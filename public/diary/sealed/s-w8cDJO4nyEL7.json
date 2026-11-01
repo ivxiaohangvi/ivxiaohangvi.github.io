@@ -1,0 +1,54 @@
+{
+  "v": 1,
+  "alg": "A256GCM",
+  "kdf": {
+    "name": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 600000
+  },
+  "entryId": "s-w8cDJO4nyEL7",
+  "share": {
+    "salt": "ZaSVmt0BwlWbbFRs9r/owQ==",
+    "iv": "XaSGhAT50afiyIu7",
+    "ct": "DF21irGOa0609fOc+9cS1a2oX3ki9zKLJRCQUtVfUjpkFEAXKLxNI0XYIYLnv2yZ"
+  },
+  "payload": {
+    "iv": "fb3sK6xicEtsKJue",
+    "ct": "vdkBRMqcHeNhw0LH6fgRKKberCn7TTP3DEXh4/Fa4zIP/RP0Tf475Oa6JLxOpn9vZPLOdossP3aAqqwXC44gRHqlJ02p+xVNLCwVG6vJaOLsZaNtcZthvRzA/ErAc+MLbNFvP9mGHLL7o1nM+imeqQdcSOlHW1hPjkp6ljgGfLBEOYHNaBZRpPTiTsWCxRFOgTV75AcsITUp8/dUXXVYtDr8s3tpDJTVvQoFCPRwzLIqkrVj9zZdPQPUoxXZZQYYuhBttzrj/uE6O8oBtLp3B91LUtLNbhO2WpwaL9rrmeik4WSSVWj8Z+40jMT+mEN1+zEEzzrNFXoS5TNqqX4r61DyyTDRhqdR4I4EgtNeUF9/2PyUn+JNnAMoa4phS+ZpDW7dYTGq3wkCv50Eko6+eTzSzcxCzWJ3HzyoiqnYSFVcxRMVcU5UMXFGqX79svRfnZi1IwKvsrwUrjATBX9FLr98xyEUT0USjZdwhOGhSPilK6Lqk5JjSVXzZQTA5hMi4BWwSq0Bv1CkcYbSnNO5ITsnRYk4pI6eegUVT+SutEACGLWWrV9U/5rEeNtnDuCfmABzvQDQOiCtgnDvTTywPi2Yvl0eHeUjAF+SGYsPGkV0nNGKG3aSQyAj3FlCGPpeuJ0iC4Eudb6wWbQDitLD9N8IG4zGot5qMnfLXqW7l05NQ+I7Eni5/IFrBJlNsOtQAKpZVnnq19UpFGDptDkqXv2xIOu8/R3qIjCnDyUPIgbzGcAWi6szkRjw5UL7TPlSp8dc6MLhWJ5QrFHn0TX5m87iijA+KVp7knX/3OViRTqCxWpPDmuf5OGwwi1/Y697sq4Q2wIStHAI0XGbWJPvDDn9CHR8lmEKZeLey2qodMgheGlj8AQiRQBHxihQycXV0T4T3ZhMwgrAv2+REq88wr7/B6k5tWebdr0ePZGKZNcviYhlJJeduMP3a0y5SHkJWoVLn70lWiIxUqXr2SDg9a7aO2kXoZ6Dc/R4WK2DdexbSyIDkJo8jC/oGgw8cu4ajUYFF5bJCtisunprTssGXrOidrm6Eft40uY3g4+5x0BRz1AQ"
+  },
+  "images": [
+    {
+      "n": 1,
+      "file": "img-1.bin"
+    },
+    {
+      "n": 2,
+      "file": "img-2.bin"
+    },
+    {
+      "n": 3,
+      "file": "img-3.bin"
+    },
+    {
+      "n": 4,
+      "file": "img-4.bin"
+    },
+    {
+      "n": 5,
+      "file": "img-5.bin"
+    },
+    {
+      "n": 6,
+      "file": "img-6.bin"
+    },
+    {
+      "n": 7,
+      "file": "img-7.bin"
+    },
+    {
+      "n": 8,
+      "file": "img-8.bin"
+    }
+  ],
+  "sealedHash": "sha256:84a96d7e973162e76ead2a33052104e9b281fd1ac12a4f4d4b08ccb12517cffe"
+}
