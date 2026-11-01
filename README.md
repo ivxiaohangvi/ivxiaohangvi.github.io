@@ -62,9 +62,9 @@ npm run preview      # 预览 dist/
 
 1. `sync-steam`：抓 Steam 留言与头像，把结果提交回仓库（只在定时任务和手动触发时跑）
 2. `ots-stamp`：给每篇文章生成 OpenTimestamps 时间戳
-3. `build` + `deploy`：构建并发布到 GitHub Pages
+3. `deploy`：构建、上传产物并发布到 GitHub Pages（构建和发布放在同一个 job 里，避免单独的发布 job 被依赖链跳过）
 
-仓库的默认分支必须是 `main`，Pages 的 Source 选 **GitHub Actions**，并到 Settings → Actions → General 把 Workflow permissions 设为 **Read and write**——`sync-steam` 与 `ots-stamp` 都要把数据提交回来，权限不够时这两步会被 `continue-on-error` 静默吞掉。
+仓库的默认分支必须是 `main`，Pages 的 Source 选 **GitHub Actions**，并到 Settings → Actions → General 把 Workflow permissions 设为 **Read and write**——`sync-steam` 与 `ots-stamp` 都要把数据提交回来，权限不够时这两步会退化成 warning 并跳过，不影响发布。
 
 站点地址集中在两处：`astro.config.mjs` 的 `site` 和 `public/CNAME`。换域名时两处一起改，并同步 `public/robots.txt` 里的 sitemap 地址。
 

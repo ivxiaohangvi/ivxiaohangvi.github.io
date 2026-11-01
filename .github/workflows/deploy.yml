@@ -109,10 +109,19 @@ jobs:
           git push
         continue-on-error: true
 
-  build:
+  # 构建和发布放在同一个 job 里：environment 与 deploy-pages 同属一个任务，
+  # 不会再被 needs 链跳过（之前单独的 deploy job 一直显示灰色，新提交发不出去）
+  deploy:
     needs: [sync-steam, ots-stamp]
     if: always()
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       # sync job 可能刚 push 了留言快照和同步状态；按分支取最新 HEAD，
       # 否则默认 checkout 会停在触发 SHA，页面要再等一轮才会看到同步结果
@@ -140,14 +149,7 @@ jobs:
         uses: withastro/action@v3
         with:
           node-version: 22
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
+      # 同一个 job 内接着发布，避免依赖链被跳过
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
