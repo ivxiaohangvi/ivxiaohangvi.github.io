@@ -1,0 +1,54 @@
+{
+  "v": 1,
+  "alg": "A256GCM",
+  "kdf": {
+    "name": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 600000
+  },
+  "entryId": "s-ZpAaXOcCR9IQ",
+  "share": {
+    "salt": "RXwh8D0hPxK9qsrcb4qutw==",
+    "iv": "oqmQ9zOL47Ol0fx0",
+    "ct": "YmjUhM5MbyUS+Xy+tVjMD62YMl+u6F1BPbmDVy712h3SKtj6Aj3OI8NDAJAwGf6i"
+  },
+  "payload": {
+    "iv": "kxgB5GaCvtx/0JNT",
+    "ct": "XrnS1vQz9Of2Oqiy/POL3TV7vlG9JYueNlmcuEcwLsRlre9jO/h2WApMD9n78GRUE6u/1GpO+zVDnKekB4T4GEEAHiwL0+ZVK6hKgVk1ljgIpKEU93rb/flwtr+cKD+gQV1Ss6yEtCgexMT9rgapCUKX28+QViBjimG8t0hfCLZ1DGyz2+wQlKuZey60Ie7lAgE3j/C9VhQGjzStIDUBAmOBNu0F9P708wjHiWZetVe2q6VxeszBhkFuapi+HTZalzGKahm9k96p0ekdfcOvVuEl2oJyET8yULbEQNSb4Vh8EsJm1Q8zASAj7e7nFZne3harUhZRQu+zguX2OalmA28rjokGhXnB3TcPMHSIlQLqpREGnTZTtY/FJmW3O0WIoSsLAmVdU5T78uu65z/ggLRQxYSp7hRgNuGZ6MhMdLl9jmzMprX8k3DbSHQY11cNQKqw4zeCGO70Z7DmIl2C6+LJakpL8vFWQXRygtRqdZaFrWTcquX8p79F7CB3BG9EX8uEaxNhJR3x01KVkVMjfQ76+IuD9nWMwfH6LikOZzyaQPr6EYECRo1gdLgKQnYuKWxbv3h0/UgoEIhfCm1htJQ1Z+qB4HGE3jab0RQoLUjsKMfuSILyeRd3JJ2sOySzoPZIzTcFHq7DTvR8DAwo7chu40K32qCwaQpKlOPHL93HROT6Mp5kNpJ3G9pRMwFjgcUFlENcjMJPX387zo3VSs3ykmarwTfusiRVBIAaeGzrEaGYrGpJWpcv2LRSbQwcRYuu171LMxz+YA9ZLmo8hjScNAZyU1QhLpMxeMqi+nGSf64j98bHnHjxRCHo1HPa7+aOZLJepbA97lLf4M7z1aoFjiuz+wac4ECR5MbZo9C+v4N9a3MBVfbL2TWj7yDz3IY2bjmILDkLOiQG1FCaGuT1PRYMhQBP9w/zcWPLQZK8qUo1IOZM69uXhby33003FDkXNMmFOzgILHulSatnpnSaEZb97Zf2fkm3rZZHXS8EzNJMO03ZODmBk7cgPE5psqeDaya9mrIBfQREmyjManrKicCW+O0Zye10d8xabPw5TtzX7k5dOdm5YhkpEqxWI0oRn5plWCnTB5hOT9Yxvvnf7sXfVKlrO1LyxcUU6882"
+  },
+  "images": [
+    {
+      "n": 1,
+      "file": "img-1.bin"
+    },
+    {
+      "n": 2,
+      "file": "img-2.bin"
+    },
+    {
+      "n": 3,
+      "file": "img-3.bin"
+    },
+    {
+      "n": 4,
+      "file": "img-4.bin"
+    },
+    {
+      "n": 5,
+      "file": "img-5.bin"
+    },
+    {
+      "n": 6,
+      "file": "img-6.bin"
+    },
+    {
+      "n": 7,
+      "file": "img-7.bin"
+    },
+    {
+      "n": 8,
+      "file": "img-8.bin"
+    }
+  ],
+  "sealedHash": "sha256:b3bf1a2b8b4d1e148bfee140b76f70be7aa17ec4f38f4bc9baad4e54d7ae0d85"
+}
