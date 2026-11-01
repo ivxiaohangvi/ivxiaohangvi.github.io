@@ -1,0 +1,21 @@
+{
+  "v": 1,
+  "alg": "A256GCM",
+  "kdf": {
+    "name": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 600000
+  },
+  "entryId": "s-aS9NqM245vjA",
+  "share": {
+    "salt": "XqUb5pY/PC54+OGmb3wl9Q==",
+    "iv": "1joSvWC3neisBn60",
+    "ct": "qhq0TUX5EKBS5KfIAdzAK/JAq3gkr+0XBMZ/aTIoXncRnt/IOAmhexEeqZIQ0OMu"
+  },
+  "payload": {
+    "iv": "tur9rttYsq/Yetg7",
+    "ct": "SG6PrtWF4T1wsZ9LQFX1MWmXXuXEmObnLyb4al+DbPP3fpE5DcQicIgUNj2D2MVXB5aoDOC+QFYXDxXaAl6WSTh1t3xdRSMaZD3voczNDlnqIQcJDOxuIrHCLOBKcJlGrJGcCZZLJP7J6bC10MWz+qsTOumO8WfJEhjV7x6DTkrYFFIa/7TtQhGPGEQ4l7JAC77ro3Lbq0N4tzHkq8057HT80zibimo9SkTEeEA29mo+"
+  },
+  "images": [],
+  "sealedHash": "sha256:d4eb842b5a5417d36ff78f3b317893fc04888609178932cb2b4a2e1b64b05af1"
+}
