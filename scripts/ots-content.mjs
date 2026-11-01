@@ -81,7 +81,7 @@ const sha256 = (text) => createHash('sha256').update(Buffer.from(text, 'utf8')).
 mkdirSync(OUT_DIR, { recursive: true });
 mkdirSync(RECORD_DIR, { recursive: true });
 
-const files = readdirSync(BLOG_DIR).filter((name) => name.endsWith('.md'));
+const files = existsSync(BLOG_DIR) ? readdirSync(BLOG_DIR).filter((name) => name.endsWith('.md')) : [];
 const digests = {};
 const written = [];
 
