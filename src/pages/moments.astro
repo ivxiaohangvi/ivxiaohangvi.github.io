@@ -12,7 +12,8 @@ const moments = (await getCollection('moments'))
   .map((entry) => ({
     id: entry.id,
     data: entry.data,
-    body: entry.body.replace(/\s+/g, ' ').trim(),
+    // 只有图片、没有正文的动态，glob loader 给出的 body 是 undefined，先兜底再压缩空白
+    body: (entry.body ?? '').replace(/\s+/g, ' ').trim(),
     ts: entry.data.date.valueOf(),
   }))
   .sort((a, b) => b.ts - a.ts);
