@@ -1,0 +1,26 @@
+{
+  "v": 1,
+  "alg": "A256GCM",
+  "kdf": {
+    "name": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 600000
+  },
+  "entryId": "s-O2xI4-iNsuzD",
+  "share": {
+    "salt": "iSvno7zdWRuFD1LMXt2uIg==",
+    "iv": "J6BLJqO4mTvtGefj",
+    "ct": "FQFGBBzOgxE5E+vgiNo0ZHqbEMbjBhlx6icebAADnPSLr8E4ezrFU+rswAiceuzy"
+  },
+  "payload": {
+    "iv": "Mx3TUfw+dRqw09b3",
+    "ct": "Hl+aU/T5zcKaNMRpIzCieRik+TZsuCffaQUk/ow6kXSPtt+w/ft6FQfJVW9Bs92K8LckASp+Y6QSiSWzhcfmubz1+b7IViKfEvIcL9AZk0FUVrRwbyuY5mPpXFyxcbsQ6+yC62hAWm+ll6KgCVK0lKidin5BzbPLZM7LRS0mV7zcoTzW3CYT/Bs5kOO3zoYsxThypiyxDRucUJ1isXg8HMvcURb+0ZY26+Xcii+etCZM6wWbxmHZDas2yK/el6Qg98SjBG0/82CmlADnusNCSoHOQbS0pBbALkPCx6zOENyILrzO0IzJ1qKIZfrSGfqT8aTMy89X+HZ0WJeSSFbUEOChBvBsY+eRve1BBaeb6iJl78i9W775FufGzAkQAH+io52aNT5OR/iiQadDOLWE7gk0U0toFI7W/Ue6Hp1ga1DwtNYjssSz/hDYacGLFRYCUmStj8DxZPqIjHoE+/kyKD7A6mxgnCoy/5A2cg/HEIf84RyrXxT7qWOv3kusDMcg6SjKwYYsnmiIPVbgzCTiL4PXLFa4YYzr4nidtYlUtmmhwL24AWeTo6c8yJjSPUIpsaGL5BzvO0YU2NTl7t34G1yMS7BL73xgA7UAebagYZCj13SYwuWeJ6m6rKBT09OzsOUXwWZj/2tkwWmUmDLMQYlzgQzAeS2wCNBQx/o4IOpXgOfAmvcjPXK7huB3xHSBFK/XTiNszKMPUfTecrDt7BUHf4cje3uMGunw/TAyehkV5Pgsv1ProupcPOWgmSSVEQZLyt3Ca+LWcfwE0h+xhpp3b7VrhpbrV20DZExw1XLK6783XWgeeWSkODi04RyxlRaFH+FlHnypXu7MfQT5GnnnOlzeewEgdiW3PqAs5zWYikOYdi+rb8YRBCKjfy8aYk7M9+PbxcjiKngDuWP1LWsGEZ9Z7hxOBPmgyMP7eUsKLkbMA7KOPR6vqYIm9KsOHQkcgc96u9WqAQTudPOjsaJSqCiGQiojBWK7TDKV1kkilVMTY/oanQ/sGVm8mjhd0Qjeo9wTzm1S65yFvSFOS4UK6tc4TdRlw6rjQa5xYRZYlR9oXLfmS+1XS5D6odyQAQNm1rpd/9PZR3PI49Htpwb+EJkPij34n85sqfc/YIg70nwnacR2EDhtamM3Mzo/vycQduVlZ+z61TZ4IYUMe4cBtCzRt1pJzqGjSlaQwkkYiaiCL18wXvQO1WAX7X1fiM2mCYJuWQSwW27ONRLYzcnVJNj4RtAMNWRrA9prydEEFDqJfpDDEYo/jBOJrTXVtaCvwFyrBVy+XealUnjAhi89St+yN+BS9X56WaoA2eOaXfoOdNE7HQ5O9W1WfJrOS19Fzx1lB9KTwc45f5JYT/elJcF+olMdjE5RVLHayiFhtV/9voEWaXNk2g7GCQJ9GeaV86FuHlsSGn6muxmYWZXFiHC21z0ne5Oz15hWxWrkGp9RWGZ1lQexWoBbTqlXqU6NV726S5yF/xQUY6v9CD0VOzIr8UmXsu7HevT16FfMJP0CfwXOo2oQviBZ4iBUSTxbxhl6CiO/BLbRpiqZ9Xe9Qvu1PWIJKMk4PvluDbEd6/RKpJb27g+JkZqCPxlpQiW85w=="
+  },
+  "images": [
+    {
+      "n": 1,
+      "file": "img-1.bin"
+    }
+  ],
+  "sealedHash": "sha256:4b62cab52e5b9c8056733346219c83942a40da793943393f46d9fc758a0dd701"
+}

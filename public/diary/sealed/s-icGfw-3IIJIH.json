@@ -1,0 +1,54 @@
+{
+  "v": 1,
+  "alg": "A256GCM",
+  "kdf": {
+    "name": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 600000
+  },
+  "entryId": "s-icGfw-3IIJIH",
+  "share": {
+    "salt": "GXvr52IdcuF/ep6RkLMvjA==",
+    "iv": "psi9nplXnFFJ9+Fs",
+    "ct": "kFLv5SQCKqKK4nsJihxjUStKuI0u018Jm9VpHbHoB0hxVLEQKv6W14ZTEGQGoc+L"
+  },
+  "payload": {
+    "iv": "lY5KmxQS6Xd+7gc3",
+    "ct": "hkgBkhhqu6kakZXO0NYBLjpzyJs3o1dW5SHPzWQB4/E5eU4f/EJYMtWbWOAB6YEn1W8A+67dYX2t+lYu/Og0LgXzckZLXZ32QqSjthWI+AfDZ0whf+NLQnG5EuLUVgKT0cGeNEv7GphosDaNHcTnlNOtqsQ5GXRviHOaX00El9AigJ+eIDFmVuhh9QLwVX26Gm7hkuKUBut33MWOHWjRKx8fnHMb2Q9/VwmBlnOjGyg6wRvntsJqyfWZFOMEkdzWeZDItr9Y9Z8/moNClHl4vInyrmk/JniqtYv0mi6c3uyIObcm5dBdXEjyHLKSUKU3l46uE9UvQYYqqEISRQqP2j6VOqW/C6wtyeIqDW1LcH15EEHGJtv+8Ds2w9UBrqFdAtQe6mS/v+P70eaRiyarTD1MqtEQ9RRSDO++YG3494EMBg8rgtGQsnamqkFS16di5G0/FunAa6Ljf3HpTpM4sU8iv1JiitGrsSvcH5db3zThAleUtJVEjO22KqqPvjRODVckudS8Hqp4g5nXwMYZzeKZp0DvcKQOQuIDnb78nG9XpeTRc4esjF4S+fPxLX65DHZQA51AhiD2fwnWIng9JlIeOM4PQJHjEc9JwPvltBB34W2l+B79OT075837GLRehTxgRj24gZWOf1kyArfRQFpAbejj2lLmwZwHsP9R+TxDevL6eoKyRLqMuZ+3TcNeZRwmQYsPMUVGFCTqaAeTlWZLHbfB1CO84Y5kO34PUyV08F3rymuFUWF82vwOxF5NMXDePotn1ZglnhYrp80nnG/44S66Vhnr6BWWrZTW5kXFF8pWgNG6V7umPiGGJL0X7ALOOG7veU4eQ3J7ipv4j+pl77Kwg5Vkqei/GZiILbImgxKuC0TnKjMVSuRyosguIq78BkRVD/zTi4a8KZ32tRBiLg7Jl5gB5y4Rn08tK44xFrYXkZ/Ne19jHvJtJGwIKxU4O2JvTtW8ckBvaT+b7kzzD6JoJzwwXcAKI9RzDxz6vhrKyR87+SEtrTX+AZpqgZZU9ovURgWxdChbou9iqzOdfz9qt5/IW1ixKhRovo6L755umk9toZqzk8Q2VIA0KNMp610UD65aNdzT/olCxGGJwe1PCJF+y0wGw4+7zkdJHdr+dy7ZmKFfKg=="
+  },
+  "images": [
+    {
+      "n": 1,
+      "file": "img-1.bin"
+    },
+    {
+      "n": 2,
+      "file": "img-2.bin"
+    },
+    {
+      "n": 3,
+      "file": "img-3.bin"
+    },
+    {
+      "n": 4,
+      "file": "img-4.bin"
+    },
+    {
+      "n": 5,
+      "file": "img-5.bin"
+    },
+    {
+      "n": 6,
+      "file": "img-6.bin"
+    },
+    {
+      "n": 7,
+      "file": "img-7.bin"
+    },
+    {
+      "n": 8,
+      "file": "img-8.bin"
+    }
+  ],
+  "sealedHash": "sha256:c9d829489780f0a3d2af2c550f2b4b2f3a38e373edf2a390eef2a2842b0fb065"
+}

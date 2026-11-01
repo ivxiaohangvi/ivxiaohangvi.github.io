@@ -1,0 +1,21 @@
+{
+  "v": 1,
+  "alg": "A256GCM",
+  "kdf": {
+    "name": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 600000
+  },
+  "entryId": "s-TQvCz6e11ZqV",
+  "share": {
+    "salt": "KskocdHkaBD7inA26H+nmQ==",
+    "iv": "/Zj62eC363k6p1P9",
+    "ct": "/briaMXpyjFHP7r6Dxo7r4lA2x5lkTABGlUuCQnaN5vzTCxjuJAY0TFYvWzdYnk9"
+  },
+  "payload": {
+    "iv": "AtnWvuLz0tHZTBV4",
+    "ct": "ls2DlYS1OQ3q8vte2aU75faic+CvhtwvTzPjfkxD9+iMmi0LT63L1OhzL3mPntdqH2fE6SI9jjJU01ZBq7EKpL/62xxwb21i4OlRlTveshUrWqee/qV49k6W2si22xPsI63JLNkBGyIJBeM3K0wH8UQVS2zWXa/QcWFvSW53wOtqA6zcwMmoEnouN7QfORyIGVAXKfhs5E2BATKNcadydSSYrZ4Qdgg1+1z/T8JuBltTnfaJR7wT5weS8tGGg8KSbznyNUpdInOGV2makHz5IKAbz4SijpzS5IzG1vAdGbif5Xly55bhyIqDhdcNe32BHAz0GHW2+kWE+6ZOMHZ5PJSFV9nWrtm0+YkX9gG/GQG0zvCSbrWOz8aq4TBZJKxk75Z+WPE3qekQ+uuqoWGj6RkLMSS1mZerT4ChlQDDroeKeuVZanzvj+uRNomVh9tO29GsmWOa7J7NuHWfFLvKXrHVRk1VBdTlYvksdmmHUvx3Ki+yB1Z1EZ6A4SJmlWZlI77D1teKgmowxbKEb5FgeAaMqtSo8a+htrBLMnmNRLwANwfYeSIJN/Z5Zb16v2PPj3wMLejq//d9NODuZ08BrnwM7tmvm/vWJ+h15HGOfWvo725H/tZNXk7Bp0fZKhH4lWgnnP4465iv0KdUF6wdbnz1igbaNTQVOlByfhJhRLGKOKDEUGfdcILTp5wSxmmz4RR0eIYqlbwGrOC8vLy+9WarKFKPy8pJxsZ2wAUGjaefiCpPs4LG6h/5xpOflmMvFyLaRJJmC4uW6hBbHRJq6wllvuEsl8Sa4TzrLoyl6cMqs3n1pgjUJHo1s2qPnImYxZyPgGiNFcxfpiSZutrkS5v2ZtA+CIwHCechVO5d1RPFErqLgL7gGE/YfWxl70EHF7sKqX+55KO8/MVrIcE0y+RgsQKWZAHfWE5pnFoi/mJlRXyBVCkYOLE5p/0bKFFlQ2mIuK3V1oPcv+glsn86FKYWyRP76i4GAnplsZoXbXbUBGb0ORPAlfXQ9lqU0W1IAvhRE2eugz6b7vWB+fhaR06A2/FFLCHvfiKyWzOCPaAtX3CWa3dtB7RXNKBm5PkGOhUTKyz8dEgmhnWcSEWGsI2UUafYuJwbQ6dP72t3Nte/nLw58rF3pF3qhD0Y77TgGqlpu+AAjdNo3SBCYlKPmaRtI9H57Qd0xK4NJTtGmIq0y31Pd+yOS078/X4jWAPaXPTXoWxBnvY4aEfEyIp7td7JpIsePjpT+UfD5LW6izHP7msuzK71rbuRnj1akosVdvNfl5czUhY4BItcniL+Uu5pZWhGtLzoT+eTvb2FSFrJrP7nb7gXUAjbedurei5Z9tX/S/Z5mZrqLbhB+R1kGnF12P7FmNcWYdbImc+WD7naYRc62EJx7nRv0kjA4uHcGv+DBUZZ2wI+V7EB08ZRqvKq9gt4Mphx4laFeg0NblDllb2UjiXK0XqQKvcnuz629wXtcYa7vg+uHlFzcYOMS4a+u5F25clPUWpwvN2eUrJf9WVzlAetpw7715UvfFwW6ZpFEtVKRzKsSJpAu88IQMsSz8P7eg=="
+  },
+  "images": [],
+  "sealedHash": "sha256:595e9e645cc1227f443885c6ef4736d73b12b12f8f65198830a5a7102b74eab2"
+}

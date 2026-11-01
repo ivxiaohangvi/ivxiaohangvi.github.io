@@ -1,0 +1,26 @@
+{
+  "v": 1,
+  "alg": "A256GCM",
+  "kdf": {
+    "name": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 600000
+  },
+  "entryId": "s-0l7soBQ510MM",
+  "share": {
+    "salt": "y9bjC1vMw1Ng1lcJ2bldbg==",
+    "iv": "Yog511XDhkNSQbaE",
+    "ct": "Wi43UV3L70oPHUY/Xj7wFGPqCgsvlgy6x/k1W6ohdjVWyPulEwp0de+GpLZH7EOj"
+  },
+  "payload": {
+    "iv": "ySon49w7WStbh6X8",
+    "ct": "ooiEGvFqafK9s6W5zCCh/dUAGhZb8qBBDsfd2KTnyjrA8nMrR5vITRB1jiwZ63dmvWCRuo25PhnN0+hnND1Ra1y4iInXTM4jS+ZcAE8plqnDzAKaHUXaBiMlqMxhWlUQehc0wKtvB+WZtdoTWvDqKhl/NJEsxAucjsTC5TmfMv7PnXW1QDGhVMtJTYj2N77awdNGk56SeOaloIdcfTNZKPHjEjM5JRaivWRz8UUicgwIFlJCmM2goT5SU9EhZrzrE2LPVVnP3N4AOKsBmRc="
+  },
+  "images": [
+    {
+      "n": 1,
+      "file": "img-1.bin"
+    }
+  ],
+  "sealedHash": "sha256:0a975a1cba7e831e8c92841edd682a1d1fa0d3867b877fab596955f030f3b7a7"
+}
