@@ -1,0 +1,54 @@
+{
+  "v": 1,
+  "alg": "A256GCM",
+  "kdf": {
+    "name": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 600000
+  },
+  "entryId": "s-4gjTXQ8v0aTi",
+  "share": {
+    "salt": "UQHivhMTWZ1TbOozcXJBcQ==",
+    "iv": "cJS9bE8tb5JZj/Dx",
+    "ct": "F7kyOpQPnt1/axVZqwWVgm8Rz5J0nxm4BXljliwJUcZrL+nN58CteGDb/I2EEwLH"
+  },
+  "payload": {
+    "iv": "wExDizC7W/LbsYV0",
+    "ct": "Lj8NXcLHcO9v4oNhbbJpZvw7AalQLg95FaISaS0MftE67/HDfm+qNBLCTnWR1ccUuhe+qgTPVKUZOjBFBI3cSQh4HxITmFOcOusX5nkXMJLu5LOVI+suTz4mzUjORRwAxjFXHhFHY2yvuELDZmSiW/DNUdybJqupGfdvl38/dm5tK0UsAXoMP7oH3iU73UjV9n3WKohddNIVj0CtzSIZ9PayvUADHXa71XDjY1vSeNjxY2YEnEmWR9snL7GURlwyMMqWtu7rDN8QA5JqABhq4q30+7GmLd5ZzG7twUfsWjIZCcLmEYi7mQRtk06LLuI38R1MgggVVoM1Z6M+kUbnkef+EqmSkAOu0h3aueE81bA+0SaYoUOq3Q0ygcxl7vD9gczrCz+8YmmaN2s/XGIn5Rl7ixxECMQFq+xWJq6ZsXxmF8vnu980PZlKiHxEpjs50Lp/iTgn1gKLWuFEj+uAW4q7g0ZwnDxzGauyQjMWdZIHhPkJ4TZibtWHnrkhqdte46DpiPXcC58mwcoDfipfNbRpR66nLDZ46CXoQWOm0V6HllCvsaRloW2azLVRFT8WeZNxfCOE5PJ2nbD8Zgwp2zSg8dxWZX2iPVtcgLQtO+D6d9Yl8sRNAbQj9M+BFLTWkZJ4Mo/7IleSsdVW1c22TuCzaDPUpY8w0ncozSVSWiVts51Nc17AoQX2WE4/lOAKs8gIcdIUyO8SoErXnBfCbrAVJYmWKVvdDWudpANfgF28uCzQcw+5v7nwH96tth8pyASy0U4eQr1HbO+T68pHGs2+uWQi+A+O09k5z/2TpFiOEyGoBKp8BDtJJma8FtA8UVySEBxNCrSS3Qy30fd6zcHjOJBeMjD+WmxVyPhc5AXCzdgMMyWjbnr9zJfnMi33lUtgICA/q3aYGmDAu6X9vZZ2DNAlae77VLBZUhvTL96vdZHSwgREMPomvla/V6hPTut7JVLpvueVJQvHOKKG5JOLR3H4nz2TVPo+NA5OsrCXhFdYLTMW78mPVh7FmiYIWvmrjgsIBsK2Wv8toSA7JIy3Fu4O6PQMAO+EMDAb9iKhspIK"
+  },
+  "images": [
+    {
+      "n": 1,
+      "file": "img-1.bin"
+    },
+    {
+      "n": 2,
+      "file": "img-2.bin"
+    },
+    {
+      "n": 3,
+      "file": "img-3.bin"
+    },
+    {
+      "n": 4,
+      "file": "img-4.bin"
+    },
+    {
+      "n": 5,
+      "file": "img-5.bin"
+    },
+    {
+      "n": 6,
+      "file": "img-6.bin"
+    },
+    {
+      "n": 7,
+      "file": "img-7.bin"
+    },
+    {
+      "n": 8,
+      "file": "img-8.bin"
+    }
+  ],
+  "sealedHash": "sha256:e95d22357704f32f86c46a3e9e484088a382216679dc7fecdc9633984859b66a"
+}
