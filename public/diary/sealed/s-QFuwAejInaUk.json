@@ -1,0 +1,21 @@
+{
+  "v": 1,
+  "alg": "A256GCM",
+  "kdf": {
+    "name": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 600000
+  },
+  "entryId": "s-QFuwAejInaUk",
+  "share": {
+    "salt": "CoyHqKJ5IUD+KjaEaeihEw==",
+    "iv": "6mGF63E91lLaI3iq",
+    "ct": "5gX7ewsnPmnVFAz78PwaG/RgaKt321LQazJjMMCQA1nHgTBVfQT9dBAn10bawFg9"
+  },
+  "payload": {
+    "iv": "HQpEFJBxncGxfwpK",
+    "ct": "aEZ+DtuBmywh98Ua7xqzAxg015shVtSYs4FOwOCBU9WKF+8+GLNdHz7xALabmyxLevW+4dwB2WNdgEAd+2lzlW8Cd7Ms7kmxbw32TRIztxvhyZ9I1w9NHAgJ+r5tayDuY1OiVNtwi5lcxsMGqbJ8HSM71fPnPEgyzUq2yvyB0fQfcOvHEz+ooSmFiT0VeWpdLPNHtebiE7HQf2Z6wooA0WbvMwVU5Jbm0G0z6P9cYumgr9ssL3l8djLALYYxF0nNkxHp9zroC7v+l13PfdHIvz9qSiF26KiKD85RgEMkYLM0PetwkS46yinmIYCHLhLQmcWo5EwIb/DzhPUDeObQ/Vg7d9wxHTOB9Sb04mBzIM6EhnEmfujYGTOnS4AesSZ83/kwSq7Nxw4WLtpE4wRqP2HxYnbjWkzhegRrwMjJSZnD/GI2aVTs/mSRQr8pXH328sEMqkcmtKaw7a3/XzJd43oVUrLnRTbNaZzPP1bzs0s95gbljDqYzuQrJb1y0BAHkLDsg1jSzBYxWT04TOnaFt+CnVVKnuxjzyYaqlqOlq0XQ/GP6bGNBMXrc/VeCt7Gtw5AWnymiJb6+KNWuZI="
+  },
+  "images": [],
+  "sealedHash": "sha256:7873767038ddc04c31761ba2a05b799c4ff12ab1645a52035fc9671aa90d303e"
+}
