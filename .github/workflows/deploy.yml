@@ -37,9 +37,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
       # 失败不拦发布：成功时覆盖留言快照，失败时只更新 steam-sync.json
+      # 脚本自己会把失败状态写进 steam-sync.json（页面会亮红条），这里只把退出码转成 warning，别把 job 染红
       - name: Sync Steam guestbook
-        run: node scripts/sync-steam-comments.mjs
-        continue-on-error: true
+        run: |
+          if ! node scripts/sync-steam-comments.mjs; then
+            echo "::warning::Steam 抓取失败（网络/风控），保留旧快照继续发布"
+          fi
       # GITHUB_TOKEN 推回仓库不会再次触发 workflow，避免循环
       # 即使抓取失败也要提交 steam-sync.json 的失败状态，构建才能亮红灯
       - name: Commit Steam snapshot
@@ -78,14 +81,21 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      # 装不上就跳过盖章，绝不挡住发布；真实错误仍在日志里，同时以 warning 形式亮出来
       - name: Install opentimestamps client
-        run: pip install opentimestamps-client
+        run: |
+          python -m pip install --upgrade pip > /dev/null
+          if ! python -m pip install opentimestamps-client; then
+            echo "::warning::opentimestamps-client 安装失败，本次跳过盖章"
+          fi
       - name: Install dependencies
         run: npm ci
       # 日历/浏览器可能抽风：失败只让那些文章显示“等待打包”，绝不挡住发布
       - name: Stamp and upgrade
-        run: npm run ots
-        continue-on-error: true
+        run: |
+          if ! npm run ots; then
+            echo "::warning::OTS 盖章失败，相关文章显示“等待打包”"
+          fi
       - name: Commit proofs
         run: |
           if [ -z "$(git status --porcelain public/ots src/data/ots.json src/data/ots-digest.json)" ]; then
