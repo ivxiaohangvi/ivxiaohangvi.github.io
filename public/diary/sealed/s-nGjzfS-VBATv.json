@@ -1,0 +1,26 @@
+{
+  "v": 1,
+  "alg": "A256GCM",
+  "kdf": {
+    "name": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 600000
+  },
+  "entryId": "s-nGjzfS-VBATv",
+  "share": {
+    "salt": "Pll8Un8yh7lmUWxLyvgJSw==",
+    "iv": "2UAuGRNA5K1QK2zI",
+    "ct": "32BSHDMPy2/h1YtZ0g4een0a1rbyi09OnAak7gJNG3G3FXD7uu22UUDuuI28RXOB"
+  },
+  "payload": {
+    "iv": "wqLnXLcOB/amVeo7",
+    "ct": "cGyRQvaCdDleK34q9iscMWcnfghh5Cl4GRJJlpIlLbQ2wRUjMN2VlBImNUQM9xvH7PWLzx2F/0DL7DR6mRexksX/14d3uHlVxZFuhegVIQH5a4QYUvSZQ5FyKr6P/FMe6Xwx2zD7nhK8e2Tw2H8gHbTljyJH5f0nAAWUQgCtYXTtRTT5X4LlThPTHJ9yKMzK+0hQmoBTatJfVL/njysWbK6ZjoeHzADPiTWz9Qn7DyC/3JzorfmkSudoC+STNOR1pg5wH4PKyJLBuHoddhFVoBroHHo9hHtosRDn88cncFNnMJuvzln0Rz9QGBhard0v"
+  },
+  "images": [
+    {
+      "n": 1,
+      "file": "img-1.bin"
+    }
+  ],
+  "sealedHash": "sha256:cfef1dc7a16c2999c67be9adc51872f224f9a12c4e5bb19b766fab8ea51024f5"
+}
