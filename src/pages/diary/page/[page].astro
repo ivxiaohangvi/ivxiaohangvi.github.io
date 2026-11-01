@@ -1,0 +1,71 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import DiaryLedger from '../../../components/DiaryLedger.astro';
+import DiaryLedgerMore from '../../../components/DiaryLedgerMore.astro';
+import DiaryLightbox from '../../../components/DiaryLightbox.astro';
+import { withBase } from '../../../config';
+import { DIARY_PAGE_SIZE, diaryPath, getSortedDiaryEntries } from '../../../lib/diary-list';
+
+export async function getStaticPaths() {
+  const entries = await getSortedDiaryEntries();
+  const totalPages = Math.ceil(entries.length / DIARY_PAGE_SIZE);
+  return Array.from({ length: Math.max(0, totalPages - 1) }, (_, index) => {
+    const page = index + 2;
+    return { params: { page: String(page) }, props: { page } };
+  });
+}
+
+interface Props {
+  page: number;
+}
+
+const { page } = Astro.props;
+const entries = await getSortedDiaryEntries();
+const totalPages = Math.max(1, Math.ceil(entries.length / DIARY_PAGE_SIZE));
+const start = (page - 1) * DIARY_PAGE_SIZE;
+const pageEntries = entries.slice(start, start + DIARY_PAGE_SIZE);
+const prevPage = withBase(diaryPath(page - 1));
+const nextPage = page < totalPages ? withBase(diaryPath(page + 1)) : null;
+---
+<BaseLayout
+  title={`日记 · 第 ${page} 页`}
+  description="小航的日记：每天的心情与记录，从 Daily You 同步推送而来。"
+  noindex
+  darkroomPrefetch="intent"
+>
+  <div class="wrap" data-back-to-top>
+    <header class="page-head">
+      <p class="eyebrow">FIELD NOTES / 日记</p>
+      <div class="page-head-line">
+        <h1>日记</h1>
+        <span class="page-count">{String(entries.length).padStart(2, '0')} 篇</span>
+      </div>
+      <p class="page-lede">
+        第 {page} / {totalPages} 页，从近到远。
+      </p>
+    </header>
+
+    <div class="ledger" data-ledger>
+      <DiaryLedger entries={pageEntries} lqipBudget={0} />
+    </div>
+
+    <DiaryLedgerMore
+      next={nextPage}
+      remaining={nextPage ? entries.length - start - pageEntries.length : 0}
+      total={entries.length}
+    />
+
+    <nav class="ledger-pager" aria-label="日记分页">
+      <a class="text-link" href={prevPage}>← 上一页</a>
+      <span class="ledger-pager-count">第 {page} / {totalPages} 页</span>
+      {
+        nextPage ? (
+          <a class="text-link" href={nextPage}>下一页 →</a>
+        ) : (
+          <span class="ledger-pager-count">到底了</span>
+        )
+      }
+    </nav>
+  </div>
+  <DiaryLightbox />
+</BaseLayout>

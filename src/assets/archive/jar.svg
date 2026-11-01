@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260" width="200" height="260">
+<defs>
+<linearGradient id="g" x1="0" x2="1">
+<stop offset="0" stop-color="#fff" stop-opacity=".42"/>
+<stop offset=".045" stop-color="#fff" stop-opacity=".15"/>
+<stop offset=".14" stop-color="#d8e6ec" stop-opacity=".05"/>
+<stop offset=".5" stop-color="#d8e6ec" stop-opacity=".012"/>
+<stop offset=".86" stop-color="#fff" stop-opacity=".05"/>
+<stop offset=".955" stop-color="#fff" stop-opacity=".2"/>
+<stop offset="1" stop-color="#fff" stop-opacity=".42"/>
+</linearGradient>
+<linearGradient id="h" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#fff" stop-opacity=".58"/>
+<stop offset=".42" stop-color="#fff" stop-opacity=".34"/>
+<stop offset=".78" stop-color="#fff" stop-opacity=".08"/>
+<stop offset="1" stop-color="#fff" stop-opacity="0"/>
+</linearGradient>
+<linearGradient id="bb" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#e8f4f8" stop-opacity="0"/>
+<stop offset="1" stop-color="#e8f4f8" stop-opacity=".14"/>
+</linearGradient>
+<radialGradient id="s1">
+<stop offset="0" stop-color="#000" stop-opacity=".3"/>
+<stop offset=".7" stop-color="#000" stop-opacity=".14"/>
+<stop offset="1" stop-color="#000" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="s2">
+<stop offset="0" stop-color="#000" stop-opacity=".13"/>
+<stop offset="1" stop-color="#000" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="cau">
+<stop offset="0" stop-color="#fff" stop-opacity=".08"/>
+<stop offset="1" stop-color="#fff" stop-opacity="0"/>
+</radialGradient>
+<linearGradient id="w" x1="0" x2="1">
+<stop offset="0" stop-color="#8a6636"/>
+<stop offset=".2" stop-color="#cfa76a"/>
+<stop offset=".46" stop-color="#e3c188"/>
+<stop offset=".72" stop-color="#c69b5d"/>
+<stop offset="1" stop-color="#7a5a2c"/>
+</linearGradient>
+<radialGradient id="wt" cx=".38" cy=".3" r=".85">
+<stop offset="0" stop-color="#f0daa8"/>
+<stop offset=".55" stop-color="#ddbb80"/>
+<stop offset="1" stop-color="#c09657"/>
+</radialGradient>
+</defs>
+<ellipse cx="100" cy="240" rx="74" ry="9.5" fill="url(#s2)"/>
+<ellipse cx="100" cy="234" rx="53" ry="6.5" fill="url(#s1)"/>
+<path d="M42,90 L42,222 A58,6.5 0 0 0 158,222 L158,90 A58,6.5 0 0 1 42,90 Z" fill="url(#g)"/>
+<path d="M42,96 L42,220" stroke="#fff" stroke-opacity=".5" stroke-width="1.3"/>
+<path d="M158,96 L158,220" stroke="#fff" stroke-opacity=".55" stroke-width="1.3"/>
+<path d="M55,96 L55,178 L61,178 L61,97 Z" fill="url(#h)"/>
+<path d="M57.5,97 L57.5,176" stroke="url(#h)" stroke-width="2.2"/>
+<path d="M139,98 L139,158 L142,158 L142,99 Z" fill="url(#h)" fill-opacity=".66"/>
+<path d="M42,206 A58,5.5 0 0 1 158,206 L158,222 A58,6.5 0 0 1 42,222 Z" fill="url(#bb)"/>
+<ellipse cx="100" cy="219.5" rx="50" ry="5.8" fill="#d8e6ec" fill-opacity=".04" stroke="#fff" stroke-opacity=".18" stroke-width=".9"/>
+<path d="M42,222 A58,6.5 0 0 0 158,222" fill="none" stroke="#fff" stroke-opacity=".34" stroke-width="1.3"/>
+<ellipse cx="100" cy="228" rx="29" ry="3.8" fill="url(#cau)"/>
+<path d="M39,88 A61,6 0 0 0 161,88 L161,90 A61,6 0 0 1 39,90 Z" fill="#000" opacity=".16"/>
+<path d="M39,73 L39,88 A61,6 0 0 0 161,88 L161,73 Z" fill="url(#w)"/>
+<path d="M44,78 Q100,82.5 156,78" stroke="#6b4a22" stroke-opacity=".14" fill="none" stroke-width=".7"/>
+<path d="M41,83 Q100,87 159,83" stroke="#6b4a22" stroke-opacity=".1" fill="none" stroke-width=".7"/>
+<path d="M39,88 A61,6 0 0 0 161,88" fill="none" stroke="#4a3115" stroke-opacity=".38" stroke-width="1"/>
+<ellipse cx="100" cy="73" rx="61" ry="6.2" fill="url(#wt)"/>
+<ellipse cx="100" cy="73" rx="61" ry="6.2" fill="none" stroke="#8a6238" stroke-opacity=".25" stroke-width=".8"/>
+<ellipse cx="100" cy="73" rx="41" ry="4" fill="none" stroke="#8a6238" stroke-opacity=".14" stroke-width=".8"/>
+<ellipse cx="100" cy="73" rx="22" ry="2.2" fill="none" stroke="#8a6238" stroke-opacity=".1" stroke-width=".8"/>
+<path d="M70,71.8 Q100,73.6 130,71.8" fill="none" stroke="#8a6238" stroke-opacity=".12" stroke-width=".7"/>
+<path d="M40,73 A60,5.6 0 0 1 78,67.6" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="1.6"/>
+<ellipse cx="86" cy="70.6" rx="20" ry="2.6" fill="#fff" fill-opacity=".14"/>
+<path d="M42,94.5 A58,6 0 0 0 158,94.5" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="1.1"/>
+<path d="M44,100 A56,5.5 0 0 0 156,100" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="1"/>
+</svg>

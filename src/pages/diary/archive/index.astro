@@ -1,0 +1,214 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ArchiveFurniture from '../../../components/ArchiveFurniture.astro';
+import { getArchiveRoll, getDiaryFurniture } from '../../../lib/archive';
+import { withBase } from '../../../config';
+
+const roll = await getArchiveRoll();
+const years = roll.years;
+const units = await getDiaryFurniture();
+---
+
+<BaseLayout
+  title="日记书架"
+  description="按月份装订的日记：书脊的厚薄是那个月写了多少，颜色是那个月最常出现的心情。"
+  noindex
+  darkroomPrefetch="intent"
+>
+  <div class="wrap" data-pagefind-ignore>
+    <header class="page-head">
+      <p class="eyebrow">Archive / 书架</p>
+      <div class="page-head-line">
+        <h1>书架</h1>
+        <span class="page-count">{roll.total} 篇 · {String(roll.monthsCount).padStart(2, '0')} 个月</span>
+      </div>
+      <p class="page-lede">
+        一天一天太长了，所以按月份装订。书脊的厚薄，是那个月写了多少页；颜色，是那个月最常出现的心情。空着的位置，是还没写到的月份。
+      </p>
+      <a class="text-link page-head-link" href={withBase('/diary/')}>回到日记 <span>→</span></a>
+    </header>
+
+    {units.length > 1 && (
+      <nav class="year-jump" aria-label="按年份跳转">
+        {units.map((unit) => (
+          <a class="year-chip" href={`#unit-${unit.key}`}>
+            {unit.key}
+          </a>
+        ))}
+      </nav>
+    )}
+
+    <div class="shelf-room">
+      <ArchiveFurniture skin="book" units={units} legend="书脊厚 = 篇数 · 颜色 = 当月主导心情" />
+    </div>
+
+    <section class="month-index" aria-labelledby="month-heading">
+      <div class="index-head">
+        <h2 id="month-heading">全部月份</h2>
+        <span class="index-hint">直接翻到某一本</span>
+      </div>
+      {
+        years.map((year) => (
+          <div class="index-row">
+            <span class="index-year">{year.year}</span>
+            <ul class="chips">
+              {year.months
+                .filter((month) => !month.isEmpty)
+                .map((month) => (
+                  <li>
+                    <a class="chip" href={withBase(month.href)}>
+                      <span>{month.nameCn}</span>
+                      <b>{month.count}</b>
+                    </a>
+                  </li>
+                ))}
+            </ul>
+          </div>
+        ))
+      }
+    </section>
+
+    <p class="shelf-note">
+      书架每月自动多出一本。点开书脊，是那个月的全部日记；空位只是还没有写到。
+    </p>
+  </div>
+</BaseLayout>
+
+<style>
+  .shelf-room {
+    padding-block: clamp(2rem, 4.5vw, 3.2rem) clamp(1.6rem, 3.5vw, 2.4rem);
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .year-jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding-top: 1.4rem;
+  }
+
+  .year-chip {
+    padding: 0.24rem 0.55rem;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+
+  .year-chip:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+
+  .month-index {
+    padding-block: clamp(1.8rem, 4vw, 2.8rem) clamp(1.2rem, 3vw, 2rem);
+  }
+
+  .index-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.8rem;
+    margin-bottom: 1.4rem;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .index-head h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .index-hint {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .index-row {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0.5rem;
+    padding-block: 0.55rem;
+  }
+
+  .index-year {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.42rem;
+    padding: 0.28rem 0.6rem 0.24rem;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    line-height: 1.2;
+    text-decoration: none;
+    transition:
+      border-color 0.2s var(--ease),
+      color 0.2s var(--ease),
+      background-color 0.2s var(--ease);
+  }
+
+  .chip b {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    font-weight: 400;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chip:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+    background: var(--glow);
+  }
+
+  .chip:hover b {
+    color: var(--brass);
+  }
+
+  .chip:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 2px;
+  }
+
+  .shelf-note {
+    margin: 0 0 clamp(2.5rem, 6vw, 4rem);
+    max-width: 34em;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.9;
+  }
+
+  @media (max-width: 560px) {
+    .index-row {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 0.45rem;
+    }
+  }
+</style>

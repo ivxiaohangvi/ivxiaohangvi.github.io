@@ -1,0 +1,244 @@
+---
+import { withBase } from '../config';
+import { beijingMonthDay } from '../lib/date';
+import type { CloudLayout } from '../lib/word-cloud-layout';
+
+interface Props {
+  layout: CloudLayout;
+  variant: 'desktop' | 'mobile';
+}
+
+const { layout, variant } = Astro.props;
+---
+
+<svg
+  class={`wc-svg wc-svg-${variant}`}
+  viewBox={`0 0 ${layout.width} ${layout.height}`}
+  aria-label="按公开记录里出现次数排布的沉浮词云"
+  tabindex="-1"
+>
+  {layout.words.map((item) => (
+    <a
+      href={withBase(`/search/?q=${encodeURIComponent(item.word)}`)}
+      class={`wc-word is-t${item.tier}`}
+      data-word={item.word}
+      data-count={item.count}
+      data-last={item.lastSeen ? beijingMonthDay(item.lastSeen) : ''}
+      aria-label={`用「${item.word}」搜索`}
+      tabindex="0"
+    >
+      <g
+        class="wc-bob"
+        style={`--fs:${item.size}px;--dur:${item.dur.toFixed(2)}s;--delay:-${item.delay.toFixed(2)}s;--sink:${item.amp.toFixed(1)}px;--rise:-${item.amp.toFixed(1)}px;--fade:${item.fade.toFixed(2)};--lo:${item.lo.toFixed(2)}`}
+      >
+        <text
+          x={item.x.toFixed(1)}
+          y={item.y.toFixed(1)}
+          text-anchor="middle"
+          dominant-baseline="central"
+        >{item.word}</text>
+      </g>
+    </a>
+  ))}
+</svg>
+
+<style>
+  .wc-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .wc-svg-mobile {
+    display: none;
+  }
+
+  .wc-word {
+    cursor: pointer;
+    text-decoration: none;
+    outline-offset: 4px;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.4s ease;
+  }
+
+  .wc-word text {
+    font-family: var(--font-display);
+    font-size: var(--fs);
+    fill: var(--ink);
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    paint-order: stroke fill;
+    stroke: var(--paper);
+    stroke-width: 0.14em;
+    stroke-linejoin: round;
+    transition:
+      fill 0.18s ease,
+      font-size 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .wc-word.is-t1 text {
+    font-weight: 600;
+  }
+
+  .wc-bob {
+    /* 正弦形缓动：到顶、到底速度归零，折返不顿挫 */
+    animation: wc-bob var(--dur) cubic-bezier(0.37, 0, 0.63, 1) infinite;
+    animation-delay: var(--delay);
+    opacity: var(--fade);
+    transform-box: fill-box;
+    transform-origin: center;
+    will-change: transform, opacity;
+  }
+
+  /* 悬停不重置动画，只按暂停键——词停在指到它的那一帧 */
+  .wc-word:hover .wc-bob,
+  .wc-word:focus-visible .wc-bob {
+    animation-play-state: paused;
+  }
+
+  .wc-word:hover text,
+  .wc-word:focus-visible text {
+    font-size: calc(var(--fs) * 1.06);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+  }
+
+  /* 其余词退成背景，变速由组件脚本按 0.3 倍速接管 */
+  .wc-svg:has(.wc-word:hover) .wc-word:not(:hover),
+  .wc-svg:has(.wc-word:focus-visible) .wc-word:not(:focus-visible) {
+    opacity: 0.42;
+  }
+
+  @keyframes wc-bob {
+    0%,
+    100% {
+      transform: translateY(var(--sink));
+      opacity: var(--lo);
+    }
+    50% {
+      transform: translateY(var(--rise));
+      opacity: var(--fade);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wc-bob {
+      animation: none;
+      opacity: var(--fade);
+      transform: none;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .wc-svg-desktop {
+      display: none;
+    }
+
+    .wc-svg-mobile {
+      display: block;
+    }
+  }
+</style>
+
+<script>
+  /* 与动态页弹幕同一套让路逻辑：指中的停住，其余降到 0.3 倍速；
+     playbackRate 缓动到目标值，速度渐变但进度连续，不跳位 */
+  const SLOW_RATE = 0.3;
+  const RATE_TAU = 90;
+
+  const targets = new Map<CSSAnimation, number>();
+  let frame = 0;
+  let last = 0;
+
+  function stepRates(now: number): void {
+    const dt = Math.min(64, now - last);
+    last = now;
+    let moving = false;
+    targets.forEach((target, anim) => {
+      const next = target + (anim.playbackRate - target) * Math.exp(-dt / RATE_TAU);
+      if (Math.abs(next - target) < 0.004) {
+        anim.playbackRate = target;
+      } else {
+        anim.playbackRate = next;
+        moving = true;
+      }
+    });
+    frame = moving ? requestAnimationFrame(stepRates) : 0;
+  }
+
+  function aimRates(entries: [CSSAnimation, number][]): void {
+    targets.clear();
+    for (const [anim, rate] of entries) targets.set(anim, rate);
+    if (frame) return;
+    last = performance.now();
+    frame = requestAnimationFrame(stepRates);
+  }
+
+  function bobAnimations(svg: SVGSVGElement): CSSAnimation[] {
+    return svg
+      .getAnimations({ subtree: true })
+      .filter(
+        (anim): anim is CSSAnimation =>
+          anim instanceof CSSAnimation && anim.animationName === 'wc-bob',
+      );
+  }
+
+  function wordOf(anim: CSSAnimation): Element | null {
+    const target = anim.effect?.target;
+    return target instanceof Element ? target.closest('.wc-word') : null;
+  }
+
+  function bindDrift(svg: SVGSVGElement): void {
+    if (svg.dataset.driftReady === 'true') return;
+    svg.dataset.driftReady = 'true';
+
+    let hovered: Element | null = null;
+    let focused: Element | null = null;
+    let active: Element | null = null;
+
+    const sync = (): void => {
+      const next = hovered ?? focused;
+      if (next === active) return;
+      active = next;
+      const anims = bobAnimations(svg);
+      if (anims.length === 0) return;
+      aimRates(
+        anims.map((anim): [CSSAnimation, number] => [
+          anim,
+          active === null || wordOf(anim) === active ? 1 : SLOW_RATE,
+        ]),
+      );
+    };
+
+    const wordIn = (target: EventTarget | null): Element | null =>
+      target instanceof Element ? target.closest('.wc-word') : null;
+
+    svg.addEventListener('pointermove', (event) => {
+      const next = wordIn(event.target);
+      if (next === hovered) return;
+      hovered = next;
+      sync();
+    });
+    svg.addEventListener('pointerleave', () => {
+      hovered = null;
+      sync();
+    });
+    svg.addEventListener('focusin', (event) => {
+      focused = wordIn(event.target);
+      sync();
+    });
+    svg.addEventListener('focusout', () => {
+      focused = null;
+      sync();
+    });
+  }
+
+  function bindAll(): void {
+    document.querySelectorAll<SVGSVGElement>('.wc-svg').forEach(bindDrift);
+  }
+
+  document.addEventListener('astro:page-load', bindAll);
+  bindAll();
+</script>

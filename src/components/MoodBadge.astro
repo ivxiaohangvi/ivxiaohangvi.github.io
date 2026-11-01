@@ -1,0 +1,21 @@
+---
+import { moodInfo } from '../lib/mood';
+
+interface Props {
+  mood?: string;
+  /** 稳定心情键，优先于 mood（emoji 可能被用户换过） */
+  moodKey?: string;
+  size?: 'sm' | 'md' | 'lg';
+}
+
+const { mood, moodKey, size = 'md' } = Astro.props;
+const info = moodInfo(mood, moodKey);
+---
+{
+  info && (
+    <span class={`mood mood-${info.tone} mood-${size}`} title={`心情：${info.label}`}>
+      <span class="mood-emoji" aria-hidden="true">{info.emoji}</span>
+      <span class="mood-label">{info.label}</span>
+    </span>
+  )
+}

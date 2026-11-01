@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ArchiveFurniture from '../../../components/ArchiveFurniture.astro';
+import { getMomentFurniture } from '../../../lib/archive';
+import { withBase } from '../../../config';
+
+const units = await getMomentFurniture();
+const total = units.reduce((sum, unit) => sum + unit.items.reduce((n, item) => n + item.count, 0), 0);
+const months = units.reduce(
+  (sum, unit) => sum + unit.items.filter((item) => !item.isEmpty).length,
+  0,
+);
+---
+
+<BaseLayout
+  title="动态玻璃罐"
+  description="按月份装罐的动态归档：一只玻璃罐是一个月，一粒光是一次动态。"
+  noindex
+>
+  <div class="wrap" data-pagefind-ignore>
+    <header class="page-head">
+      <p class="eyebrow">Archive / 玻璃罐</p>
+      <div class="page-head-line">
+        <h1>玻璃罐</h1>
+        <span class="page-count">{String(total).padStart(2, '0')} 则 · {String(months).padStart(2, '0')} 罐</span>
+      </div>
+      <p class="page-lede">碎念头不值当写成长文，就按月份装进玻璃罐。一只罐子一个月，一粒光就是一条动态，写得多的月份，罐里的光也更密；没写到的月份，就在架子上空着一格。</p>
+      <a class="text-link page-head-link" href={withBase('/moments/')}>回到动态 <span aria-hidden="true">→</span></a>
+    </header>
+
+    <div class="archive-room">
+      <ArchiveFurniture skin="bottle" units={units} legend="一罐 = 一个月 · 一粒光 = 一则动态 · 空格 = 那个月没有动态" />
+    </div>
+
+    <p class="archive-note">罐子按年份横着排，一年十二格，最右边是最新的月份。哪天想不起某个月在想什么，来找那一罐光就行；空着的那格，就当那个月悄悄过去了。</p>
+  </div>
+</BaseLayout>
+
+<style>
+  .archive-room {
+    padding-block: clamp(2.2rem, 5vw, 3.4rem) clamp(1.6rem, 3.5vw, 2.4rem);
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .archive-note {
+    margin: clamp(1.4rem, 3vw, 2rem) 0 clamp(2.5rem, 6vw, 4rem);
+    max-width: 34em;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.9;
+  }
+</style>

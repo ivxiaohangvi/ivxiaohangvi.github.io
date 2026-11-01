@@ -1,0 +1,122 @@
+---
+import { getCollection } from 'astro:content';
+
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import DiaryLedger from '../../../../components/DiaryLedger.astro';
+import { TONE_EMOJI, getArchiveRoll, neighbourMonths } from '../../../../lib/archive';
+import type { MoodTone } from '../../../../lib/mood';
+import { beijingParts } from '../../../../lib/date';
+import { withBase } from '../../../../config';
+
+export async function getStaticPaths() {
+  const roll = await getArchiveRoll();
+  return roll.months.map((month) => ({
+    params: { year: month.key.slice(0, 4), month: month.month },
+  }));
+}
+
+const { year = '', month = '' } = Astro.params;
+const roll = await getArchiveRoll();
+const current = roll.months.find((item) => item.key === `${year}-${month}`)!;
+const { prev, next } = neighbourMonths(roll.months, current.key);
+
+const all = await getCollection('diary');
+const entries = all
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .filter((entry) => {
+    const parts = beijingParts(entry.data.date);
+    return parts.year === year && parts.month === month;
+  });
+
+const moodLine = Object.entries(current.tones)
+  .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
+  .map(([tone, count]) => `${TONE_EMOJI[tone as MoodTone]} ${count}`)
+  .join(' · ');
+
+const yearRoll = roll.years.find((item) => item.year === year);
+const busiest = yearRoll?.months.reduce((a, b) => (b.count > a.count ? b : a));
+const monthNote =
+  current.count <= 2
+    ? `这个月只留下 ${current.count} 篇。空着的日子也算日子。`
+    : current.count <= 8
+      ? `这个月写得不多，${current.count} 篇，夹在别的事情中间。`
+      : busiest && busiest.key === current.key
+        ? `这个月写了 ${current.count} 篇，是这一年里写得最多的一个月。`
+        : `这个月写了 ${current.count} 篇。`;
+---
+
+<BaseLayout
+  title={`${year} 年 ${current.nameCn} · 书架`}
+  description={`${year} 年 ${current.nameCn}的日记，共 ${current.count} 篇。`}
+  noindex
+  darkroomPrefetch="intent"
+>
+  <div class="wrap" data-pagefind-ignore>
+    <header class="page-head">
+      <p class="eyebrow">Archive / {year}</p>
+      <div class="page-head-line">
+        <h1>{current.nameCn}</h1>
+        <span class="page-count">{current.count} 篇</span>
+      </div>
+      <p class="page-lede">
+        {moodLine ? `这个月的心情：${moodLine}` : '这个月没有标记心情。'}
+      </p>
+      <p class="month-note">{monthNote}</p>
+      <nav class="month-nav" aria-label="相邻月份">
+        {
+          prev ? (
+            <a class="text-link" href={withBase(prev.href)}>
+              <span>←</span> {prev.nameCn}
+            </a>
+          ) : (
+            <span class="nav-off">← 之前没有了</span>
+          )
+        }
+        <a class="text-link" href={withBase('/diary/archive/')}>回到书架</a>
+        {
+          next ? (
+            <a class="text-link" href={withBase(next.href)}>
+              {next.nameCn} <span>→</span>
+            </a>
+          ) : (
+            <span class="nav-off">之后还没有 →</span>
+          )
+        }
+      </nav>
+    </header>
+
+    <div class="ledger-wrap">
+      <DiaryLedger entries={entries} lqipBudget={0} />
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .month-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.8rem 1.4rem;
+    margin-top: 1.5rem;
+    font-size: 0.78rem;
+  }
+
+  .nav-off {
+    color: var(--muted);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+  }
+
+  .month-note {
+    margin: 0.9rem 0 0;
+    max-width: 34em;
+    font-size: 0.78rem;
+    line-height: 1.9;
+    color: var(--muted);
+  }
+
+  .ledger-wrap {
+    padding-block: clamp(1.2rem, 3vw, 2.4rem) clamp(3rem, 7vw, 5rem);
+  }
+</style>

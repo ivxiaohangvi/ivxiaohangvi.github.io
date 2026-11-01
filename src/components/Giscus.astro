@@ -1,0 +1,93 @@
+---
+import { siteConfig } from '../config';
+
+interface Props {
+  /** 栏目标签，例如「REPLIES / 回响」 */
+  kicker?: string;
+  /** 栏目标题 */
+  title?: string;
+  /** 标题下的一句说明 */
+  note?: string;
+  mapping?: 'pathname' | 'specific';
+  /** mapping 为 specific 时用来固定讨论串，改名或换链接也不丢 */
+  term?: string;
+}
+
+const {
+  kicker = 'REPLIES / 回响',
+  title = '在下面说点什么',
+  note,
+  mapping = 'pathname',
+  term,
+} = Astro.props;
+
+const g = siteConfig.giscus;
+const enabled = Boolean(g.repo && g.repoId && g.categoryId);
+---
+{
+  enabled && (
+    <>
+      <section class="comments" data-pagefind-ignore aria-label="评论">
+        <header class="comments-head">
+          <p class="comments-kicker">{kicker}</p>
+          <h2>{title}</h2>
+          {note && <p class="comments-note">{note}</p>}
+        </header>
+        <script
+          is:inline
+          src="https://giscus.app/client.js"
+          data-astro-rerun
+          data-repo={g.repo}
+          data-repo-id={g.repoId}
+          data-category={g.category}
+          data-category-id={g.categoryId}
+          data-mapping={mapping}
+          data-term={term}
+          data-strict={mapping === 'pathname' ? '1' : undefined}
+          data-reactions-enabled="1"
+          data-emit-metadata="0"
+          data-input-position="top"
+          data-theme="preferred_color_scheme"
+          data-lang="zh-CN"
+          data-loading="lazy"
+          crossorigin="anonymous"
+          async
+        />
+      </section>
+      <script is:inline data-astro-rerun>
+        // giscus 的 preferred_color_scheme 只看系统，跟不上站内的主题开关；
+        // iframe 加载完成后把站内主题推给它，切换时也实时同步。
+        (() => {
+          if (window.__giscusThemeBridge) return;
+          window.__giscusThemeBridge = true;
+
+          const sync = () => {
+            const theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+            document.querySelectorAll('iframe.giscus-frame').forEach((frame) => {
+              frame.contentWindow?.postMessage({ giscus: { setConfig: { theme } } }, 'https://giscus.app');
+            });
+          };
+
+          // giscus 的 iframe 是脚本插入的，插入后再挂 load：这样首次加载也能拿到站内主题
+          const bind = () => {
+            document.querySelectorAll('iframe.giscus-frame').forEach((frame) => {
+              if (frame.dataset.giscusBound) return;
+              frame.dataset.giscusBound = '1';
+              frame.addEventListener('load', sync);
+              sync();
+            });
+          };
+
+          new MutationObserver(bind).observe(document.body, { childList: true, subtree: true });
+          document.addEventListener('astro:page-load', bind);
+          bind();
+
+          new MutationObserver(sync).observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-theme'],
+          });
+        })();
+      </script>
+    </>
+  )
+}

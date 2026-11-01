@@ -1,0 +1,263 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import WordDriftCloud from '../components/WordDriftCloud.astro';
+import { layoutWordCloud } from '../lib/word-cloud-layout';
+import { buildWordField } from '../lib/word-field';
+import '../styles/word-field.css';
+
+const [diary, moments, blog] = await Promise.all([
+  getCollection('diary'),
+  getCollection('moments'),
+  getCollection('blog', ({ data }) => !data.draft),
+]);
+const wordField = buildWordField([...diary, ...moments, ...blog]);
+const wordNote = `${wordField.sourceCount} 篇公开记录 · ${wordField.words.length} 个词`;
+
+const driftDesktop = layoutWordCloud(wordField.words, {
+  width: 720,
+  height: 400,
+  sizes: { 1: 60, 2: 44, 3: 33, 4: 24 },
+  padding: 8,
+  gap: 9,
+  seed: 23757,
+  shape: 3.2,
+  bands: { 1: [0.02, 0.28], 2: [0.26, 0.56], 3: [0.5, 0.8], 4: [0.7, 0.97] },
+});
+
+const driftMobile = layoutWordCloud(wordField.words, {
+  width: 360,
+  height: 520,
+  sizes: { 1: 44, 2: 33, 3: 26, 4: 20 },
+  padding: 5,
+  gap: 8,
+  seed: 2718,
+  shape: 3.2,
+  bands: { 1: [0.02, 0.38], 2: [0.24, 0.62], 3: [0.44, 0.82], 4: [0.62, 1.0] },
+  ampScale: 0.8,
+});
+---
+<BaseLayout title="搜索" description="搜索 moxo 里的日记、动态与文章。">
+  <div class="wrap-narrow">
+    <header class="page-head">
+      <p class="eyebrow">SEARCH / 搜索</p>
+      <div class="page-head-line">
+        <h1>搜索</h1>
+      </div>
+      <p class="page-lede">在日记、动态和文章里找一句话。按 <kbd>/</kbd> 直接开始，或从词场点一个词。</p>
+    </header>
+
+    <div class="search-box">
+      <label class="search-label" for="search-input">关键词</label>
+      <input id="search-input" type="search" placeholder="比如：莫比乌斯、摄影、深夜…" autocomplete="off" spellcheck="false" />
+      <p id="search-hint" class="search-hint">
+        搜索索引在构建时由 Pagefind 生成；本地开发模式下不可用，执行
+        <code>npm run build &amp;&amp; npm run preview</code> 可以体验完整效果。
+      </p>
+    </div>
+
+    {
+      wordField.words.length > 0 && (
+        <section class="word-field" data-word-field data-pagefind-ignore aria-labelledby="word-field-title">
+          <div class="word-field-head">
+            <h2 id="word-field-title">词场 / WORD FIELD</h2>
+            <span class="word-field-note" data-word-note>{wordNote}</span>
+          </div>
+          <div class="word-field-stage">
+            <WordDriftCloud layout={driftDesktop} variant="desktop" />
+            <WordDriftCloud layout={driftMobile} variant="mobile" />
+          </div>
+        </section>
+      )
+    }
+
+    <div id="search-results" class="search-results" aria-live="polite"></div>
+  </div>
+
+  <style>
+    .word-field-stage {
+      margin-top: 1.35rem;
+    }
+
+    @media (max-width: 560px) {
+      .word-field-stage {
+        margin-top: 1.1rem;
+      }
+    }
+  </style>
+
+  <script>
+    import { gsap } from 'gsap';
+
+    type PagefindResultData = {
+      url: string;
+      excerpt: string;
+      meta: { title?: string };
+    };
+
+    type Pagefind = {
+      search(query: string): Promise<{
+        results: { data(): Promise<PagefindResultData> }[];
+      }>;
+    };
+
+    let pagefind: Pagefind | null = null;
+
+    async function ensurePagefind(): Promise<Pagefind | null> {
+      if (!import.meta.env.PROD) return null;
+      if (pagefind) return pagefind;
+      try {
+        const path = `${import.meta.env.BASE_URL}pagefind/pagefind.js`;
+        pagefind = (await import(/* @vite-ignore */ path)) as unknown as Pagefind;
+      } catch {
+        pagefind = null;
+      }
+      return pagefind;
+    }
+
+    function escapeHtml(text: string): string {
+      return text
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
+    }
+
+    function safeExcerpt(html: string): string {
+      return escapeHtml(html).replaceAll('&lt;mark&gt;', '<mark>').replaceAll('&lt;/mark&gt;', '</mark>');
+    }
+
+    /** 连续输入会高频重渲染：用 context 收口，上一轮 tween（元素已被替换）一并杀掉 */
+    let resultsAnim: gsap.Context | null = null;
+
+    function renderResults(items: PagefindResultData[], query: string): void {
+      const box = document.getElementById('search-results');
+      if (!box) return;
+      if (!query) {
+        resultsAnim?.revert();
+        resultsAnim = null;
+        box.innerHTML = '';
+        return;
+      }
+      box.innerHTML =
+        items.length === 0
+          ? `<p class="search-empty">没有找到「${escapeHtml(query)}」。换个词试试。</p>`
+          : items
+              .map(
+                (item) => `
+                  <a class="search-result" href="${item.url}">
+                    <span class="search-result-kind">${
+                      item.url.includes('/diary/')
+                        ? '日记'
+                        : item.url.includes('/moments/')
+                          ? '动态'
+                          : item.url.includes('/blog/')
+                            ? '文章'
+                            : '页面'
+                    }</span>
+                    <strong>${escapeHtml(item.meta.title ?? item.url)}</strong>
+                    <span class="search-result-excerpt">${safeExcerpt(item.excerpt)}</span>
+                  </a>`,
+              )
+              .join('');
+
+      const cards = box.querySelectorAll('.search-result');
+      if (cards.length === 0 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        resultsAnim?.revert();
+        resultsAnim = null;
+        return;
+      }
+      resultsAnim?.revert();
+      resultsAnim = gsap.context(() => {
+        gsap.from(cards, {
+          y: 14,
+          autoAlpha: 0,
+          duration: 0.4,
+          ease: 'power2.out',
+          stagger: 0.045,
+          clearProps: 'all',
+        });
+      });
+    }
+
+    async function initSearch(): Promise<void> {
+      const input = document.getElementById('search-input') as HTMLInputElement | null;
+      const hint = document.getElementById('search-hint');
+      if (!input) return;
+
+      const field = document.querySelector<HTMLElement>('[data-word-field]');
+      const note = field?.querySelector<HTMLElement>('[data-word-note]') ?? null;
+      const defaultNote = note?.textContent ?? '';
+
+      const syncQuery = (query: string): void => {
+        const url = new URL(window.location.href);
+        if (query) url.searchParams.set('q', query);
+        else url.searchParams.delete('q');
+        window.history.replaceState(null, '', url);
+      };
+
+      const describe = (target: EventTarget | null): void => {
+        const link = target instanceof Element ? target.closest<HTMLAnchorElement>('a[data-word]') : null;
+        if (!note || !link) return;
+        note.textContent = `「${link.dataset.word}」${link.dataset.count} 篇 · 最近 ${link.dataset.last}`;
+      };
+      const restoreNote = (): void => {
+        if (note) note.textContent = defaultNote;
+      };
+
+      const pf = await ensurePagefind();
+      if (pf) hint?.remove();
+
+      field?.addEventListener('click', (event) => {
+        const link = (event.target as Element).closest<HTMLAnchorElement>('a[data-word]');
+        if (!link) return;
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        input.value = link.dataset.word ?? '';
+        input.focus();
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      field?.addEventListener('pointerover', (event) => describe(event.target));
+      field?.addEventListener('focusin', (event) => describe(event.target));
+      field?.addEventListener('pointerleave', restoreNote);
+      field?.addEventListener('focusout', restoreNote);
+
+      let timer: number | undefined;
+      input.addEventListener('input', () => {
+        const query = input.value.trim();
+        if (field) field.hidden = query.length > 0;
+        restoreNote();
+        syncQuery(query);
+        window.clearTimeout(timer);
+        if (!query) {
+          renderResults([], '');
+          return;
+        }
+        timer = window.setTimeout(async () => {
+          if (!pf) return;
+          const response = await pf.search(query);
+          const items = await Promise.all(response.results.slice(0, 10).map((r) => r.data()));
+          renderResults(items, query);
+        }, 180);
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === '/' && document.activeElement !== input) {
+          event.preventDefault();
+          input.focus();
+        }
+        if (event.key === 'Escape' && document.activeElement === input) {
+          input.blur();
+        }
+      });
+
+      const initial = new URLSearchParams(window.location.search).get('q');
+      if (initial) {
+        input.value = initial;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+
+    document.addEventListener('astro:page-load', initSearch);
+  </script>
+</BaseLayout>

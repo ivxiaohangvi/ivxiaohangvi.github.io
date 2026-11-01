@@ -1,0 +1,50 @@
+---
+// 蓝晒对版准星：四道刻线 + 中心点，整枚随手速缓慢自转；
+// 悬停时刻线外推、连成方框，把要对版的那一格框住。
+// 其余形态：text 立起细 I 梁、zoom 落下镜环、resize 张开双向箭头、
+// grab 把刻线转 45° 向心收拢成光圈。跟随与状态切换见 scripts/cursor-mark.ts。
+---
+<div class="cursor-mark" data-state="idle" aria-hidden="true">
+  <svg class="cursor-mark-reg" viewBox="0 0 40 40" fill="none">
+    <g class="cursor-reg-core">
+      <g class="cursor-reg-ghost">
+        <line x1="20" y1="2" x2="20" y2="38"></line>
+        <line x1="2" y1="20" x2="38" y2="20"></line>
+      </g>
+      <g class="cursor-reg-spin">
+        <rect class="cursor-reg-box" x="5" y="5" width="30" height="30"></rect>
+        <g class="cursor-reg-ticks">
+          <g class="cursor-reg-grip">
+            <line class="cursor-reg-tick" x1="20" y1="6" x2="20" y2="12"></line>
+            <line class="cursor-reg-tick" x1="34" y1="20" x2="28" y2="20"></line>
+            <line class="cursor-reg-tick" x1="20" y1="34" x2="20" y2="28"></line>
+            <line class="cursor-reg-tick" x1="6" y1="20" x2="12" y2="20"></line>
+          </g>
+        </g>
+        <circle class="cursor-reg-dot" cx="20" cy="20" r="1.5"></circle>
+        <g class="cursor-reg-variant is-text">
+          <g class="cursor-reg-var-in">
+            <line x1="20" y1="8.5" x2="20" y2="31.5"></line>
+            <line x1="16.4" y1="8.5" x2="23.6" y2="8.5"></line>
+            <line x1="16.4" y1="31.5" x2="23.6" y2="31.5"></line>
+          </g>
+        </g>
+        <g class="cursor-reg-variant is-zoom">
+          <g class="cursor-reg-var-in">
+            <circle class="cursor-zoom-lens" cx="20" cy="20" r="7.2"></circle>
+            <line class="cursor-zoom-handle" x1="25.4" y1="25.4" x2="29.6" y2="29.6"></line>
+            <line class="cursor-zoom-cross" x1="17.7" y1="20" x2="22.3" y2="20"></line>
+            <line class="cursor-zoom-cross" x1="20" y1="17.7" x2="20" y2="22.3"></line>
+          </g>
+        </g>
+        <g class="cursor-reg-variant is-resize">
+          <g class="cursor-reg-var-in">
+            <line x1="13" y1="20" x2="27" y2="20"></line>
+            <path d="M16 16.2 L11.6 20 L16 23.8"></path>
+            <path d="M24 16.2 L28.4 20 L24 23.8"></path>
+          </g>
+        </g>
+      </g>
+    </g>
+  </svg>
+</div>

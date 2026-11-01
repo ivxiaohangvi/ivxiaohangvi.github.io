@@ -1,0 +1,1008 @@
+---
+import FilmCanister from './FilmCanister.astro';
+import type { FurnitureItem, FurnitureSkin, FurnitureUnit } from '../lib/archive';
+
+interface Props {
+  skin: FurnitureSkin;
+  units: FurnitureUnit[];
+  /** 每层最多摆几件 */
+  perRow?: number;
+  /** 家具下方的一行小字 */
+  legend?: string;
+}
+
+const { skin, units, perRow, legend } = Astro.props;
+
+const DEFAULTS: Record<FurnitureSkin, number> = { book: 12, drawer: 4, canister: 7, bottle: 12 };
+const rowSize = perRow ?? DEFAULTS[skin];
+const sideRail = skin === 'book' || skin === 'bottle';
+
+function chunk<T>(list: T[], size: number): T[][] {
+  if (list.length === 0) return [[]];
+  const rows: T[][] = [];
+  for (let i = 0; i < list.length; i += size) rows.push(list.slice(i, i + size));
+  return rows;
+}
+
+function hashOf(value: string): number {
+  let hash = 0;
+  for (const char of value) hash = (hash * 31 + (char.codePointAt(0) ?? 0)) % 9973;
+  return hash;
+}
+
+const BOOK_FILL: Record<string, string> = {
+  joy: 'var(--book-joy)',
+  ease: 'var(--book-ease)',
+  still: 'var(--book-still)',
+  low: 'var(--book-low)',
+  sad: 'var(--book-sad)',
+};
+
+/** 浅色书脊上用深字，深色书脊上用浅字 */
+const BOOK_INK: Record<string, string> = {
+  joy: 'var(--book-ink)',
+  ease: 'var(--book-ink-deep)',
+  still: 'var(--book-ink)',
+  low: 'var(--book-ink)',
+  sad: 'var(--book-ink)',
+};
+
+/** 瓶里的光：颜色跟着当月主导心情走 */
+const MOOD_RING = ['joy', 'ease', 'still', 'low', 'sad'] as const;
+function dustToneOf(tone: string | undefined): string {
+  return (MOOD_RING as readonly string[]).includes(tone ?? '') ? (tone as string) : 'still';
+}
+/** 日间再掺一点相邻的心情色，让同一瓶里的光也不完全一样 */
+function dustMixOf(tone: string | undefined, spread: number): string {
+  const key = dustToneOf(tone);
+  const index = MOOD_RING.indexOf(key as (typeof MOOD_RING)[number]);
+  const mix = [100, 76, 58][(spread >> 3) % 3];
+  if (mix === 100) return `var(--dust-${key})`;
+  const step = (spread >> 7) % 2 === 0 ? 1 : MOOD_RING.length - 1;
+  const other = MOOD_RING[(index + step) % MOOD_RING.length];
+  return `color-mix(in srgb, var(--dust-${key}) ${mix}%, var(--dust-${other}))`;
+}
+
+function bookWidth(count: number): number {
+  return Math.min(62, Math.round(22 + Math.sqrt(Math.max(count, 0)) * 4));
+}
+
+function liftOf(item: FurnitureItem): number {
+  return (hashOf(item.key) % 7) - 3;
+}
+
+function canWidth(count: number): number {
+  return Math.round(36 + Math.min(10, Math.sqrt(Math.max(count, 1)) * 2.6));
+}
+
+function canHeight(count: number): number {
+  // 暗盒的画幅是 264 : 517，宽高一起长才不变形
+  return Math.round(canWidth(count) * 1.958);
+}
+
+/** 一事一颗粒：最多画 12 颗，多出来的用右下角的 +N 表示 */
+const MAX_PARTICLES = 12;
+function particlesOf(item: FurnitureItem) {
+  const hash = hashOf(item.key);
+  const shown = Math.min(item.count, MAX_PARTICLES);
+  return Array.from({ length: shown }, (_, index) => {
+    const spread = hash + index * 97;
+    const dir = (spread % 2 === 0 ? 1 : -1) as 1 | -1;
+    return {
+      /** 坐标是罐子外框的百分比：只走罐肚中间那一片，别贴到壁上 */
+      x: 24 + (spread % 52),
+      y: 36 + ((spread * 7) % 38),
+      size: 3.4 + ((spread % 5) * 0.5),
+      /** 光晕大小：有的紧、有的散，才不像复制出来的一排珠子 */
+      haze: (2 + ((spread >> 5) % 4) * 0.25).toFixed(2),
+      delay: ((spread % 40) / 10 - 2).toFixed(1),
+      /** 漂移半径：罐身只有 60 出头，横向走 3–5px、纵向走 5–9px 才不会蹭到罐壁 */
+      mx: ((3 + (spread % 3)) * dir).toFixed(1),
+      my: -(5 + ((spread >> 3) % 5)).toFixed(1),
+      /** 一颗粒一次绕行 26–44 秒，速度各不相同才不会同频 */
+      dur: (26 + (spread % 19)).toFixed(1),
+      /** 一瓶一个主色（夜间用），掺过相邻心情色的留到白天用 */
+      color: `var(--dust-${dustToneOf(item.tone)})`,
+      colorMix: dustMixOf(item.tone, spread),
+    };
+  });
+}
+---
+
+<div class="furniture" data-skin={skin}>
+  {skin === 'bottle' && (
+    <svg class="jar-sprite" aria-hidden="true" focusable="false" width="0" height="0">
+      <defs>
+        <linearGradient id="jar-g" x1="0" x2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity=".42" />
+          <stop offset=".045" stop-color="#fff" stop-opacity=".15" />
+          <stop offset=".14" stop-color="#d8e6ec" stop-opacity=".05" />
+          <stop offset=".5" stop-color="#d8e6ec" stop-opacity=".012" />
+          <stop offset=".86" stop-color="#fff" stop-opacity=".05" />
+          <stop offset=".955" stop-color="#fff" stop-opacity=".2" />
+          <stop offset="1" stop-color="#fff" stop-opacity=".42" />
+        </linearGradient>
+        <linearGradient id="jar-h" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity=".58" />
+          <stop offset=".42" stop-color="#fff" stop-opacity=".34" />
+          <stop offset=".78" stop-color="#fff" stop-opacity=".08" />
+          <stop offset="1" stop-color="#fff" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="jar-bb" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e8f4f8" stop-opacity="0" />
+          <stop offset="1" stop-color="#e8f4f8" stop-opacity=".14" />
+        </linearGradient>
+        <radialGradient id="jar-s1">
+          <stop offset="0" stop-color="#000" stop-opacity=".3" />
+          <stop offset=".7" stop-color="#000" stop-opacity=".14" />
+          <stop offset="1" stop-color="#000" stop-opacity="0" />
+        </radialGradient>
+        <radialGradient id="jar-cau">
+          <stop offset="0" stop-color="#fff" stop-opacity=".08" />
+          <stop offset="1" stop-color="#fff" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="jar-w" x1="0" x2="1">
+          <stop offset="0" stop-color="#8a6636" />
+          <stop offset=".2" stop-color="#cfa76a" />
+          <stop offset=".46" stop-color="#e3c188" />
+          <stop offset=".72" stop-color="#c69b5d" />
+          <stop offset="1" stop-color="#7a5a2c" />
+        </linearGradient>
+        <radialGradient id="jar-wt" cx=".38" cy=".3" r=".85">
+          <stop offset="0" stop-color="#f0daa8" />
+          <stop offset=".55" stop-color="#ddbb80" />
+          <stop offset="1" stop-color="#c09657" />
+        </radialGradient>
+
+        {/* 玻璃罐：木头盖 + 厚玻璃罐身。坐标沿用原作者 200×260 的画布，只用 use 引用 */}
+        <g id="jar-shape">
+          <ellipse cx="100" cy="228" rx="53" ry="6.5" fill="url(#jar-s1)" />
+          <path d="M42,90 L42,222 A58,6.5 0 0 0 158,222 L158,90 A58,6.5 0 0 1 42,90 Z" fill="url(#jar-g)" />
+          <path d="M42,96 L42,220" stroke="#fff" stroke-opacity=".5" stroke-width="1.3" />
+          <path d="M158,96 L158,220" stroke="#fff" stroke-opacity=".55" stroke-width="1.3" />
+          <path d="M55,96 L55,178 L61,178 L61,97 Z" fill="url(#jar-h)" />
+          <path d="M57.5,97 L57.5,176" stroke="url(#jar-h)" stroke-width="2.2" />
+          <path d="M139,98 L139,158 L142,158 L142,99 Z" fill="url(#jar-h)" fill-opacity=".66" />
+          <path d="M42,206 A58,5.5 0 0 1 158,206 L158,222 A58,6.5 0 0 1 42,222 Z" fill="url(#jar-bb)" />
+          <ellipse cx="100" cy="219.5" rx="50" ry="5.8" fill="#d8e6ec" fill-opacity=".04" stroke="#fff" stroke-opacity=".18" stroke-width=".9" />
+          <path d="M42,222 A58,6.5 0 0 0 158,222" fill="none" stroke="#fff" stroke-opacity=".34" stroke-width="1.3" />
+          <ellipse cx="100" cy="228" rx="29" ry="3.8" fill="url(#jar-cau)" />
+          <path d="M39,88 A61,6 0 0 0 161,88 L161,90 A61,6 0 0 1 39,90 Z" fill="#000" opacity=".16" />
+          <path d="M39,73 L39,88 A61,6 0 0 0 161,88 L161,73 Z" fill="url(#jar-w)" />
+          <path d="M44,78 Q100,82.5 156,78" stroke="#6b4a22" stroke-opacity=".14" fill="none" stroke-width=".7" />
+          <path d="M41,83 Q100,87 159,83" stroke="#6b4a22" stroke-opacity=".1" fill="none" stroke-width=".7" />
+          <path d="M39,88 A61,6 0 0 0 161,88" fill="none" stroke="#4a3115" stroke-opacity=".38" stroke-width="1" />
+          <ellipse cx="100" cy="73" rx="61" ry="6.2" fill="url(#jar-wt)" />
+          <ellipse cx="100" cy="73" rx="61" ry="6.2" fill="none" stroke="#8a6238" stroke-opacity=".25" stroke-width=".8" />
+          <ellipse cx="100" cy="73" rx="41" ry="4" fill="none" stroke="#8a6238" stroke-opacity=".14" stroke-width=".8" />
+          <ellipse cx="100" cy="73" rx="22" ry="2.2" fill="none" stroke="#8a6238" stroke-opacity=".1" stroke-width=".8" />
+          <path d="M70,71.8 Q100,73.6 130,71.8" fill="none" stroke="#8a6238" stroke-opacity=".12" stroke-width=".7" />
+          <path d="M40,73 A60,5.6 0 0 1 78,67.6" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="1.6" />
+          <ellipse cx="86" cy="70.6" rx="20" ry="2.6" fill="#fff" fill-opacity=".14" />
+          <path d="M42,94.5 A58,6 0 0 0 158,94.5" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="1.1" />
+          <path d="M44,100 A56,5.5 0 0 0 156,100" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="1" />
+        </g>
+      </defs>
+    </svg>
+  )}
+  {
+    units.map((unit) => {
+      const rows = chunk(unit.items, rowSize);
+      return (
+        <section class:list={['unit', { 'has-rail': sideRail }]} id={`unit-${unit.key}`} aria-label={unit.label}>
+          {sideRail ? (
+            <div class="unit-rail">
+              <span class="unit-meta">{unit.meta}</span>
+              <span class="unit-year">{unit.label}</span>
+            </div>
+          ) : (
+            <header class="unit-head">
+              <span class="unit-title">{unit.label}</span>
+              <span class="unit-meta">{unit.meta}</span>
+            </header>
+          )}
+
+          {skin === 'drawer' ? (
+            <div class="cabinet" role="list">
+              {unit.items.map((item, index) => (
+                <a class="drawer" role="listitem" href={item.href} aria-label={item.aria} data-index={index}>
+                  <span class="drawer-year">{item.label}</span>
+                  <span class="drawer-rule" aria-hidden="true" />
+                  <span class="drawer-count">{item.countLabel}</span>
+                  <span class="drawer-pull" aria-hidden="true">
+                    <i />
+                    <i />
+                  </span>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div class="unit-body" data-scroll-native>
+              {rows.map((row) => (
+                <div class="row">
+                  <ul class="row-items">
+                    {row.map((item) =>
+                      skin === 'book' ? (
+                        <li class="book-slot" style={`--w:${bookWidth(item.count)}px`}>
+                          {item.isEmpty ? (
+                            <span class="book-missing" aria-hidden="true" />
+                          ) : (
+                            <a
+                              class="book"
+                              href={item.href}
+                              aria-label={item.aria}
+                              style={`--fill:${BOOK_FILL[item.tone ?? ''] ?? 'var(--book-none)'};--ink-on:${BOOK_INK[item.tone ?? ''] ?? 'var(--book-ink)'};--lift:${liftOf(item)}px`}
+                            >
+                              <span class="book-band" aria-hidden="true" />
+                              <span class="book-month">{item.label}</span>
+                              <span class="book-unit">{item.sub}</span>
+                              <span class="book-count">{item.count}</span>
+                            </a>
+                          )}
+                        </li>
+                      ) : skin === 'canister' ? (
+                        <li class="can-slot">
+                          <a
+                            class="canister"
+                            href={item.href}
+                            aria-label={item.aria}
+                            style={`--w:${canWidth(item.count)}px;--h:${canHeight(item.count)}px`}
+                          >
+                            <FilmCanister seed={item.key} />
+                          </a>
+                        </li>
+                      ) : (
+                        <li class:list={['bottle-slot', { 'is-empty': item.isEmpty }]}>
+                          {item.isEmpty ? null : (
+                            <a class="bottle" href={item.href} aria-label={item.aria}>
+                              <svg class="jar-art" viewBox="36 64 128 168" aria-hidden="true" focusable="false">
+                                <use href="#jar-shape" />
+                              </svg>
+                              {particlesOf(item).map((particle) => (
+                                <span
+                                  class="bot-dust"
+                                  style={`--x:${particle.x}%;--y:${particle.y}%;--s:${particle.size}px;--haze:${particle.haze};--d:${particle.delay}s;--t:${particle.dur}s;--mx:${particle.mx}px;--my:${particle.my}px;--c:${particle.color};--c2:${particle.colorMix}`}
+                                />
+                              ))}
+                              {item.count > MAX_PARTICLES && <span class="bot-more">+{item.count - MAX_PARTICLES}</span>}
+                              <span class="bot-note">
+                                <span class="bot-month">{item.label}</span>
+                                <span class="bot-count">{item.countLabel}</span>
+                              </span>
+                            </a>
+                          )}
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                  <span class="board" aria-hidden="true" />
+                  {skin === 'canister' && (
+                    <ul class="row-labels" aria-hidden="true">
+                      {row.map((item) => (
+                        <li class="bot-label is-name" style="--lw:66px">
+                          <span class="bot-month">{item.label}</span>
+                          <span class="bot-count">{item.countLabel}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      );
+    })
+  }
+  {legend && <p class="legend">{legend}</p>}
+</div>
+
+<style>
+  .furniture {
+    --book-h: clamp(126px, 12vw, 168px);
+    --book-joy: #2f6270;
+    --book-ease: #d8cbb0;
+    --book-still: #8b938b;
+    --book-low: #a9803f;
+    --book-sad: #8d4136;
+    --book-none: #c9c2b1;
+    --book-ink: #f3efe4;
+    --book-ink-deep: #4f4130;
+
+    --wood-top: #e2d8bf;
+    --wood: #d3c5a6;
+    --wood-deep: #b6a684;
+    --wood-edge: #9d8b68;
+    --board-top: #eee6d3;
+
+    --case: #c3ae87;
+    --case-edge: #9d8760;
+    --face-top: #f4eedd;
+    --face-bottom: #ded4ba;
+
+    --glass: rgba(38, 58, 56, 0.13);
+    --glass-edge: rgba(28, 44, 42, 0.42);
+    --glass-shine: rgba(255, 255, 255, 0.85);
+    --dust: #c99a52;
+    --dust-joy: #2f6270;
+    --dust-ease: #a3874e;
+    --dust-still: #6e7874;
+    --dust-low: #b3803a;
+    --dust-sad: #a34e3d;
+
+    margin-top: clamp(1.2rem, 2.4vw, 2rem);
+  }
+
+  :global(:root[data-theme='dark']) .furniture {
+    --book-joy: #4f8b96;
+    --book-ease: #6d6552;
+    --book-still: #56615c;
+    --book-low: #8a6a35;
+    --book-sad: #8d4b3c;
+    --book-none: #4a4f47;
+    --book-ink: #e9e3d4;
+    --book-ink-deep: #e9e3d4;
+
+    --wood-top: #26332e;
+    --wood: #1d2a26;
+    --wood-deep: #101a17;
+    --wood-edge: #3d5049;
+    --board-top: #33453f;
+
+    --case: #1a2421;
+    --case-edge: #0e1714;
+    --face-top: #2c3a34;
+    --face-bottom: #222e29;
+
+    --glass: rgba(200, 226, 230, 0.06);
+    --glass-edge: rgba(200, 226, 230, 0.28);
+    --glass-shine: rgba(255, 255, 255, 0.45);
+    --dust: #e0bb7a;
+    --dust-joy: #8fc3cc;
+    --dust-ease: #d8cbb0;
+    --dust-still: #a7aea8;
+    --dust-low: #e0b978;
+    --dust-sad: #d99a86;
+  }
+
+  .unit + .unit {
+    margin-top: clamp(2rem, 4vw, 3rem);
+  }
+
+  .unit-rail {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.15rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .unit-year {
+    font-family: var(--font-display), serif;
+    font-size: 2.1rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .unit-meta {
+    font-family: var(--font-mono);
+    font-size: 0.56rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass);
+    white-space: nowrap;
+  }
+
+  /* 多层家具的年份标在顶上，单层的贴着层板 */
+  .furniture[data-skin='bottle'] .unit-rail {
+    align-self: start;
+    padding-top: 0.55rem;
+  }
+
+  .unit-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .unit-title {
+    font-family: var(--font-display), serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+  }
+
+  /* 一年一层：书与瓶把年份放在左侧栏，抽屉与胶卷桶把年份放在顶上 */
+  .unit {
+    display: block;
+  }
+
+  .unit.has-rail {
+    display: grid;
+    grid-template-columns: 6.8rem minmax(0, 1fr);
+    align-items: end;
+  }
+
+  .unit-body {
+    min-width: 0;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .row-items {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    margin: 0;
+    padding: 0.9rem 0 0;
+    list-style: none;
+  }
+
+  .board {
+    display: block;
+    flex: 1 0 100%;
+    height: 14px;
+    background: linear-gradient(180deg, var(--board-top), var(--wood) 45%, var(--wood-deep));
+    border-top: 1px solid var(--wood-edge);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.34),
+      0 3px 8px -6px rgba(20, 28, 26, 0.65);
+    border-radius: 1px;
+  }
+
+  /* 书是挨着站的：厚度不同，间距只有一线，像真的插在架子上 */
+  .furniture[data-skin='book'] .row-items {
+    width: 100%;
+    gap: 3px;
+  }
+
+  /* 玻璃瓶那排只托住瓶子本身，右边留白给以后贴涂鸦 */
+  .furniture[data-skin='bottle'] .row {
+    display: block;
+    width: max-content;
+    max-width: 100%;
+  }
+
+  .furniture[data-skin='bottle'] .board {
+    width: 100%;
+    flex: none;
+  }
+
+  /* ── 书 ─────────────────────────────── */
+
+  .book-slot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    width: var(--w);
+  }
+
+  .book {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: calc(var(--book-h) + var(--lift, 0px));
+    padding: 0.55rem 0 0.5rem;
+    border-radius: 2px 3px 2px 2px;
+    background:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.16), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.12)),
+      var(--fill);
+    color: var(--ink-on, var(--book-ink));
+    text-decoration: none;
+    box-shadow:
+      inset 0 0 0 1px rgba(0, 0, 0, 0.16),
+      inset 3px 0 6px -5px rgba(0, 0, 0, 0.55),
+      0 6px 10px -7px rgba(20, 28, 26, 0.6);
+    transition:
+      transform 0.35s var(--ease),
+      box-shadow 0.35s var(--ease);
+  }
+
+  .book:hover,
+  .book:focus-visible {
+    transform: translateY(-5px);
+    box-shadow:
+      inset 0 0 0 1px rgba(0, 0, 0, 0.16),
+      0 14px 20px -12px rgba(20, 28, 26, 0.7);
+  }
+
+  .book:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 3px;
+  }
+
+  .book-band {
+    width: 60%;
+    height: 2px;
+    background: currentColor;
+    opacity: 0.32;
+  }
+
+  .book-month {
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  .book-unit {
+    font-family: var(--font-display), serif;
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    opacity: 0.78;
+  }
+
+  .book-count {
+    font-family: var(--font-mono);
+    font-size: 0.56rem;
+    letter-spacing: 0.06em;
+    opacity: 0.72;
+  }
+
+  .book-missing {
+    display: block;
+    width: 1px;
+    height: calc(var(--book-h) * 0.46);
+    background: repeating-linear-gradient(180deg, var(--rule) 0 4px, transparent 4px 9px);
+    opacity: 0.85;
+  }
+
+  /* ── 胶卷桶 ─────────────────────────── */
+
+  .can-slot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    width: 66px;
+  }
+
+  .canister {
+    position: relative;
+    display: block;
+    width: var(--w, 44px);
+    height: var(--h, 86px);
+    text-decoration: none;
+    filter: drop-shadow(4px 6px 8px rgba(20, 28, 26, 0.28));
+    transition: transform 0.35s var(--ease);
+  }
+
+  .canister:hover,
+  .canister:focus-visible {
+    transform: translateY(-5px);
+  }
+
+  .canister:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 4px;
+  }
+
+  /* ── 玻璃瓶 ─────────────────────────── */
+
+  .bottle-slot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    width: 76px;
+  }
+
+  .bottle {
+    position: relative;
+    display: block;
+    width: 70px;
+    height: 92px;
+    text-decoration: none;
+    filter: drop-shadow(0 4px 5px rgba(20, 28, 26, 0.18));
+    transition: transform 0.35s var(--ease);
+  }
+
+  /* 贴在罐身上的小便笺：月份 + 条数 */
+  .bot-note {
+    position: absolute;
+    left: 9%;
+    bottom: 17%;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 0.06rem;
+    padding: 0.28rem 0.36rem 0.26rem;
+    background: #f7f3e6;
+    color: #3c443f;
+    border: 1px solid rgba(60, 68, 63, 0.18);
+    border-radius: 1px;
+    box-shadow:
+      0 3px 6px -2px rgba(20, 28, 26, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    transform: rotate(-2.4deg);
+    transform-origin: 30% 50%;
+    transition: transform 0.3s var(--ease);
+  }
+
+  .bot-note .bot-month {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    color: #2d3531;
+  }
+
+  .bot-note .bot-count {
+    font-family: var(--font-mono);
+    font-size: 0.46rem;
+    letter-spacing: 0.03em;
+    line-height: 1.1;
+    color: #6d7167;
+  }
+
+  .bottle:hover .bot-note,
+  .bottle:focus-visible .bot-note {
+    transform: rotate(-1.2deg) translateY(-1px);
+  }
+
+  .jar-art {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .jar-sprite {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  .bottle.is-empty:hover {
+    transform: none;
+  }
+
+  .bottle:hover,
+  .bottle:focus-visible {
+    transform: translateY(-5px);
+  }
+
+  .bottle:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+
+  /* 一粒光：中心一点白芯，往外化成光晕，没有实心的边 */
+  .bot-dust {
+    --halo: calc(var(--s) * var(--haze, 2.6));
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: var(--halo);
+    height: var(--halo);
+    margin-top: calc(var(--halo) / -2);
+    margin-left: calc(var(--halo) / -2);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: dust-drift var(--t) ease-in-out var(--d) infinite;
+  }
+
+  .bot-dust::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    /* 白里掺 10% 的情绪色：光是白的，但每一颗白得不一样 */
+    --glow: color-mix(in srgb, #fff 90%, var(--c2, var(--c, var(--dust))));
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--glow) 92%, transparent) 0 12%,
+      color-mix(in srgb, var(--glow) 50%, transparent) 30%,
+      color-mix(in srgb, var(--glow) 18%, transparent) 52%,
+      transparent 76%
+    );
+    filter: blur(1.8px);
+  }
+
+  .bot-dust::after {
+    content: '';
+    position: absolute;
+    inset: 34%;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      #fff 0 40%,
+      rgba(255, 255, 255, 0.6) 70%,
+      transparent 100%
+    );
+    filter: blur(0.45px);
+  }
+
+  /* 夜间：第二版的样子——不叠加、一瓶一个色、白芯白雾（保持不动） */
+  :global(:root[data-theme='dark']) .bot-dust::before {
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, #fff 72%, var(--c, var(--dust))) 0 10%,
+      color-mix(in srgb, var(--c, var(--dust)) 58%, transparent) 24%,
+      color-mix(in srgb, var(--c, var(--dust)) 24%, transparent) 46%,
+      transparent 72%
+    );
+    filter: blur(2px);
+  }
+
+  :global(:root[data-theme='dark']) .bot-dust::after {
+    background: radial-gradient(
+      circle,
+      #fff 0 28%,
+      color-mix(in srgb, var(--c, var(--dust)) 42%, #fff) 62%,
+      transparent 100%
+    );
+    filter: blur(0.5px);
+  }
+
+  /* 光粒在瓶里慢慢绕：每一步的横纵位移都不同，看起来像被瓶中的气流带着走 */
+  @keyframes dust-drift {
+    0% {
+      transform: translate3d(0, 0, 0);
+      opacity: 0.55;
+    }
+    20% {
+      transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) * 0.5), 0);
+      opacity: 0.9;
+    }
+    45% {
+      transform: translate3d(calc(var(--mx, 0px) * -0.65), var(--my, 0px), 0);
+      opacity: 1;
+    }
+    65% {
+      transform: translate3d(calc(var(--mx, 0px) * 0.45), calc(var(--my, 0px) * 0.75), 0);
+      opacity: 0.7;
+    }
+    85% {
+      transform: translate3d(calc(var(--mx, 0px) * -0.5), calc(var(--my, 0px) * 0.25), 0);
+      opacity: 0.95;
+    }
+    100% {
+      transform: translate3d(0, 0, 0);
+      opacity: 0.55;
+    }
+  }
+
+  .bot-more {
+    position: absolute;
+    right: 14%;
+    bottom: 17%;
+    font-family: var(--font-mono);
+    font-size: 0.46rem;
+    color: var(--muted);
+  }
+
+  .row-labels {
+    display: flex;
+    flex-basis: 100%;
+    gap: 4px;
+    margin: 0;
+    padding: 0.45rem 0 0 0;
+    list-style: none;
+  }
+
+  .bot-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.05rem;
+    width: var(--lw, 56px);
+    font-family: var(--font-mono);
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .bot-month {
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+  }
+
+  .bot-count {
+    font-size: 0.46rem;
+    color: var(--muted);
+  }
+
+  .bot-label.is-name .bot-month {
+    font-size: 0.5rem;
+    letter-spacing: 0;
+    color: var(--ink-soft);
+  }
+
+  /* ── 抽屉柜 ─────────────────────────── */
+
+  .cabinet {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 9px;
+    width: 100%;
+    padding: 14px;
+    background: var(--case);
+    border: 1px solid var(--case-edge);
+    border-radius: 3px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.28),
+      inset 0 -8px 18px -14px rgba(0, 0, 0, 0.6),
+      0 10px 18px -16px rgba(20, 28, 26, 0.8);
+  }
+
+  .drawer {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-height: 68px;
+    padding: 0 1.1rem;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--face-top), var(--face-bottom));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+      0 2px 3px -2px rgba(20, 28, 26, 0.55);
+    text-decoration: none;
+    transition:
+      transform 0.3s var(--ease),
+      box-shadow 0.3s var(--ease);
+  }
+
+  .drawer:hover,
+  .drawer:focus-visible {
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      0 8px 12px -10px rgba(20, 28, 26, 0.7);
+  }
+
+  .drawer:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 2px;
+  }
+
+  .drawer-year {
+    font-family: var(--font-display), serif;
+    font-size: 1.25rem;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    min-width: 3.6rem;
+  }
+
+  .drawer-rule {
+    flex: 1;
+    height: 1px;
+    background: repeating-linear-gradient(90deg, var(--rule) 0 3px, transparent 3px 6px);
+    opacity: 0.8;
+  }
+
+  .drawer-count {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  .drawer-pull {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    width: 34px;
+    height: 9px;
+    padding: 0 2px;
+    border-radius: 5px;
+    background: linear-gradient(180deg, #d9b877, #a57c3f 55%, #7b5a29);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+
+  .drawer-pull i {
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(58, 40, 14, 0.32);
+  }
+
+  .legend {
+    margin: 1.5rem 0 0;
+    font-family: var(--font-body);
+    font-size: 0.68rem;
+    letter-spacing: 0.03em;
+    color: var(--ink-soft);
+    opacity: 0.85;
+  }
+
+  @media (max-width: 640px) {
+    .unit,
+    .unit.has-rail {
+      display: block;
+    }
+
+    .unit-rail {
+      flex-direction: row;
+      align-items: baseline;
+      gap: 0.6rem;
+      padding-bottom: 0.6rem;
+    }
+
+    .unit-year {
+      font-size: 1.5rem;
+    }
+
+    .unit-body {
+      padding-bottom: 2px;
+    }
+
+    .cabinet {
+      grid-template-columns: 1fr;
+      padding: 10px;
+    }
+
+    .drawer {
+      min-height: 54px;
+    }
+
+    .drawer-year {
+      font-size: 1.1rem;
+      min-width: 3.1rem;
+    }
+  }
+
+  /* 货架行宽是 max-content（一年十二格），一旦比容器宽就必须能横滑：
+     641–900px（平板竖屏）这一段既没有手机的单列布局，也没人给它滚动容器，
+     右侧罐子会被祖先裁掉且无法到达。断点跟手机一样止于 900px——
+     900 以上一行放得下，不需要滚。 */
+  @media (max-width: 900px) {
+    .unit-body {
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      scroll-snap-type: x proximity;
+    }
+
+    .row-items > li {
+      scroll-snap-align: end;
+    }
+
+    /* 边缘渐隐挂在 scroll(self inline) 时间轴上：内容放得下时时间轴是 inactive、
+       动画整条不生效，不会给「本来不缺东西」的架子右缘白白淡一截
+       （/photos/archive/ 在 768px 就是这种放得下的情况）；
+       滚到最右时 keyframes 的 to 把渐隐收没，最后一只罐子不会被永远盖住。 */
+    @supports (animation-timeline: scroll(self inline)) {
+      .unit-body {
+        animation: unit-body-edge linear both;
+        animation-timeline: scroll(self inline);
+        animation-range: 0 100%;
+      }
+
+      @keyframes unit-body-edge {
+        from {
+          mask-image: linear-gradient(90deg, #000 0 calc(100% - 24px), transparent 100%);
+        }
+        to {
+          mask-image: linear-gradient(90deg, #000 0 calc(100% - 2px), transparent 100%);
+        }
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .book,
+    .canister,
+    .bottle,
+    .drawer {
+      transition: none;
+    }
+
+    .bot-dust {
+      animation: none;
+    }
+  }
+</style>

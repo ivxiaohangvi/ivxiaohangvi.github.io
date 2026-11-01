@@ -1,0 +1,30 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import FormattedDate from './FormattedDate.astro';
+import { withBase } from '../config';
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+}
+
+const { post } = Astro.props;
+---
+<article class="note-row" data-reveal>
+  <div class="note-side">
+    <FormattedDate date={post.data.pubDate} format="numeric" />
+  </div>
+  <div class="note-main">
+    <h2 class="note-title" transition:name={`post-title-${post.id}`}>
+      <a href={withBase(`/blog/${post.id}/`)}>{post.data.title}</a>
+    </h2>
+    {post.data.description && <p class="note-desc">{post.data.description}</p>}
+    {
+      post.data.tags.length > 0 && (
+        <div class="tag-line">
+          {post.data.tags.map((tag) => <a href={withBase(`/tags/${tag}/`)}>#{tag}</a>)}
+        </div>
+      )
+    }
+  </div>
+  <span class="note-arrow" aria-hidden="true">↗</span>
+</article>

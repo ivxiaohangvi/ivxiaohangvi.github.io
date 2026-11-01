@@ -1,0 +1,46 @@
+---
+// 页脚上方探出头的五个人。
+//
+// 素材底部是「身体被切齐」的线（占图高 81.5%），下面 18.5% 是搭在沿上的手。
+// 把整张图当作普通块放在 main 末尾，再用负外边距把页脚拉上来，
+// 让那条切线正好落在页脚的上边框上——手就搭在线上了。
+import { withBase } from '../config';
+
+interface Props {
+  /** 展示宽度，默认 360px（原 900px 的 40%）；窄屏按 36.8vw 收 */
+  width?: string;
+}
+
+const { width = 'min(36.8vw, 360px)' } = Astro.props;
+---
+
+<div class="asoul-peek" aria-hidden="true" style={`--peek-w:${width}`}>
+  <img
+    src={withBase('/images/asoul-peek.webp')}
+    alt=""
+    width="720"
+    height="145"
+    loading="lazy"
+    decoding="async"
+  />
+</div>
+
+<style>
+  .asoul-peek {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    /* 上边留一点气口，别贴着最后一段正文 */
+    margin-top: clamp(1.6rem, 3.4vw, 2.6rem);
+    /* 页脚自己有 --section-gap 的上边距；先抵消它，再往下多让出手的高度（图的 18.5%） */
+    margin-bottom: calc(-1 * (var(--section-gap) + var(--peek-w) * 0.03673));
+    pointer-events: none;
+  }
+
+  .asoul-peek img {
+    display: block;
+    width: var(--peek-w);
+    height: auto;
+  }
+</style>

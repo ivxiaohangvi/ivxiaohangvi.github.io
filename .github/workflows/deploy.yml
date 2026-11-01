@@ -1,0 +1,143 @@
+# 推送到 main 分支时自动构建并发布到 GitHub Pages
+# 使用前：仓库 Settings → Pages → Build and deployment → Source 选择 “GitHub Actions”
+# 每 6 小时顺带同步一次 Steam 留言板；抓取失败时保留仓库里的旧快照，留言区标红继续发布
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一分支的新推送取消排队中的旧构建
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  sync-steam:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      # 失败不拦发布：成功时覆盖留言快照，失败时只更新 steam-sync.json
+      - name: Sync Steam guestbook
+        run: node scripts/sync-steam-comments.mjs
+        continue-on-error: true
+      # GITHUB_TOKEN 推回仓库不会再次触发 workflow，避免循环
+      # 即使抓取失败也要提交 steam-sync.json 的失败状态，构建才能亮红灯
+      - name: Commit Steam snapshot
+        if: always()
+        run: |
+          if [ -z "$(git status --porcelain src/data/steam-comments.json src/data/steam-sync.json public/steam/avatars)" ]; then
+            echo "Steam snapshot unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/steam-comments.json src/data/steam-sync.json public/steam/avatars
+          git commit -m "chore: sync steam guestbook"
+          git push
+        continue-on-error: true
+
+  # 给文章盖 OpenTimestamps 时间戳：新增的文章盖章、待确认的尝试升级。
+  # 三个数据文件（.txt / .ots / ots.json）都提交回仓库，构建只读它们，所以构建本身离线也能跑。
+  ots-stamp:
+    needs: sync-steam
+    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install opentimestamps client
+        run: pip install opentimestamps-client
+      - name: Install dependencies
+        run: npm ci
+      # 日历/浏览器可能抽风：失败只让那些文章显示“等待打包”，绝不挡住发布
+      - name: Stamp and upgrade
+        run: npm run ots
+        continue-on-error: true
+      - name: Commit proofs
+        run: |
+          if [ -z "$(git status --porcelain public/ots src/data/ots.json src/data/ots-digest.json)" ]; then
+            echo "OTStamps unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/ots src/data/ots.json src/data/ots-digest.json
+          git commit -m "chore: opentimestamps"
+          git push
+        continue-on-error: true
+
+  build:
+    needs: [sync-steam, ots-stamp]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      # sync job 可能刚 push 了留言快照和同步状态；按分支取最新 HEAD，
+      # 否则默认 checkout 会停在触发 SHA，页面要再等一轮才会看到同步结果
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      # LQIP 的 med/thumb 是构建期产物，不入库；用清单的内容哈希做 cache key。
+      # 命中时只重算新增/改动的图；未命中（例如第一次部署）会全量生成一次。
+      - name: Restore LQIP image cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            public/diary/images/med
+            public/diary/images/thumb
+            public/photos/med
+            public/photos/thumb
+            public/moments/med
+            public/moments/thumb
+          key: lqip-${{ hashFiles('src/lib/image-lqip.json') }}
+          restore-keys: |
+            lqip-
+      # 安装依赖 → npm run build（prebuild 先解码 vault、再补 LQIP，最后 Pagefind）→ 上传产物
+      - name: Install, build, and upload site
+        uses: withastro/action@v3
+        with:
+          node-version: 22
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

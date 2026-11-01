@@ -1,0 +1,446 @@
+---
+// 左栏里的 Minecraft 小人。
+//
+// 皮肤是 64×64（scripts/build-skin.mjs 由旧版 64×32 补齐左右手脚）。
+// 六个方块用 CSS 3D 拼出来，头部绕脖子转、手臂轻微摆，纯 CSS + 一点点 JS，
+// 不引入 three / skinview3d。
+import { withBase } from '../config';
+
+const { variant = 'block' } = Astro.props;
+---
+
+<div
+  class:list={['mc-me', { 'mc-me--rail': variant === 'rail' }]}
+  data-mc-me
+  data-skin={withBase('/images/mc123-skin.png')}
+  aria-label="mc123 的 Minecraft 皮肤模型"
+  role="img"
+>
+  <div class="mc-stage">
+    <div class="mc-model" data-mc-model></div>
+  </div>
+  <p class="mc-caption"><span>MC · mc123</span><span class="mc-hint">转头看我</span></p>
+</div>
+
+<style is:global>
+  .mc-me {
+    --mc-texel: 4px;
+    --mc-scale: 1.3;
+    display: grid;
+    gap: 0.6rem;
+    justify-items: center;
+  }
+
+  .mc-stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: calc(128px * var(--mc-scale) + 18px);
+    perspective: 900px;
+    perspective-origin: 50% 42%;
+  }
+
+  /* 脚下的软影子 */
+  .mc-stage::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    width: calc(40px * var(--mc-scale));
+    height: calc(9px * var(--mc-scale));
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(20, 28, 26, 0.28), transparent 78%);
+    filter: blur(2px);
+    pointer-events: none;
+  }
+
+  .mc-model {
+    position: relative;
+    width: 0;
+    height: 0;
+    transform: scale(var(--mc-scale));
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+
+  .mc-part {
+    position: absolute;
+    transform-style: preserve-3d;
+  }
+
+  .mc-part--head {
+    transform-origin: 50% 100%;
+  }
+
+  .mc-part--arm,
+  .mc-part--leg {
+    transform-origin: 50% 0;
+  }
+
+  .mc-face {
+    position: absolute;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    backface-visibility: hidden;
+  }
+
+  /* 侧面与背面压暗一点，转身时才有体积感 */
+  .mc-face[data-face='left'],
+  .mc-face[data-face='right'] {
+    filter: brightness(0.9);
+  }
+
+  .mc-face[data-face='back'] {
+    filter: brightness(0.84);
+  }
+
+  .mc-face[data-face='bottom'] {
+    filter: brightness(0.76);
+  }
+
+  .mc-face[data-face='top'] {
+    filter: brightness(1.04);
+  }
+
+  /* 第二层：外套、帽子、袖子、裤脚，整体放大 12.5% 罩在外面 */
+  .mc-outer {
+    position: absolute;
+    inset: 0;
+    transform: scale(1.125);
+    transform-style: preserve-3d;
+    pointer-events: none;
+  }
+
+  /* 贴在状态面板上方：脚踩在面板顶边那条线上，不占文档流 */
+  .mc-me--rail {
+    position: absolute;
+    right: 0;
+    /* 往下压一个 rail-label 的高度，脚正好落在「STATUS / 状态」下面那条横线上 */
+    bottom: calc(100% - 1.2rem);
+    gap: 0;
+    justify-items: end;
+    pointer-events: none;
+  }
+
+  .mc-me--rail .mc-stage {
+    width: calc(56px * var(--mc-scale));
+    height: calc(128px * var(--mc-scale));
+  }
+
+  .mc-me--rail .mc-caption {
+    display: none;
+  }
+
+  @media (max-width: 900px) {
+    .mc-me--rail {
+      position: static;
+      justify-items: center;
+      pointer-events: auto;
+    }
+
+    .mc-me--rail .mc-caption {
+      display: flex;
+    }
+  }
+
+  .mc-caption {
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.52rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+
+  .mc-hint {
+    color: var(--rule);
+    letter-spacing: 0.06em;
+  }
+
+  @media (max-width: 900px) {
+    .mc-me {
+      --mc-scale: 1.05;
+    }
+  }
+</style>
+
+<script>
+  const TEXEL = 4; // 一个皮肤像素 = 4px
+  const SKIN_PX = 64;
+
+  type Face = { w: number; h: number; u: number; v: number; transform: string; shade: string };
+
+  const box = (
+    w: number,
+    h: number,
+    d: number,
+    uv: Record<'front' | 'back' | 'left' | 'right' | 'top' | 'bottom', [number, number]>,
+  ): Face[] => {
+    const px = (n: number) => n * TEXEL;
+    const half = { w: px(w) / 2, h: px(h) / 2, d: px(d) / 2 };
+    const f = (
+      fw: number,
+      fh: number,
+      [u, v]: [number, number],
+      transform: string,
+      shade: string,
+    ): Face => ({ w: px(fw), h: px(fh), u, v, transform, shade });
+    return [
+      f(w, h, uv.front, `translateZ(${half.d}px)`, 'front'),
+      f(w, h, uv.back, `rotateY(180deg) translateZ(${half.d}px)`, 'back'),
+      f(d, h, uv.right, `rotateY(90deg) translateZ(${half.w}px)`, 'right'),
+      f(d, h, uv.left, `rotateY(-90deg) translateZ(${half.w}px)`, 'left'),
+      f(w, d, uv.top, `rotateX(90deg) translateZ(${half.h}px)`, 'top'),
+      f(w, d, uv.bottom, `rotateX(-90deg) translateZ(${half.h}px)`, 'bottom'),
+    ];
+  };
+
+  const parts = [
+    {
+      name: 'head',
+      w: 8,
+      h: 8,
+      d: 8,
+      x: 0,
+      y: -12,
+      faces: box(8, 8, 8, {
+        top: [8, 0],
+        bottom: [16, 0],
+        right: [0, 8],
+        front: [8, 8],
+        left: [16, 8],
+        back: [24, 8],
+      }),
+    },
+    {
+      name: 'body',
+      w: 8,
+      h: 12,
+      d: 4,
+      x: 0,
+      y: -2,
+      faces: box(8, 12, 4, {
+        top: [20, 16],
+        bottom: [28, 16],
+        right: [16, 20],
+        front: [20, 20],
+        left: [28, 20],
+        back: [32, 20],
+      }),
+    },
+    {
+      name: 'arm',
+      side: 'right',
+      w: 4,
+      h: 12,
+      d: 4,
+      x: -6,
+      y: -2,
+      faces: box(4, 12, 4, {
+        top: [44, 16],
+        bottom: [48, 16],
+        right: [40, 20],
+        front: [44, 20],
+        left: [48, 20],
+        back: [52, 20],
+      }),
+    },
+    {
+      name: 'arm',
+      side: 'left',
+      w: 4,
+      h: 12,
+      d: 4,
+      x: 6,
+      y: -2,
+      faces: box(4, 12, 4, {
+        top: [36, 48],
+        bottom: [40, 48],
+        right: [32, 52],
+        front: [36, 52],
+        left: [40, 52],
+        back: [44, 52],
+      }),
+    },
+    {
+      name: 'leg',
+      side: 'right',
+      w: 4,
+      h: 12,
+      d: 4,
+      x: -2,
+      y: 10,
+      faces: box(4, 12, 4, {
+        top: [4, 16],
+        bottom: [8, 16],
+        right: [0, 20],
+        front: [4, 20],
+        left: [8, 20],
+        back: [12, 20],
+      }),
+    },
+    {
+      name: 'leg',
+      side: 'left',
+      w: 4,
+      h: 12,
+      d: 4,
+      x: 2,
+      y: 10,
+      faces: box(4, 12, 4, {
+        top: [20, 48],
+        bottom: [24, 48],
+        right: [16, 52],
+        front: [20, 52],
+        left: [24, 52],
+        back: [28, 52],
+      }),
+    },
+  ];
+
+  // 第二层（外套/帽子/袖子/裤脚）在 64×64 皮肤里的原点偏移，纹素为单位。
+  // 64×32 的旧皮肤没有这一层，偏移过去是透明像素，等于不画。
+  const OUTER_SHIFT: Record<string, [number, number]> = {
+    head: [32, 0],
+    body: [0, 16],
+    'arm-right': [0, 16],
+    'arm-left': [16, 0],
+    'leg-right': [0, 16],
+    'leg-left': [-16, 0],
+  };
+
+  const build = (root: HTMLElement) => {
+    const skin = root.dataset.skin;
+    if (!skin) return null;
+    const model = root.querySelector<HTMLElement>('[data-mc-model]');
+    if (!model || model.childElementCount > 0) return null;
+
+    const nodes: Record<string, HTMLElement> = {};
+    for (const part of parts) {
+      const el = document.createElement('div');
+      el.className = `mc-part mc-part--${part.name}${part.side ? ` mc-part--${part.side}` : ''}`;
+      el.style.width = `${part.w * TEXEL}px`;
+      el.style.height = `${part.h * TEXEL}px`;
+      el.style.left = `${part.x * TEXEL - (part.w * TEXEL) / 2}px`;
+      el.style.top = `${part.y * TEXEL - (part.h * TEXEL) / 2}px`;
+
+      const faceEl = (face: Face, dx = 0, dy = 0) => {
+        const div = document.createElement('div');
+        div.className = 'mc-face';
+        div.dataset.face = face.shade;
+        div.style.width = `${face.w}px`;
+        div.style.height = `${face.h}px`;
+        div.style.left = `${(part.w * TEXEL - face.w) / 2}px`;
+        div.style.top = `${(part.h * TEXEL - face.h) / 2}px`;
+        div.style.backgroundImage = `url(${skin})`;
+        div.style.backgroundSize = `${SKIN_PX * TEXEL}px ${SKIN_PX * TEXEL}px`;
+        div.style.backgroundPosition = `${-(face.u + dx) * TEXEL}px ${-(face.v + dy) * TEXEL}px`;
+        div.style.transform = face.transform;
+        return div;
+      };
+
+      for (const face of part.faces) el.append(faceEl(face));
+
+      const key = part.side ? `${part.name}-${part.side}` : part.name;
+      const shift = OUTER_SHIFT[key];
+      if (shift) {
+        const shell = document.createElement('div');
+        shell.className = 'mc-outer';
+        for (const face of part.faces) shell.append(faceEl(face, shift[0], shift[1]));
+        el.append(shell);
+      }
+
+      model.append(el);
+      nodes[key] = el;
+    }
+
+    return nodes;
+  };
+
+  const start = (root: HTMLElement) => {
+    const nodes = build(root);
+    if (!nodes) return;
+
+    const head = nodes.head;
+    const model = root.querySelector<HTMLElement>('[data-mc-model]');
+    const stage = root.querySelector<HTMLElement>('.mc-stage');
+    if (!head || !model || !stage) return;
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const arms = [nodes['arm-left'], nodes['arm-right']].filter(Boolean);
+    const baseArm = -4; // 让手臂略向前，不是僵直的
+    let targetYaw = 0;
+    let targetPitch = 0;
+    let yaw = 0;
+    let pitch = 0;
+
+    const onMove = (event: PointerEvent) => {
+      if (reduce.matches) return;
+      // 以「头」为中心算偏移，而不是整个身体：模型高 = 阶段高，头高 = 1/4，
+      // 头的中心在模型中心上方 (高 - 高/4) / 2。不然鼠标贴在脸上会被当成
+      // 「抬头」，看起来像身体在追踪。
+      const rect = stage.getBoundingClientRect();
+      const headX = rect.left + rect.width / 2;
+      const headY = rect.top + rect.height / 2 - (rect.height * 0.75) / 2;
+      const nx = (event.clientX - headX) / 220;
+      const ny = (event.clientY - headY) / 150;
+      targetYaw = Math.max(-38, Math.min(38, Math.max(-1, Math.min(1, nx)) * 34));
+      targetPitch = Math.max(-22, Math.min(22, -Math.max(-1, Math.min(1, ny)) * 20));
+    };
+
+    const onLeave = () => {
+      targetYaw = 0;
+      targetPitch = 0;
+    };
+
+    window.addEventListener('pointermove', onMove, { passive: true });
+    document.addEventListener('pointerleave', onLeave);
+
+    let raf = 0;
+    let last = performance.now();
+    let phase = 0;
+
+    const tick = (now: number) => {
+      const dt = Math.min(48, now - last) / 1000;
+      last = now;
+      phase += dt;
+
+      const idleYaw = reduce.matches ? Math.sin(phase * 0.5) * 14 : 0;
+      const idlePitch = reduce.matches ? Math.sin(phase * 0.33) * 4 : 0;
+      const ty = reduce.matches ? idleYaw : targetYaw;
+      const tp = reduce.matches ? idlePitch : targetPitch;
+
+      const k = 1 - Math.exp(-dt * 9);
+      yaw += (ty - yaw) * k;
+      pitch += (tp - pitch) * k;
+      head.style.transform = `rotateY(${yaw.toFixed(2)}deg) rotateX(${pitch.toFixed(2)}deg)`;
+
+      const breath = Math.sin(phase * 1.5) * 0.012;
+      model.style.transform = `scale(var(--mc-scale)) translateY(${(Math.sin(phase * 1.5) * 0.9).toFixed(2)}px) scaleY(${(1 + breath).toFixed(4)})`;
+
+      arms.forEach((arm, i) => {
+        const swing = Math.sin(phase * 1.1 + i * Math.PI) * 2.4 + baseArm;
+        arm.style.transform = `rotateX(${swing.toFixed(2)}deg)`;
+      });
+
+      raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+
+    document.addEventListener('astro:before-swap', () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerleave', onLeave);
+    });
+  };
+
+  const init = () => {
+    document.querySelectorAll<HTMLElement>('[data-mc-me]').forEach(start);
+  };
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

@@ -1,0 +1,13 @@
+{
+  "frames": 10,
+  "cssSize": 30,
+  "sheetPx": 64,
+  "fps": 9,
+  "sheet": "/cursor/ghost-arrow.png",
+  "hand": "/cursor/pumpkin-hand.png",
+  "arrowStatic": "/cursor/ghost-arrow-32.png",
+  "handStatic": "/cursor/pumpkin-hand-32.png",
+  "sheetHash": "ad959083",
+  "pack": "Cute Halloween Ghost Arrow & Pumpkin Hand Animated Cursor",
+  "credit": "Sweezy Cursors"
+}

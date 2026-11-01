@@ -1,0 +1,146 @@
+---
+/**
+ * 文章底部的「已上链」提示。
+ *
+ * 数据来自 src/data/ots.json（由 scripts/ots-stamp.mjs 生成，跟着构建产物一起提交）。
+ * 三种状态必须如实区分，绝不把没确认的写成已确认：
+ *   confirmed  证明已绑到某个比特币区块 —— 给高度 / 哈希 / 出块时间
+ *   pending    已提交日历，还没进区块（通常 1–24 小时）—— 只给指纹
+ *   stale      构建时发现内容指纹与清单对不上（正文改过但没重新盖章）—— 显示"内容已更新"
+ */
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import ots from '../data/ots.json';
+
+interface Props {
+  slug: string;
+}
+
+const { slug } = Astro.props;
+
+const item = (ots.items as Record<string, any>)[slug];
+const explorer: string = ots.explorer ?? 'https://mempool.space';
+
+/** 指纹以磁盘上的 .txt 为准：它才是被盖章的那份字节 */
+function currentDigest(path: string): string | null {
+  try {
+    const file = join(process.cwd(), 'public', path.replace(/^\//, ''));
+    if (!existsSync(file)) return null;
+    return createHash('sha256').update(readFileSync(file)).digest('hex');
+  } catch {
+    return null;
+  }
+}
+
+const digest = item ? currentDigest(item.content) : null;
+const stale = Boolean(item && digest && item.digest && digest !== item.digest);
+const status = !item ? 'missing' : stale ? 'stale' : item.status;
+
+const short = (hex: string | null | undefined, head = 10, tail = 6) =>
+  hex ? `${hex.slice(0, head)}…${hex.slice(-tail)}` : '—';
+
+const beijing = (iso: string | null | undefined) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}`;
+};
+
+const stateText: Record<string, string> = {
+  confirmed: '已确认',
+  pending: '已提交',
+  stale: '待重新盖章',
+  missing: '未盖章',
+};
+
+const kickerText: Record<string, string> = {
+  confirmed: 'ON-CHAIN / 已上链',
+  pending: 'ON-CHAIN / 等待打包',
+  stale: 'ON-CHAIN / 内容已更新',
+  missing: 'ON-CHAIN / 尚未盖章',
+};
+
+const show = status !== 'missing';
+---
+
+{
+  show && (
+    <section class:list={['onchain', `is-${status}`]} data-pagefind-ignore aria-label="内容时间戳证明">
+      <div class="onchain-head">
+        <span class="onchain-kicker">{kickerText[status]}</span>
+        <span class="onchain-state">{stateText[status]}</span>
+      </div>
+
+      {status === 'confirmed' && (
+        <p class="onchain-meta">
+          <span class="onchain-num">#{item.height.toLocaleString('en-US')}</span>
+          <span class="onchain-sep">·</span>
+          <span>{beijing(item.blockTime)}</span>
+          <span class="onchain-sep">·</span>
+          {item.blockHash ? (
+            <a href={item.explorer ?? `${explorer}/block/${item.blockHash}`} target="_blank" rel="noopener noreferrer">
+              {short(item.blockHash)}
+            </a>
+          ) : (
+            <span>{short(item.blockHash)}</span>
+          )}
+        </p>
+      )}
+
+      {status === 'pending' && (
+        <p class="onchain-meta">
+          已提交到 OpenTimestamps 日历，正在等待打包进比特币区块（通常 1–24 小时）。
+        </p>
+      )}
+
+      {status === 'stale' && (
+        <p class="onchain-meta">
+          这篇文章改过，旧的证明只对上一版有效，新版还没重新盖章。
+        </p>
+      )}
+
+      <p class="onchain-digest">
+        <span>内容指纹</span>
+        <code>{short(item?.digest ?? digest, 12, 8)}</code>
+        {item?.content && (
+          <a class="onchain-file" href={item.content} download>
+            原文 .txt ↓
+          </a>
+        )}
+        {item?.stamp && (
+          <a class="onchain-file" href={item.stamp} download>
+            证明 .ots ↓
+          </a>
+        )}
+      </p>
+
+      <details class="onchain-how">
+        <summary>怎么自己验证</summary>
+        <ol>
+          <li>下载上面那份 <code>.txt</code> 和 <code>.ots</code>，放在同一个目录里；</li>
+          <li>
+            <code>pip install opentimestamps-client</code>，然后
+            <code>ots upgrade hello.txt.ots</code> 拉取最新的确认；
+          </li>
+          <li>
+            <code>ots verify hello.txt.ots</code> —— 会打出它所在的比特币区块高度与
+            Merkle 根，和页面上的数字对得上就说明这份内容确实早于那个区块。
+          </li>
+        </ol>
+        <p class="onchain-note">
+          只能证明「这份内容在某个区块之前就存在」，不证明作者身份，也不保证之后没改过。
+        </p>
+      </details>
+    </section>
+  )
+}

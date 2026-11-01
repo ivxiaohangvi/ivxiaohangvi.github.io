@@ -1,0 +1,124 @@
+---
+import { withBase } from '../config';
+import {
+  formatSteamTime,
+  steamComments,
+  steamProfileUrl,
+  steamStaleCount,
+  steamSyncState,
+  steamSyncedAt,
+} from '../lib/steam-comments';
+
+const comments = steamComments;
+
+const syncLabels = {
+  ok: '同步正常',
+  partial: '抓取不完整 · 已合并旧留言',
+  failed: '抓取失败 · 显示旧快照',
+  empty: '这次没读到留言 · 显示上一份快照',
+} as const;
+
+const syncLabel = syncLabels[steamSyncState];
+---
+
+{
+  comments.length > 0 && (
+    <section
+      class="steam-notes"
+      id="steam-notes"
+      data-pagefind-ignore
+      aria-labelledby="steam-notes-title"
+    >
+      <header class="steam-notes-head">
+        <p class="steam-notes-kicker">STEAM / 旧留言</p>
+        <div class="steam-notes-titleline">
+          <h2 id="steam-notes-title">Steam 留言</h2>
+          <span class="steam-notes-count">{comments.length} 条</span>
+        </div>
+        <p class="steam-notes-note">
+          同步自 Steam 公开留言板，最新在上；头像取静态一帧。快照更新于{' '}
+          <time datetime={steamSyncedAt}>{formatSteamTime(steamSyncedAt)}</time>。
+          <span class="steam-sync" data-state={steamSyncState}>
+            <span class="steam-sync-lamp" aria-hidden="true" />
+            <span>{syncLabel}</span>
+          </span>{' '}
+          <a href={steamProfileUrl} target="_blank" rel="noopener noreferrer">
+            去 Steam 看看 <span aria-hidden="true">↗</span>
+          </a>
+          {steamStaleCount > 0 && (
+            <>
+              <br />
+              其中 {steamStaleCount} 条是上一轮留下的，这一轮没核对到。
+            </>
+          )}
+        </p>
+      </header>
+
+      <ol class="steam-notes-list">
+        {comments.map((comment) => {
+          const isArt =
+            (comment.html.match(/<br>/g) ?? []).length >= 2 &&
+            /[\u2800-\u28FF]| {4,}|　{2,}/.test(comment.html);
+          return (
+            <li class="steam-note">
+              <a
+                class="steam-note-avatar"
+                href={comment.profileUrl || steamProfileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${comment.name} 的 Steam 资料`}
+              >
+                {comment.avatar ? (
+                  <img
+                    src={withBase(comment.avatar)}
+                    alt=""
+                    width="40"
+                    height="40"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <span class="steam-note-initial" aria-hidden="true">
+                    {comment.name.slice(0, 1)}
+                  </span>
+                )}
+              </a>
+              <div class="steam-note-main">
+                <div class="steam-note-meta">
+                  <a
+                    class="steam-note-name"
+                    href={comment.profileUrl || steamProfileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {comment.name}
+                  </a>
+                  <time
+                    class="steam-note-time"
+                    datetime={comment.createdAt}
+                    title={
+                      comment.lastSeenAt
+                        ? `这一轮没核对到，上次确认于 ${formatSteamTime(comment.lastSeenAt)}`
+                        : undefined
+                    }
+                  >
+                    {formatSteamTime(comment.createdAt)}
+                  </time>
+                  {isArt && (
+                    <span class="steam-note-art-hint" aria-hidden="true">
+                      左右滑动
+                    </span>
+                  )}
+                </div>
+                <div
+                  class:list={['steam-note-text', { 'is-art': isArt }]}
+                  set:html={comment.html}
+                />
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  )
+}

@@ -1,0 +1,345 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import MoodBadge from '../../components/MoodBadge.astro';
+import ProgressiveImg from '../../components/ProgressiveImg.astro';
+import DiaryLightbox from '../../components/DiaryLightbox.astro';
+import DiaryLock from '../../components/DiaryLock.astro';
+import '../../styles/diary.css';
+import { withBase } from '../../config';
+import {
+  beijingDateCn,
+  beijingIso,
+  beijingParts,
+  beijingTime,
+  beijingWeekday,
+  isSameBeijingDay,
+} from '../../lib/date';
+import { moodInfo } from '../../lib/mood';
+import { buildTypingLexicon } from '../../lib/typing-data';
+import { plainText } from '../../lib/diary-list';
+import imageManifest from '../../lib/image-lqip.json';
+
+/** 配图的高宽比：竖长图要单独排版，不然一张手机长截图会把页面撑到几千像素高 */
+function figureMeta(src: string) {
+  const meta = (imageManifest as Record<string, { entry?: { w: number; h: number } }>)[src]?.entry;
+  if (!meta || !meta.h) return { shape: 'wide' as const, ar: 1, ultra: false };
+  const ar = meta.w / meta.h;
+  const shape = ar < 0.62 ? 'tall' : ar < 0.9 ? 'portrait' : 'wide';
+  // 超级长条（<0.2，整条聊天记录那种）：完整显示时只有几十像素宽，给它更大的高度预算
+  return { shape, ar, ultra: ar < 0.2 };
+}
+
+function figureShape(src: string) {
+  return figureMeta(src).shape;
+}
+
+/**
+ * 0.35–0.62 的「竖图」（多是 720×1600 的手机截图）：宽屏时挪到正文右侧的边栏，
+ * 完整显示、不裁切，高度只有五百多像素，正好填掉那片留白。
+ * 更细的长截图（<0.35）不进边栏——它在 260px 宽下仍有一两千像素高，只会变成一堵墙。
+ */
+function isMarginShape(src: string) {
+  const meta = (imageManifest as Record<string, { entry?: { w: number; h: number } }>)[src]?.entry;
+  if (!meta || !meta.h) return false;
+  const ratio = meta.w / meta.h;
+  return ratio >= 0.35 && ratio < 0.62;
+}
+
+export async function getStaticPaths() {
+  const entries = await getCollection('diary');
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+interface Props {
+  entry: CollectionEntry<'diary'>;
+}
+
+const { entry } = Astro.props;
+const locked = entry.data.locked === true;
+const rendered = locked ? null : await render(entry);
+const Content = rendered?.Content;
+
+const entries = (await getCollection('diary')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const index = entries.findIndex((item) => item.id === entry.id);
+const older = entries[index + 1];
+const newer = entries[index - 1];
+
+/** 只让第一张够格竖图去边栏；同一篇里再来一张就还是走行内裁切，免得两张叠在同一个位置 */
+const marginSrc = entry.data.images.find((src) => isMarginShape(src));
+
+/**
+ * 正文太短就别把图甩到边栏：一篇只有一两行字的时候，边栏里一张图、旁边一片空白，
+ * 比居中反而更空。少于 30 个字的一律留在中间（走 is-tall 的裁切封面）。
+ */
+const bodyChars = plainText(entry.body ?? '').replace(/\s/g, '').length;
+const useMargin = bodyChars >= 30;
+const marginImage = useMargin ? marginSrc : undefined;
+
+const longDate = (date: Date) => beijingDateCn(date);
+const weekday = beijingWeekday(entry.data.date);
+const { year, month, day } = beijingParts(entry.data.date);
+const dayNumber = String(Number(day));
+const time = entry.data.timeKnown ? beijingTime(entry.data.date) : null;
+const sameDay = (a: Date, b: Date) => isSameBeijingDay(a, b);
+const stamped = (date: Date, withTime: boolean) =>
+  `${longDate(date)}${withTime ? ` ${beijingTime(date)}` : ''}`;
+
+const attachmentLabel = { audio: '音频', video: '视频', file: '文件' } as const;
+const heading = entry.data.title;
+
+const typingLexicon = locked ? null : buildTypingLexicon(entry.body ?? '');
+const typingJson = typingLexicon ? JSON.stringify(typingLexicon).replace(/</g, '\\u003c') : null;
+const typingSessionKey = `moxo:diary-input:v1:${entry.id}`;
+const typingBoot = typingJson
+  ? `(()=>{const host=document.currentScript&&document.currentScript.parentElement;if(!host)return;let seen=false;try{seen=sessionStorage.getItem(${JSON.stringify(typingSessionKey)})==='1'}catch(e){}if(seen||matchMedia('(prefers-reduced-motion: reduce)').matches){host.dataset.typingState='done';return}setTimeout(()=>{if(!host.dataset.typingReady)host.dataset.typingState='done'},4000)})()`
+  : null;
+---
+<BaseLayout
+  title={locked ? `已封存的日记 · ${stamped(entry.data.date, entry.data.timeKnown)}` : heading ? `${heading} · 日记 · ${stamped(entry.data.date, entry.data.timeKnown)}` : `日记 · ${stamped(entry.data.date, entry.data.timeKnown)}`}
+  description={locked ? `小航写于${stamped(entry.data.date, entry.data.timeKnown)}的日记，正文与图片已封存。` : `${heading ? `《${heading}》——` : ''}小航写于${stamped(entry.data.date, entry.data.timeKnown)}的日记。`}
+  type="article"
+  noindex
+>
+  <article
+    class="diary-page wrap-narrow"
+    data-pagefind-body={locked ? undefined : ''}
+    data-pagefind-ignore={locked ? '' : undefined}
+    data-diary-locked={locked ? '' : undefined}
+    data-back-to-top
+  >
+    <nav class="back-row" aria-label="返回" data-pagefind-ignore>
+      <a href={withBase('/diary/')}>← 全部日记</a>
+      <span>FIELD NOTE / {year}</span>
+    </nav>
+
+    <header class="diary-hero" data-animate="hero-title">
+      <p class="eyebrow" data-lock-eyebrow={locked ? '' : undefined}>
+        {weekday} / {locked ? 'SEALED NOTE' : heading ?? (entry.data.sample ? '示例记录' : 'DAILY NOTE')}
+      </p>
+      <h1 class="diary-date-title">
+        <span class="date-year">{year}</span>
+        <span class="date-main">{month}.{dayNumber}</span>
+        {time && (
+          <span class="date-time">
+            <time datetime={beijingIso(entry.data.date)}>{time}</time>
+            <span>BJT</span>
+          </span>
+        )}
+      </h1>
+      <div class="diary-meta" data-pagefind-ignore>
+        {moodInfo(entry.data.mood, entry.data.moodKey) ? (
+          <MoodBadge mood={entry.data.mood} moodKey={entry.data.moodKey} size="lg" />
+        ) : (
+          <span class="entry-no-mood">心情未知</span>
+        )}
+        {entry.data.sample && <span class="sample-stamp">示例内容</span>}
+        {locked && (
+          <span class="lock-stamp">
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <rect x="3.2" y="7" width="9.6" height="7" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.2" />
+              <path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.2" />
+            </svg>
+            已封存
+          </span>
+        )}
+      </div>
+      {entry.data.tags.length > 0 && (
+        <p class="diary-tags">
+          {entry.data.tags.map((tag) => (
+            <a class="diary-tag" href={withBase(`/tags/${tag}/`)}>#{tag}</a>
+          ))}
+        </p>
+      )}
+    </header>
+
+    {
+      locked ? (
+        <>
+          <DiaryLock
+            entryId={entry.id}
+            sealedId={entry.data.sealedId ?? ''}
+            weekday={weekday}
+            dateStamp={stamped(entry.data.date, entry.data.timeKnown)}
+            dateLabel={longDate(entry.data.date)}
+            hasEncryptedImages={entry.data.hasEncryptedImages}
+            sample={entry.data.sample}
+          />
+          <div class="diary-unsealed" data-diary-unsealed hidden tabindex="-1">
+            <div class="diary-figures" data-diary-gallery hidden />
+            <div
+              class="diary-typing"
+              data-diary-typing
+              data-diary-slug={entry.id}
+              data-typing-state="done"
+            >
+              <div class="prose diary-prose diary-typing-source" data-diary-typing-source />
+              <button class="diary-typing-skip" type="button" data-diary-typing-skip data-pagefind-ignore>
+                <span>跳过打字</span>
+                <kbd>ESC</kbd>
+              </button>
+            </div>
+            <p class="sr-only" data-unlock-announcer role="status" aria-live="polite" />
+          </div>
+        </>
+      ) : (
+        <>
+          {
+            entry.data.images.filter((src) => src !== marginImage).length > 0 && (
+              <div
+                class={`diary-figures${
+                  entry.data.images.filter((src) => src !== marginImage).length === 1 ? ' is-single' : ''
+                }`}
+              >
+                {entry.data.images
+                  .filter((src) => src !== marginImage)
+                  .map((src) => {
+                    const back = entry.data.imageBacks?.[src]?.trim();
+                    const { shape, ar, ultra } = figureMeta(src);
+                    return (
+                      <figure
+                        class:list={[
+                          'diary-figure',
+                          `is-${shape}`,
+                          { 'is-flippable': Boolean(back), 'is-margin': src === marginImage, 'is-ultra': ultra },
+                        ]}
+                        style={`--ar: ${ar}`}
+                        data-lightbox
+                      >
+                      <div class="diary-figure-paper">
+                        <button class="diary-figure-btn" type="button" aria-label="查看日记图片大图">
+                          <ProgressiveImg
+                            src={src}
+                            alt={`${longDate(entry.data.date)}的日记配图`}
+                            variant="srcset"
+                            sizes={
+                              entry.data.images.length === 1
+                                ? '(max-width: 780px) calc(100vw - 2rem), 720px'
+                                : '(max-width: 620px) calc(100vw - 2rem), (max-width: 1100px) 45vw, 350px'
+                            }
+                          />
+                        </button>
+                        {back && (
+                          <div class="diary-figure-back">
+                            <p class="diary-figure-back-note">{back}</p>
+                            <span class="diary-figure-back-stamp" aria-hidden="true">
+                              {longDate(entry.data.date)} · 小航 m∞
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </figure>
+                  );
+                })}
+              </div>
+            )
+          }
+          <div
+            class="diary-typing"
+            data-diary-typing
+            data-diary-slug={entry.id}
+            data-typing-state={typingJson ? 'pending' : 'done'}
+          >
+            {typingBoot && <script is:inline set:html={typingBoot} />}
+            {
+              marginImage && (
+                <figure
+                  class={`diary-figure is-${figureShape(marginImage)} is-margin`}
+                  style={`--ar: ${figureMeta(marginImage).ar}`}
+                  data-lightbox
+                >
+                  <div class="diary-figure-paper">
+                    <button class="diary-figure-btn" type="button" aria-label="查看日记图片大图">
+                      <ProgressiveImg
+                        src={marginImage}
+                        alt={`${longDate(entry.data.date)}的日记配图`}
+                        variant="srcset"
+                        sizes="(max-width: 1279px) calc(100vw - 2rem), 272px"
+                      />
+                    </button>
+                    {entry.data.imageBacks?.[marginImage]?.trim() && (
+                      <div class="diary-figure-back">
+                        <p class="diary-figure-back-note">{entry.data.imageBacks[marginImage]?.trim()}</p>
+                        <span class="diary-figure-back-stamp" aria-hidden="true">
+                          {longDate(entry.data.date)} · 小航 m∞
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </figure>
+              )
+            }
+            <div class="prose diary-prose diary-typing-source" data-diary-typing-source>
+              <Content />
+            </div>
+            {
+              typingJson && (
+                <script
+                  type="application/json"
+                  data-diary-typing-lexicon
+                  is:inline
+                  set:html={typingJson}
+                />
+              )
+            }
+            <button class="diary-typing-skip" type="button" data-diary-typing-skip data-pagefind-ignore>
+              <span>跳过打字</span>
+              <kbd>ESC</kbd>
+            </button>
+          </div>
+        </>
+      )
+    }
+
+    {
+      !locked && entry.data.attachments.length > 0 && (
+        <section class="attachments" aria-labelledby="attachments-title">
+          <h2 id="attachments-title" class="small-heading">随日记带上来的东西</h2>
+          <ul class="attachment-list">
+            {entry.data.attachments.map((att) => (
+              <li class={`attachment is-${att.kind}`}>
+                <span class="attachment-kind">{attachmentLabel[att.kind]}</span>
+                {att.kind === 'audio' ? (
+                  <audio controls preload="metadata" src={withBase(att.url)}></audio>
+                ) : att.kind === 'video' ? (
+                  <video controls preload="metadata" src={withBase(att.url)}></video>
+                ) : (
+                  <a href={withBase(att.url)} download>{att.name}</a>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <nav class="entry-pager" aria-label="相邻日记">
+      {
+        older ? (
+          <a class="pager-link is-prev" href={withBase(`/diary/${older.id}/`)}>
+            <span>{sameDay(older.data.date, entry.data.date) ? '同一天 · 稍早' : '更早一篇'}</span>
+            <strong>{stamped(older.data.date, older.data.timeKnown)}{older.data.mood ? ` · ${older.data.mood}` : ''}</strong>
+          </a>
+        ) : (
+          <span></span>
+        )
+      }
+      {
+        newer ? (
+          <a class="pager-link is-next" href={withBase(`/diary/${newer.id}/`)}>
+            <span>{sameDay(newer.data.date, entry.data.date) ? '同一天 · 稍晚' : '更近一篇'}</span>
+            <strong>{stamped(newer.data.date, newer.data.timeKnown)}{newer.data.mood ? ` · ${newer.data.mood}` : ''}</strong>
+          </a>
+        ) : (
+          <span></span>
+        )
+      }
+    </nav>
+  </article>
+  <DiaryLightbox />
+</BaseLayout>
+

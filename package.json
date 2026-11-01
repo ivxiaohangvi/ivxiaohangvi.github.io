@@ -1,0 +1,45 @@
+{
+  "name": "ivxiaohangvi.github.io",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "predev": "node scripts/decode-vault.mjs && node scripts/write-push-info.mjs",
+    "prebuild": "node scripts/decode-vault.mjs && node scripts/write-push-info.mjs && node scripts/gen-image-lqip.mjs",
+    "gen:images": "node scripts/gen-image-lqip.mjs",
+    "test:sanitize": "node --test scripts/sanitize-comment.test.mjs",
+    "test:steam-sync": "node --test scripts/steam-sync.test.mjs",
+    "verify:steam": "node scripts/verify-steam-output.mjs",
+    "build": "node --test scripts/sanitize-comment.test.mjs scripts/steam-sync.test.mjs && astro build && node scripts/verify-steam-output.mjs && pagefind --site dist",
+    "preview": "astro preview",
+    "astro": "astro",
+    "vault:encode": "node scripts/encode-vault.mjs",
+    "vault:decode": "node scripts/decode-vault.mjs",
+    "seal": "node --experimental-strip-types scripts/seal-diary.mjs",
+    "share": "node scripts/share-code.mjs",
+    "import:diary": "node scripts/import-daily-you.mjs",
+    "sync:steam": "node scripts/sync-steam-comments.mjs",
+    "ots": "node scripts/ots-content.mjs && node scripts/ots-stamp.mjs"
+  },
+  "dependencies": {
+    "@astrojs/rss": "^4.0.19",
+    "@astrojs/sitemap": "^3.7.4",
+    "astro": "^5.18.2",
+    "gsap": "^3.15.0",
+    "pagefind": "^1.5.2",
+    "parse5": "^7.3.0",
+    "pinyin-pro": "^3.29.5",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@astrojs/markdown-remark": "^6.3.11",
+    "@gltf-transform/cli": "^4.2.0",
+    "js-yaml": "^4.3.2",
+    "obj2gltf": "^3.1.1",
+    "sharp": "^0.34.4"
+  }
+}

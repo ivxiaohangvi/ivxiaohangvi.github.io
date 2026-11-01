@@ -1,0 +1,68 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Giscus from '../components/Giscus.astro';
+import SteamGuestbook from '../components/SteamGuestbook.astro';
+import { siteConfig } from '../config';
+import { steamComments } from '../lib/steam-comments';
+
+const giscus = siteConfig.giscus;
+const giscusEnabled = Boolean(giscus.repo && giscus.repoId && giscus.categoryId);
+---
+<BaseLayout
+  title="留言簿"
+  description="没有对应文章的话，写在这里。留言保存在 GitHub Discussions，公开可见。"
+>
+  <div class="wrap-narrow">
+    <header class="page-head">
+      <p class="eyebrow">GUESTBOOK / 留言</p>
+      <div class="page-head-line">
+        <h1>留言簿</h1>
+        <span class="page-count">OPEN</span>
+      </div>
+      <p class="page-lede">
+        没有对应文章的话，写在这里。一句问候、一个建议，或者只是告诉我你来过。
+      </p>
+      <p class="guestbook-meta">
+        {giscusEnabled ? '公开可见 · Giscus 留言需要 GitHub 账号' : '公开可见 · 留言入口稍后开放'}
+        {
+          steamComments.length > 0 && (
+            <>
+              {' · '}
+              <a href="#steam-notes">Steam 旧留言 {steamComments.length} 条 ↓</a>
+            </>
+          )
+        }
+      </p>
+    </header>
+
+    <Giscus
+      kicker="LEAVE A NOTE / 投递"
+      title="写一句"
+      mapping="specific"
+      term="留言簿"
+      note="留言保存在 GitHub Discussions；Steam 上的新留言会定时同步到下面。"
+    />
+
+    <SteamGuestbook />
+  </div>
+</BaseLayout>
+
+<style>
+  .guestbook-meta {
+    margin: 1rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+
+  .guestbook-meta a {
+    color: var(--brass);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+  }
+
+  .guestbook-meta a:hover {
+    border-color: currentColor;
+  }
+</style>

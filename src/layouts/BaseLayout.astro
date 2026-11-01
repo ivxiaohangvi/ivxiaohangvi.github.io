@@ -1,0 +1,53 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import SiteLoader from '../components/SiteLoader.astro';
+import NavProgress from '../components/NavProgress.astro';
+import CursorMark from '../components/CursorMark.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import ExternalLinkNotice from '../components/ExternalLinkNotice.astro';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+  bare?: boolean;
+  type?: 'website' | 'article';
+  image?: string;
+  /** 暗房模型的预取时机：idle 空闲即取；intent 只在悬停/聚焦暗房入口或进入底栏时取 */
+  darkroomPrefetch?: 'idle' | 'intent';
+}
+
+const { title, description, noindex, bare = false, type, image, darkroomPrefetch = 'idle' } = Astro.props;
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <BaseHead title={title} description={description} noindex={noindex} type={type} image={image} />
+  </head>
+  <body class={bare ? 'is-bare' : ''} data-darkroom-prefetch={darkroomPrefetch}>
+    <SiteLoader />
+    <NavProgress />
+    <CursorMark />
+    <a class="skip-link" href="#main">跳到内容</a>
+    {!bare && <Header />}
+    <main id="main" class={bare ? 'bare-main' : 'site-main'}>
+      <slot />
+    </main>
+    {!bare && <Footer />}
+    <ExternalLinkNotice />
+    <div class="grain" aria-hidden="true"></div>
+    <script>
+      import '../scripts/animations';
+      import '../scripts/cursor-mark';
+      import '../scripts/live-infinity';
+      import '../scripts/scroll-experience';
+      import '../scripts/diary-typing';
+      import '../scripts/progressive-images';
+      import '../scripts/diary-ledger';
+      import '../scripts/darkroom-prefetch';
+      import '../scripts/vercount';
+    </script>
+  </body>
+</html>

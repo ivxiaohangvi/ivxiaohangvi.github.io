@@ -1,0 +1,325 @@
+/* 灯箱：从 global.css 拆出的单页样式。迹忆与摄影共用的灯箱外壳。 */
+
+.photo-lightbox,
+.lightbox-plate,
+.lightbox-stage,
+.lightbox-rail {
+  transition: none;
+}
+
+.lightbox-close {
+  position: fixed;
+  top: max(0.9rem, env(safe-area-inset-top));
+  right: max(0.9rem, env(safe-area-inset-right));
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid rgba(228, 223, 210, 0.34);
+  border-radius: 0;
+  background: rgba(7, 12, 11, 0.64);
+  color: #e4dfd2;
+  font-size: 1.02rem;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.lightbox-close:hover {
+  border-color: var(--brass);
+  background: rgba(22, 32, 29, 0.86);
+  color: #fff6e6;
+}
+
+.photo-lightbox .lightbox-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  width: auto;
+  height: 34px;
+  padding: 0 12px 0 11px;
+  border: 1px solid rgba(228, 223, 210, 0.26);
+  border-left: 2px solid rgba(201, 162, 104, 0.7);
+  border-radius: 0;
+  background: linear-gradient(180deg, rgba(43, 34, 23, 0.92), rgba(16, 12, 8, 0.94));
+  color: #e4dfd2;
+  font-family: var(--font-mono);
+  font-size: 0.54rem;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.32);
+}
+
+.photo-lightbox .lightbox-close::before {
+  content: '';
+  flex: none;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(4, 8, 7, 0.92);
+  box-shadow:
+    0 -8px 0 rgba(4, 8, 7, 0.92),
+    0 8px 0 rgba(4, 8, 7, 0.92);
+}
+
+.photo-lightbox .lightbox-close:hover {
+  border-color: rgba(201, 162, 104, 0.7);
+  border-left-color: var(--brass);
+  background: linear-gradient(180deg, rgba(58, 45, 30, 0.96), rgba(24, 18, 12, 0.96));
+  color: #fff6e6;
+}
+
+.photo-lightbox .lightbox-close-x {
+  color: rgba(228, 223, 210, 0.55);
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+@media (max-width: 560px) {
+  .lightbox-close {
+    width: 34px;
+    height: 34px;
+  }
+
+  .photo-lightbox .lightbox-close {
+    width: auto;
+    height: 32px;
+    padding-inline: 10px;
+  }
+}
+
+/* 灯箱关闭键在手机上只有 34×34（摄影页更矮，32），是整屏唯一的出口，
+   手指按偏就只剩「点空白」这条路。垫一层 56×56 的透明命中区，
+   按钮本身尺寸不变；关闭键固定在右上角，四周是空的，扩边不会压到别的东西。 */
+.lightbox-close::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 56px);
+  height: max(100%, 56px);
+  translate: -50% -50%;
+}
+
+.lightbox-stage {
+  position: relative;
+  display: block;
+  /* 相纸多大，显影盘就多大：画布、橙罩、扫光都钉在照片上，
+     竖幅时墨色不会漫到照片两侧的灯箱空墙上 */
+  width: fit-content;
+  margin-inline: auto;
+  isolation: isolate;
+}
+
+.lightbox-plate {
+  width: fit-content;
+  margin-inline: auto;
+}
+
+.lightbox-rail {
+  --lightbox-perf-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='15'%20height='7'%3E%3Crect%20x='3.1'%20width='8.8'%20height='7'%20rx='1.4'%20fill='white'/%3E%3C/svg%3E");
+  position: relative;
+  width: 0;
+  min-width: 100%;
+  height: 38px;
+  margin-top: 8px;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 238, 208, 0.14) 0,
+    rgba(255, 238, 208, 0.14) 1px,
+    #2b2217 1px,
+    #1c1610 16%,
+    #171009 48%,
+    #130e08 84%,
+    rgba(0, 0, 0, 0.55) calc(100% - 1px),
+    rgba(0, 0, 0, 0.55) 100%
+  );
+  overflow: hidden;
+}
+
+.lightbox-rail[hidden] {
+  display: none;
+}
+
+.lightbox-rail::before,
+.lightbox-rail::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  height: 7px;
+  background: rgba(4, 8, 7, 0.88);
+  -webkit-mask-image: var(--lightbox-perf-mask);
+  mask-image: var(--lightbox-perf-mask);
+  -webkit-mask-size: 15px 7px;
+  mask-size: 15px 7px;
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
+  pointer-events: none;
+}
+
+.lightbox-rail::before {
+  top: 4px;
+}
+
+.lightbox-rail::after {
+  bottom: 4px;
+}
+
+.lightbox-rail-track {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.lightbox-rail-track::-webkit-scrollbar {
+  display: none;
+}
+
+.lightbox-hole {
+  position: relative;
+  z-index: 1;
+  flex: 1 0 56px;
+  min-width: 56px;
+  height: 100%;
+  padding: 0 4px;
+  border: 0;
+  border-right: 1px solid rgba(233, 228, 215, 0.07);
+  background: transparent;
+  color: #9d8d76;
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.lightbox-hole:last-child {
+  border-right: 0;
+}
+
+.lightbox-hole:hover {
+  background: rgba(255, 238, 208, 0.05);
+  color: #eae5d8;
+}
+
+.lightbox-hole.is-on {
+  background: rgba(201, 162, 104, 0.13);
+  color: var(--brass);
+}
+
+.lightbox-hole.is-on::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--brass);
+}
+
+.lightbox-hole.is-on::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  z-index: 3;
+  width: 3px;
+  height: 3px;
+  background: #b8472b;
+  transform: translateX(-50%);
+}
+
+.lightbox-hole:focus-visible {
+  outline: 1px solid var(--brass);
+  outline-offset: -3px;
+}
+
+.lightbox-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(165deg, rgba(228, 152, 76, 0.9), rgba(174, 102, 50, 0.88));
+  mix-blend-mode: multiply;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lightbox-sweep {
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: 0;
+  z-index: 4;
+  width: 46%;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 238, 208, 0) 0%,
+    rgba(255, 238, 208, 0.85) 55%,
+    rgba(255, 205, 130, 0.95) 72%,
+    rgba(255, 238, 208, 0) 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lightbox-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  margin: 0.8rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: #a8b3a6;
+}
+
+.lightbox-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.lightbox-copy > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lightbox-count {
+  flex: none;
+  color: #7f8a80;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+}
+
+.lightbox-caption strong {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #e4dfd2;
+}
+
+html.has-cursor-mark .photo-lightbox[open] .lightbox-close,
+html.has-cursor-mark .photo-lightbox[open] .lightbox-hole {
+  cursor: pointer !important;
+}

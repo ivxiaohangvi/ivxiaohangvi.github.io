@@ -1,0 +1,112 @@
+---
+/**
+ * 封存日记的锁页：只有一个输入框，分享码与主密码都从这里进。
+ * 解锁逻辑在 src/scripts/diary-unlock.ts；这里只提供数据与语义结构。
+ */
+import { withBase } from '../config';
+
+interface Props {
+  entryId: string;
+  sealedId: string;
+  weekday: string;
+  /** 用于解封后替换 document.title 的日期戳 */
+  dateStamp: string;
+  /** 相片背面的落款日期 */
+  dateLabel: string;
+  hasEncryptedImages?: boolean;
+  sample?: boolean;
+}
+
+const {
+  entryId,
+  sealedId,
+  weekday,
+  dateStamp,
+  dateLabel,
+  hasEncryptedImages = false,
+  sample = false,
+} = Astro.props;
+
+const keyringUrl = withBase('/diary/keyring.json');
+const sealedUrl = withBase(`/diary/sealed/${sealedId}.json`);
+const sealedBase = withBase(`/diary/sealed/${sealedId}/`);
+const voidUrl = withBase('/void/');
+const inputId = `diary-lock-${entryId}`;
+---
+
+<section
+  class="diary-lock"
+  data-diary-lock
+  data-entry-id={entryId}
+  data-keyring={keyringUrl}
+  data-sealed={sealedUrl}
+  data-sealed-base={sealedBase}
+  data-void={voidUrl}
+  data-weekday={weekday}
+  data-date-stamp={dateStamp}
+  data-date-label={dateLabel}
+  data-has-images={hasEncryptedImages ? 'true' : 'false'}
+  aria-labelledby={`${inputId}-title`}
+>
+  <div class="lock-plate" aria-hidden="true">
+    <svg viewBox="0 0 48 48" focusable="false">
+      <circle cx="24" cy="24" r="21" fill="none" stroke="currentColor" stroke-width="0.9" />
+      <circle
+        cx="24"
+        cy="24"
+        r="15.5"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="0.55"
+        stroke-dasharray="1.6 3.2"
+      />
+      <rect x="17" y="22.5" width="14" height="10.5" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.15" />
+      <path d="M20 22.5v-3.2a4 4 0 0 1 8 0v3.2" fill="none" stroke="currentColor" stroke-width="1.15" />
+      <circle cx="24" cy="27.3" r="1.3" fill="currentColor" />
+      <path d="M24 28.4v2.1" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" />
+    </svg>
+  </div>
+
+  <p class="lock-kicker">
+    SEALED ENTRY / 已封存
+    {sample && <span class="sample-stamp">示例</span>}
+  </p>
+  <h2 class="lock-title" id={`${inputId}-title`}>这一页锁着</h2>
+  <p class="lock-lede">
+    支持分享码解锁。
+  </p>
+  {hasEncryptedImages && <p class="lock-detail">正文与图片都存放在密文里。</p>}
+
+  <form class="lock-form" data-lock-form novalidate>
+    <label class="lock-label" for={inputId}>分享码</label>
+    <div class="lock-field">
+      <input
+        id={inputId}
+        data-lock-input
+        type="password"
+        name="passphrase"
+        placeholder="输入分享码"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        maxlength="256"
+      />
+      <button class="lock-reveal" type="button" data-lock-reveal aria-label="显示输入">显示</button>
+      <button class="lock-submit" type="submit" data-lock-submit>
+        <span data-lock-submit-label>解封</span>
+      </button>
+    </div>
+  </form>
+
+  <div class="lock-meter">
+    <span class="lock-dots" data-lock-dots aria-hidden="true"><i></i><i></i><i></i></span>
+    <span data-lock-status role="status" aria-live="polite">还有 3 次</span>
+  </div>
+  <p class="lock-error" data-lock-error role="alert"></p>
+  <p class="lock-note">钥匙只在这台设备上派生，不会发送到任何服务器。</p>
+  <p class="sr-only" data-lock-announcer role="status" aria-live="polite"></p>
+</section>
+
+<script>
+  import '../scripts/diary-unlock';
+</script>

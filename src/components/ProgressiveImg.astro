@@ -1,0 +1,83 @@
+---
+import manifest from '../lib/image-lqip.json';
+import { withBase } from '../config';
+
+type Variant = 'default' | 'thumb' | 'srcset';
+type Entry = { w: number; h: number; med: string; thumb?: string; lqip: string };
+
+interface Props {
+  /** 站内绝对路径，如 /diary/images/xxx.webp（不含 base） */
+  src: string;
+  alt?: string;
+  class?: string;
+  sizes?: string;
+  eager?: boolean;
+  /** 是否自动升级原图：走带/缩略场景中画质已够，关掉可省一次原图下载+解码+重光栅（原图留给灯箱） */
+  upgrade?: boolean;
+  /** default 中画质；thumb 列表小图；srcset 内页配图按视口只挑一档 */
+  variant?: Variant;
+  /** 是否内联 LQIP；列表页只为首屏几张保留，其余用骨架底色 */
+  lqip?: boolean;
+}
+
+const {
+  src,
+  alt = '',
+  class: className = '',
+  sizes,
+  eager = false,
+  upgrade = true,
+  variant = 'default',
+  lqip = true,
+} = Astro.props;
+
+const record = (manifest as Record<string, { entry?: Entry }>)[src];
+const meta = record?.entry;
+
+const fullUrl = withBase(src);
+const medUrl = meta ? withBase(meta.med) : fullUrl;
+const thumbUrl = meta?.thumb ? withBase(meta.thumb) : medUrl;
+const loading = eager ? 'eager' : 'lazy';
+const useLqip = lqip && Boolean(meta);
+const canUpgrade = Boolean(meta) && upgrade && variant === 'default';
+
+let imgSrc = medUrl;
+let srcset: string | undefined;
+if (variant === 'thumb') {
+  imgSrc = thumbUrl;
+} else if (variant === 'srcset' && meta) {
+  // med 是 ≤900px 的那一档；原图本身就不超过 900 时没必要再给两个候选
+  const medW = Math.min(meta.w, 900);
+  if (medW < meta.w) srcset = `${medUrl} ${medW}w, ${fullUrl} ${meta.w}w`;
+}
+---
+
+{
+  meta ? (
+    <img
+      class:list={['pimg', className, { 'is-skeleton': !useLqip }]}
+      src={imgSrc}
+      srcset={srcset}
+      sizes={srcset ? sizes : undefined}
+      data-full={fullUrl}
+      data-upgrade={canUpgrade ? undefined : 'off'}
+      width={meta.w}
+      height={meta.h}
+      alt={alt}
+      loading={loading}
+      decoding="async"
+      style={useLqip ? `background-image:url("${meta.lqip}")` : undefined}
+    />
+  ) : (
+    <img
+      class:list={['pimg is-static', className]}
+      src={fullUrl}
+      data-full={fullUrl}
+      data-upgrade="off"
+      alt={alt}
+      sizes={sizes}
+      loading={loading}
+      decoding="async"
+    />
+  )
+}

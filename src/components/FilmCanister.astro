@@ -1,0 +1,246 @@
+---
+/**
+ * 135 胶卷暗盒贴图（纯 SVG，无外部资源）。
+ * 画幅比例与 .fs-canister 盒子一致：宽 : 高 = can-w : (can-h + 0.2·can-w)。
+ * 出片缝一侧的压暗由外层 .is-left/.is-right 通过 CSS 点亮对应遮罩，
+ * 本体不镜像，保证明暗光源方向全页一致。
+ *
+ * 外观按 seed 做稳定伪随机：壳色、标签版式、贴纸、盖圈和卷种各取一种，
+ * 同一次构建里同一卷永远长得一样；所有渐变/裁切 id 都带本卷后缀，
+ * 否则同页多个 SVG 会全部引用第一只卷的 defs。
+ */
+interface Props {
+  /** 稳定的随机种子，通常传卷 key */
+  seed?: string;
+}
+
+const { seed = 'moxo-135' } = Astro.props;
+
+let hash = 2166136261;
+for (const char of seed) {
+  hash ^= char.codePointAt(0) ?? 0;
+  hash = Math.imul(hash, 16777619);
+}
+hash >>>= 0;
+
+const pick = <T,>(list: T[], shift: number) => list[(hash >>> shift) % list.length];
+
+const SHELLS = [
+  {
+    name: 'graphite',
+    stops: ['#040706', '#1a2321', '#2e3834', '#4d5852', '#39433f', '#202825', '#121817', '#080c0b', '#030504'],
+    cap: ['#77827b', '#3c4641', '#1e2623', '#0b110f'],
+  },
+  {
+    name: 'umber',
+    stops: ['#070606', '#241c19', '#3a2f29', '#5d4a3e', '#453830', '#2a211c', '#171210', '#0a0807', '#040303'],
+    cap: ['#84766a', '#463a32', '#241c18', '#0d0907'],
+  },
+  {
+    name: 'steel',
+    stops: ['#050709', '#19212a', '#2a3947', '#485c6d', '#374958', '#222e38', '#141b21', '#090d10', '#030405'],
+    cap: ['#7b8791', '#3e4a54', '#1e272e', '#0a0f13'],
+  },
+  {
+    name: 'oxblood',
+    stops: ['#080505', '#2a1918', '#442724', '#6a3b34', '#4f2c28', '#33201d', '#1f1311', '#0d0807', '#050303'],
+    cap: ['#8a716c', '#4a3834', '#281d1a', '#0e0908'],
+  },
+  {
+    name: 'olive',
+    stops: ['#060705', '#20241a', '#343b28', '#525c3f', '#3e4731', '#293021', '#181d14', '#0b0e08', '#040503'],
+    cap: ['#7d826c', '#444936', '#252a1d', '#0d0f09'],
+  },
+  {
+    name: 'silver',
+    stops: ['#070708', '#232427', '#3a3c40', '#5f6267', '#484b50', '#2f3135', '#1c1d20', '#0c0d0e', '#040405'],
+    cap: ['#8c8e93', '#4b4d52', '#282a2d', '#0e0f11'],
+  },
+] as const;
+
+const ACCENTS = [
+  { name: 'brass', value: '#c49a5c', ink: '#1a1208' },
+  { name: 'sand', value: '#cdbfa0', ink: '#1e1810' },
+  { name: 'rust', value: '#bc6c4c', ink: '#190d08' },
+  { name: 'steel', value: '#90aab2', ink: '#0a1214' },
+  { name: 'oxide', value: '#9f7c4d', ink: '#160f07' },
+] as const;
+
+const STOCKS = ['PAN 400', 'NIGHT 800', 'C-41 200', 'TRI-X 400', 'COLOR 100', 'PUSH 1600'] as const;
+const LABEL_STYLES = ['rings', 'band', 'paper', 'dx'] as const;
+
+const shell = pick([...SHELLS], 0);
+const accent = pick([...ACCENTS], 7);
+const stock = pick([...STOCKS], 11);
+const labelStyle = pick([...LABEL_STYLES], 15);
+const cap = shell.cap;
+
+const uid = `can-${hash.toString(36)}`;
+const pid = (suffix: string) => `${uid}-${suffix}`;
+
+const BODY_OFFSETS = ['0', '0.035', '0.14', '0.27', '0.36', '0.55', '0.75', '0.9', '1'];
+const CAP_OFFSETS = ['0', '0.42', '0.7', '1'];
+
+const bodyPath =
+  'M0 26.4 A132 26.4 0 0 0 132 52.8 A132 26.4 0 0 0 264 26.4 L264 490.6 A132 26.4 0 0 1 132 517 A132 26.4 0 0 1 0 490.6 Z';
+
+/** 环向色带：上下两条边都随圆柱微俯视向下弯，厚度保持一致 */
+const curveBand = (top: number, bottom: number) =>
+  `M0 ${top} A132 26.4 0 0 0 132 ${top + 26.4} A132 26.4 0 0 0 264 ${top} ` +
+  `L264 ${bottom} A132 26.4 0 0 1 132 ${bottom + 26.4} A132 26.4 0 0 1 0 ${bottom} Z`;
+
+const curveText = (top: number) =>
+  `M0 ${top} A132 26.4 0 0 0 132 ${top + 26.4} A132 26.4 0 0 0 264 ${top}`;
+
+const wearX = 20 + ((hash >>> 3) % 180);
+const wearY = 210 + ((hash >>> 12) % 220);
+const wearLen = 12 + ((hash >>> 19) % 34);
+const dxX = 186 + ((hash >>> 21) % 24);
+const dxY = 330 + ((hash >>> 24) % 80);
+const barcode = Array.from({ length: 7 }, (_, i) => 1 + (((hash >>> (i + 4)) >>> (i % 5)) % 3));
+
+const variant = `${shell.name}-${labelStyle}-${stock.toLowerCase().replace(/[^a-z0-9]+/g, '')}`;
+---
+
+<svg
+  class="can-art"
+  viewBox="0 0 264 517"
+  preserveAspectRatio="none"
+  data-can-variant={variant}
+  aria-hidden="true"
+  focusable="false"
+>
+  <defs>
+    <!-- 壳身横向圆柱明暗：左缘反光、主高光偏左、向右渐暗 -->
+    <linearGradient id={pid('body')} x1="0" y1="0" x2="1" y2="0">
+      {shell.stops.map((color, i) => <stop offset={BODY_OFFSETS[i]} stop-color={color} />)}
+    </linearGradient>
+    <!-- 纵向光泽：顶部受光、底部转离光源 -->
+    <linearGradient id={pid('sheen')} x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff4de" stop-opacity="0.1"></stop>
+      <stop offset="0.14" stop-color="#fff4de" stop-opacity="0.02"></stop>
+      <stop offset="0.5" stop-color="#000000" stop-opacity="0"></stop>
+      <stop offset="0.82" stop-color="#000000" stop-opacity="0.16"></stop>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.42"></stop>
+    </linearGradient>
+    <radialGradient id={pid('cap')} cx="0.38" cy="0.28" r="0.9">
+      {cap.map((color, i) => <stop offset={CAP_OFFSETS[i]} stop-color={color} />)}
+    </radialGradient>
+    <radialGradient id={pid('hub')} cx="0.4" cy="0.35" r="0.85">
+      <stop offset="0" stop-color="#39433e"></stop>
+      <stop offset="0.6" stop-color="#161d1b"></stop>
+      <stop offset="1" stop-color="#05080a"></stop>
+    </radialGradient>
+    <!-- 出片缝压暗：暗口在缝侧，向壳身中部渐散 -->
+    <linearGradient id={pid('slot-r')} x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#000000" stop-opacity="0"></stop>
+      <stop offset="0.55" stop-color="#000000" stop-opacity="0.35"></stop>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.9"></stop>
+    </linearGradient>
+    <linearGradient id={pid('slot-l')} x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0" stop-color="#000000" stop-opacity="0"></stop>
+      <stop offset="0.55" stop-color="#000000" stop-opacity="0.35"></stop>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.9"></stop>
+    </linearGradient>
+    <!-- 壳身剪裁：上下沿都是标准椭圆弧，底部收口为完整曲线 -->
+    <clipPath id={pid('clip')}>
+      <path d={bodyPath}></path>
+    </clipPath>
+    <filter id={pid('grain')} x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" stitchTiles="stitch"></feTurbulence>
+      <feColorMatrix type="saturate" values="0"></feColorMatrix>
+      <feComponentTransfer><feFuncA type="linear" slope="0.14" intercept="0"></feFuncA></feComponentTransfer>
+      <feComposite operator="in" in2="SourceGraphic"></feComposite>
+    </filter>
+    <!-- 壳身铭印的行走路径：与刻线同曲率的弧，字随环面走 -->
+    <path id={pid('print-arc')} d="M0 463.6 A132 26.4 0 0 0 264 463.6" fill="none"></path>
+    {labelStyle === 'band' && <path id={pid('label-arc')} d={curveText(96)} fill="none"></path>}
+    {labelStyle === 'paper' && (
+      <>
+        <path id={pid('paper-arc')} d={curveText(102)} fill="none"></path>
+        <path id={pid('paper-sub-arc')} d={curveText(154)} fill="none"></path>
+      </>
+    )}
+  </defs>
+
+  <!-- 壳身：上下边缘走椭圆弧，与顶盖、底口严丝合缝 -->
+  <path d={bodyPath} fill={`url(#${pid('body')})`}></path>
+
+  <g clip-path={`url(#${pid('clip')})`}>
+    <rect x="0" y="0" width="264" height="517" fill={`url(#${pid('sheen')})`}></rect>
+    <!-- 卷模刻线：环向圆环在微俯视下的投影是椭圆弧，与顶盖/底口同曲率，不能用直线 -->
+    <path d="M0 32.4 A132 26.4 0 0 0 264 32.4" fill="none" stroke="#000000" stroke-opacity="0.3" stroke-width="3"></path>
+    <path d="M0 36.4 A132 26.4 0 0 0 264 36.4" fill="none" stroke="#fff4de" stroke-opacity="0.07" stroke-width="1.4"></path>
+    <path d="M0 446 A132 26.4 0 0 0 264 446" fill="none" stroke="#000000" stroke-opacity="0.32" stroke-width="3.5"></path>
+    <path d="M0 450.5 A132 26.4 0 0 0 264 450.5" fill="none" stroke="#fff4de" stroke-opacity="0.08" stroke-width="1.4"></path>
+    <path d="M0 470 A132 26.4 0 0 0 264 470" fill="none" stroke="#000000" stroke-opacity="0.25" stroke-width="2.4"></path>
+
+    <!-- 标签：版式由 seed 决定，但都贴着壳身环面弯 -->
+    {labelStyle === 'rings' && (
+      <>
+        <path d={curveBand(76, 80)} fill={accent.value} opacity="0.62"></path>
+        <path d={curveBand(438, 442)} fill={accent.value} opacity="0.5"></path>
+      </>
+    )}
+    {labelStyle === 'band' && (
+      <>
+        <path d={curveBand(84, 150)} fill={accent.value} opacity="0.9"></path>
+        <path d={curveBand(154, 157)} fill={accent.value} opacity="0.36"></path>
+        <text font-family="ui-monospace, 'JetBrains Mono', Consolas, monospace" font-size="12" letter-spacing="2.4" fill={accent.ink} fill-opacity="0.86">
+          <textPath href={`#${pid('label-arc')}`} startOffset="50%" text-anchor="middle">{stock}</textPath>
+        </text>
+      </>
+    )}
+    {labelStyle === 'paper' && (
+      <>
+        <path d={curveBand(78, 196)} fill="#ded5c0" opacity="0.94"></path>
+        <path d={curveBand(78, 84)} fill={accent.value} opacity="0.92"></path>
+        <path d={curveBand(190, 196)} fill={accent.value} opacity="0.78"></path>
+        <text font-family="ui-monospace, 'JetBrains Mono', Consolas, monospace" font-size="12" letter-spacing="2" fill="#221b12" fill-opacity="0.86">
+          <textPath href={`#${pid('paper-arc')}`} startOffset="50%" text-anchor="middle">{stock}</textPath>
+        </text>
+        <text font-family="ui-monospace, 'JetBrains Mono', Consolas, monospace" font-size="6.5" letter-spacing="2.6" fill="#4a3f2e" fill-opacity="0.76">
+          <textPath href={`#${pid('paper-sub-arc')}`} startOffset="50%" text-anchor="middle">MOXO · 36 EXP · C-41</textPath>
+        </text>
+      </>
+    )}
+    {labelStyle === 'dx' && (
+      <>
+        <rect x={dxX} y={dxY} width="42" height="66" rx="2" fill="#ded5c0" opacity="0.9"></rect>
+        <rect x={dxX} y={dxY} width="42" height="8" fill={accent.value} opacity="0.9"></rect>
+        <text x={dxX + 21} y={dxY + 59} text-anchor="middle" font-family="ui-monospace, 'JetBrains Mono', Consolas, monospace" font-size="7" letter-spacing="0.8" fill="#2a2218">{stock.split(' ')[0]}</text>
+        {barcode.map((width, i) => (
+          <rect x={dxX + 9 + i * 3.6} y={dxY + 13} width={width} height="36" fill="#221b12" opacity="0.78"></rect>
+        ))}
+        <path d={curveBand(430, 434)} fill={accent.value} opacity="0.34"></path>
+      </>
+    )}
+
+    <!-- 磨损：两三道极淡的擦痕，位置由 seed 固定 -->
+    <path d={`M${wearX} ${wearY} l${wearLen} -3.5`} stroke="#fff4de" stroke-opacity="0.07" stroke-width="1.2"></path>
+    <path d={`M${wearX + 14} ${wearY + 8} l${Math.round(wearLen * 0.55)} 2`} stroke="#000000" stroke-opacity="0.16" stroke-width="1.6"></path>
+
+    <!-- 塑料颗粒 -->
+    <rect x="0" y="0" width="264" height="517" filter={`url(#${pid('grain')})`} opacity="0.5"></rect>
+    <!-- 出片缝侧压暗，由 .is-left / .is-right 点亮其一 -->
+    <rect class="can-shade-l" x="0" y="0" width="96" height="517" fill={`url(#${pid('slot-l')})`} opacity="0"></rect>
+    <rect class="can-shade-r" x="168" y="0" width="96" height="517" fill={`url(#${pid('slot-r')})`} opacity="0"></rect>
+  </g>
+
+  <!-- 顶盖与卷轴芯 -->
+  <ellipse cx="132" cy="26.4" rx="132" ry="26.4" fill={`url(#${pid('cap')})`}></ellipse>
+  <ellipse cx="132" cy="26.4" rx="131" ry="25.2" fill="none" stroke="#fff4de" stroke-opacity="0.12" stroke-width="1.2"></ellipse>
+  <ellipse cx="132" cy="27.4" rx="108" ry="19" fill="none" stroke={accent.value} stroke-opacity="0.22" stroke-width="1.2"></ellipse>
+  <ellipse cx="132" cy="28.4" rx="46" ry="13" fill={`url(#${pid('hub')})`}></ellipse>
+  <ellipse cx="132" cy="28.4" rx="46" ry="13" fill="none" stroke="#000000" stroke-opacity="0.45" stroke-width="1"></ellipse>
+  <ellipse cx="132" cy="28.4" rx="15" ry="4.6" fill="#0a0f0d" stroke="#e8e4d9" stroke-opacity="0.09" stroke-width="1"></ellipse>
+  <circle cx={78 + ((hash >>> 26) % 108)} cy="26.4" r="2.6" fill={accent.value} fill-opacity="0.48"></circle>
+
+  <!-- 底口收边：完整椭圆弧勾出底部轮廓 -->
+  <path d="M0 490.6 A132 26.4 0 0 0 132 517 A132 26.4 0 0 0 264 490.6" fill="none" stroke="#000000" stroke-opacity="0.55" stroke-width="1.6"></path>
+
+  <!-- 壳身铭印：卷种与规格沿环面弧排布 -->
+  <text font-family="ui-monospace, 'JetBrains Mono', Consolas, monospace" font-size="10" letter-spacing="3.5" fill={accent.value} fill-opacity="0.55">
+    <textPath href={`#${pid('print-arc')}`} startOffset="50%" text-anchor="middle">{stock} · 36 EXP</textPath>
+  </text>
+</svg>

@@ -1,0 +1,18 @@
+---
+import { beijingDateCn, beijingDateDot, beijingIso, beijingMonthDay } from '../lib/date';
+
+interface Props {
+  date: Date;
+  format?: 'long' | 'numeric' | 'month-day';
+}
+
+const { date, format = 'long' } = Astro.props;
+
+const formatted =
+  format === 'numeric'
+    ? beijingDateDot(date)
+    : format === 'month-day'
+      ? beijingMonthDay(date)
+      : beijingDateCn(date);
+---
+<time datetime={beijingIso(date)}>{formatted}</time>

@@ -1,0 +1,127 @@
+---
+import type { PhotoRoll } from '../lib/photo-rolls';
+import { beijingYear } from '../lib/date';
+import { withBase } from '../config';
+import FilmCanister from './FilmCanister.astro';
+import ProgressiveImg from './ProgressiveImg.astro';
+
+interface Props {
+  roll: PhotoRoll;
+}
+
+const { roll } = Astro.props;
+const { frames, isEmpty, index, side, isLast } = roll;
+const number = index + 1;
+const pad = (value: number) => String(value).padStart(2, '0');
+const edgeCode = (i: number) => `${pad(i + 1)}A`;
+const yearOf = (date: Date) => beijingYear(date);
+/** 缺省按年份分卷时卷名就是年份，跟 ROLL 重复，不再重复念一遍 */
+const showTitle = !/^\d{4}$/.test(roll.title);
+const count = frames.length;
+const countLabel = `${pad(count)} FRAME${count === 1 ? '' : 'S'}`;
+const meta = [`第 ${pad(number)} 卷`, ...(showTitle ? [roll.title] : []), `ROLL ${roll.years.join('–')} / ${countLabel}`].join(
+  ' · ',
+);
+const label = `第 ${number} 卷${showTitle ? ` · ${roll.title}` : ''}`;
+---
+
+<section
+  class:list={['filmroll', { 'is-empty': isEmpty }]}
+  id={`roll-${pad(number)}`}
+  data-film-roll
+  data-empty={isEmpty ? 'true' : undefined}
+  data-reveal
+  data-reveal-early
+  aria-label={label}
+>
+  <div class="wrap">
+    <div class="roll-meta">
+      <span>{meta}</span>
+      <span class="roll-hint">
+        {
+          isEmpty ? (
+            <>
+              <span class="hint-idle">拖动检查片头 · 尚未装片</span>
+              <span class="hint-live">滚轮抽拉空卷 · 离开片基即释放</span>
+              <span class="hint-touch">拖动检查片头</span>
+            </>
+          ) : (
+            <>
+              <span class="hint-idle">拖拽 / ← → 过片 · 点击冲印正片</span>
+              <span class="hint-live">滚轮抽拉本卷 · 离开片基即释放</span>
+              <span class="hint-touch">拖动过片 · 点按冲印</span>
+            </>
+          )
+        }
+      </span>
+    </div>
+  </div>
+
+  <div class={`filmstrip side-${side} has-darkroom`}>
+    <div
+      class="film-viewport"
+      tabindex={isEmpty ? -1 : 0}
+      aria-label={isEmpty ? `${label}，空白相册，可拖动` : `${label}，可横向拖动，方向键过片`}
+    >
+      <div class="film-band">
+        <span class="film-leader" aria-hidden="true"></span>
+        {frames.map((photo, i) => (
+          <figure class="fs-frame">
+            <span class="fs-code" aria-hidden="true">{edgeCode(i)}</span>
+            {(i === 0 || yearOf(frames[i - 1].data.date) !== yearOf(photo.data.date)) && (
+              <span class="fs-year">{yearOf(photo.data.date)}</span>
+            )}
+            <button
+              class="fs-pic"
+              type="button"
+              data-full={withBase(photo.data.image)}
+              data-title={photo.data.title}
+              data-meta={[photo.data.location, photo.data.camera, yearOf(photo.data.date)].filter(Boolean).join(' · ')}
+            >
+              {/* 走带上不自动升级原图：900px 中图已盖住画幅，原图留给灯箱 */}
+              <ProgressiveImg src={photo.data.image} alt={photo.data.title} upgrade={false} />
+            </button>
+            <figcaption class="fs-cap">
+              <span class="fs-title">{photo.data.title}</span>
+              <span class="fs-meta">{[photo.data.location, yearOf(photo.data.date)].filter(Boolean).join(' · ')}</span>
+            </figcaption>
+          </figure>
+        ))}
+
+        {isEmpty ? (
+          <figure class="fs-frame is-blank">
+            <span class="fs-code" aria-hidden="true">{edgeCode(0)}</span>
+            <span class="fs-pic fs-blank-pic" aria-hidden="true">未曝光</span>
+            <figcaption class="fs-cap">
+              <span class="fs-title">空白卷</span>
+              <span class="fs-meta">等下一批照片</span>
+            </figcaption>
+          </figure>
+        ) : isLast ? (
+          <figure class="fs-frame is-blank" aria-hidden="true">
+            <span class="fs-code">{edgeCode(count)}</span>
+            <span class="fs-pic fs-blank-pic">待曝光</span>
+            <figcaption class="fs-cap">
+              <span class="fs-title">下一格</span>
+              <span class="fs-meta">—</span>
+            </figcaption>
+          </figure>
+        ) : null}
+
+        <span class="film-edge" aria-hidden="true"></span>
+        <span class="film-tail" aria-hidden="true"></span>
+      </div>
+    </div>
+    <div class={`fs-canister is-${side}`} aria-hidden="true">
+      <FilmCanister seed={roll.key} />
+    </div>
+  </div>
+
+  <div class="film-scrub" aria-hidden="true">
+    <span class="scrub-yr">{side === 'right' ? roll.years[roll.years.length - 1] : roll.years[0]}</span>
+    <div class="scrub-track">
+      <span class="scrub-knob"></span>
+    </div>
+    <span class="scrub-yr">{side === 'right' ? roll.years[0] : roll.years[roll.years.length - 1]}</span>
+  </div>
+</section>

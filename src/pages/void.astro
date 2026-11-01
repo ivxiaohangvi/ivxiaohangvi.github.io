@@ -1,0 +1,279 @@
+---
+/**
+ * 三次密钥错误后的独立噪声页：不复用日记模板，也不会加载打字机。
+ * 返回时清掉这一篇的尝试次数，让它还能重新试。
+ */
+import { withBase } from '../config';
+
+const diaryUrl = withBase('/diary/');
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#080f10" />
+    <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
+    <title>VOID · 无记录 · m∞</title>
+  </head>
+  <body>
+    <canvas id="noise" aria-hidden="true"></canvas>
+    <div class="scanlines" aria-hidden="true"></div>
+    <div class="vignette" aria-hidden="true"></div>
+
+    <div class="topline" aria-hidden="true">
+      <span>VOID / 0x03</span>
+      <span><em>NO RECORD</em> · 无索引</span>
+    </div>
+
+    <div class="status">
+      <span class="status-mark" aria-hidden="true">无</span>
+      <p class="status-copy">三次错误 · 信号丢失</p>
+    </div>
+
+    <a class="return" id="return" href={diaryUrl}>回到日记</a>
+
+    <script is:inline>
+      (() => {
+        const canvas = document.getElementById('noise');
+        const ctx = canvas.getContext('2d');
+        const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+        const returnLink = document.getElementById('return');
+        const CELL_W = 17;
+        const CELL_H = 23;
+        const GLYPHS =
+          '01<>/\\[]{}()=+-*#%&@$?;:~^|_' +
+          '日月山川风雨雪夜灯窗潮汐雾霭尘沙岸港舟影声音光暗静默醒梦' +
+          '上下左右前后始终归去来兮是若非无有空白等候记得忘记' +
+          '┌┐└┘├┤┬┴┼─│╳░▒▓█▚▞▙▟';
+
+        let cells = [];
+        let columns = 0;
+        let rows = 0;
+        let dpr = 1;
+        let last = 0;
+        let frame = 0;
+
+        const pick = () => GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+
+        function resize() {
+          dpr = Math.min(window.devicePixelRatio || 1, 2);
+          canvas.width = Math.floor(window.innerWidth * dpr);
+          canvas.height = Math.floor(window.innerHeight * dpr);
+          columns = Math.ceil(window.innerWidth / CELL_W) + 1;
+          rows = Math.ceil(window.innerHeight / CELL_H) + 1;
+          cells = [];
+
+          for (let y = 0; y < rows; y += 1) {
+            for (let x = 0; x < columns; x += 1) {
+              cells.push({
+                char: pick(),
+                alpha: 0.035 + Math.random() * 0.19,
+                hot: Math.random() < 0.016,
+              });
+            }
+          }
+        }
+
+        function draw(now) {
+          const interval = reduced.matches ? Infinity : 92;
+          if (now - last < interval) {
+            frame = requestAnimationFrame(draw);
+            return;
+          }
+          last = now;
+
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+          ctx.font = '15px "Cascadia Mono", Consolas, monospace';
+          ctx.textBaseline = 'middle';
+
+          const mutateCount = reduced.matches ? 0 : Math.ceil(cells.length * 0.018);
+
+          for (let index = 0; index < cells.length; index += 1) {
+            const cell = cells[index];
+            if (Math.random() < mutateCount / cells.length) {
+              cell.char = pick();
+              cell.alpha = 0.035 + Math.random() * 0.2;
+              cell.hot = Math.random() < 0.02;
+            }
+
+            const column = index % columns;
+            const row = Math.floor(index / columns);
+            const pulse = reduced.matches ? 1 : 0.86 + Math.sin(now * 0.0016 + index * 0.17) * 0.14;
+            const alpha = Math.min(0.62, cell.alpha * pulse);
+
+            ctx.fillStyle = cell.hot
+              ? `rgba(199, 122, 103, ${alpha + 0.18})`
+              : `rgba(228, 223, 210, ${alpha})`;
+            ctx.fillText(cell.char, column * CELL_W, row * CELL_H);
+          }
+
+          if (!reduced.matches) frame = requestAnimationFrame(draw);
+        }
+
+        try {
+          const from = new URLSearchParams(location.search).get('from');
+          if (from) {
+            sessionStorage.removeItem(`moxo:diary-attempts:v1:${from}`);
+          } else {
+            for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+              const key = sessionStorage.key(index);
+              if (key?.startsWith('moxo:diary-attempts:v1:')) sessionStorage.removeItem(key);
+            }
+          }
+        } catch {
+          /* 存不了也能从日记列表重新进 */
+        }
+
+        window.addEventListener('resize', () => {
+          cancelAnimationFrame(frame);
+          resize();
+          draw(performance.now());
+        });
+
+        resize();
+        draw(performance.now());
+
+        window.setTimeout(
+          () => returnLink.classList.add('is-visible'),
+          reduced.matches ? 1200 : 3000,
+        );
+      })();
+    </script>
+
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #080f10;
+        color: #e4dfd2;
+        font-family: 'SFMono-Regular', 'Cascadia Mono', 'Roboto Mono', Consolas, monospace;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      canvas {
+        position: fixed;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .scanlines {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0, 0, 0, 0.18) 2px 3px);
+        mix-blend-mode: multiply;
+        opacity: 0.55;
+      }
+
+      .vignette {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(circle at 50% 48%, transparent 0 20%, rgba(8, 15, 16, 0.5) 70%, #080f10 100%);
+      }
+
+      .topline {
+        position: fixed;
+        top: clamp(1rem, 3vw, 1.8rem);
+        left: clamp(1rem, 3vw, 1.8rem);
+        right: clamp(1rem, 3vw, 1.8rem);
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        font-size: 0.56rem;
+        letter-spacing: 0.22em;
+        color: rgba(228, 223, 210, 0.38);
+        pointer-events: none;
+      }
+
+      .topline em {
+        font-style: normal;
+        color: rgba(199, 122, 103, 0.66);
+      }
+
+      .status {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-content: center;
+        justify-items: center;
+        gap: clamp(1rem, 3vw, 2rem);
+        pointer-events: none;
+        text-align: center;
+      }
+
+      .status-mark {
+        font-family: 'Songti SC', 'Noto Serif CJK SC', 'STSong', serif;
+        font-size: clamp(4rem, 15vw, 10rem);
+        font-weight: 600;
+        line-height: 1;
+        color: rgba(228, 223, 210, 0.035);
+        letter-spacing: 0.08em;
+        user-select: none;
+      }
+
+      .status-copy {
+        margin: 0;
+        padding-bottom: clamp(3rem, 8vw, 6rem);
+        font-size: 0.56rem;
+        letter-spacing: 0.26em;
+        color: rgba(228, 223, 210, 0.3);
+      }
+
+      .return {
+        position: fixed;
+        left: 50%;
+        bottom: clamp(1.4rem, 5vw, 3rem);
+        transform: translate(-50%, 0.6rem);
+        padding: 0.45rem 0.7rem;
+        border: 1px solid rgba(228, 223, 210, 0.18);
+        background: rgba(8, 15, 16, 0.55);
+        font-size: 0.55rem;
+        letter-spacing: 0.14em;
+        color: rgba(228, 223, 210, 0.52);
+        text-decoration: none;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.7s ease, transform 0.7s ease, color 0.2s ease, border-color 0.2s ease;
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+      }
+
+      .return.is-visible {
+        opacity: 1;
+        transform: translate(-50%, 0);
+        pointer-events: auto;
+      }
+
+      .return:hover,
+      .return:focus-visible {
+        color: #e4dfd2;
+        border-color: rgba(196, 154, 92, 0.6);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .return {
+          transition: none;
+        }
+      }
+    </style>
+  </body>
+</html>

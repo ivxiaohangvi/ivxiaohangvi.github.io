@@ -1,0 +1,274 @@
+/* 摄影：从 global.css 拆出的单页样式。胶卷、接触印相。 */
+
+.roll-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 1rem;
+  /* 卷壳顶盖会高出片端约 0.2·can-w：两端让出壳宽的四成、整行再抬高一点，
+     文字就完全离开盖顶的弧面，不再压在卷壳上 */
+  padding-inline: calc(var(--can-w) * 0.42 + var(--mm) * 2);
+  padding-bottom: 1.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.roll-hint .hint-live {
+  display: none;
+  color: var(--brass);
+}
+
+.roll-hint .hint-touch {
+  display: none;
+}
+
+.filmroll.is-armed .roll-hint .hint-idle {
+  display: none;
+}
+
+.filmroll.is-armed .roll-hint .hint-live {
+  display: inline;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .roll-hint .hint-idle,
+  .roll-hint .hint-live {
+    display: none;
+  }
+
+  .roll-hint .hint-touch {
+    display: inline;
+  }
+}
+
+.film-viewport {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  overflow: clip;
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.film-viewport.is-drag,
+.film-viewport.is-drag .fs-pic {
+  cursor: grabbing;
+}
+
+.film-viewport.is-drag {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.film-band {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  width: max-content;
+  min-width: 100%;
+  padding: var(--film-margin) 0 10px clamp(28px, 6vw, 72px);
+  background-image: var(--film-base);
+  background-size: calc(100% - var(--tail-w)) var(--film-h);
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  will-change: transform;
+}
+
+.film-band::before,
+.film-band::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: calc(100% - var(--tail-w));
+  /* 收在最后一个整孔上：宽度按孔距向下取整，舌片前不再出现半截孔 */
+  width: round(down, calc(100% - var(--tail-w)), var(--perf-pitch));
+  height: var(--perf-h);
+  background: var(--film-hole);
+  -webkit-mask-image: var(--perf-mask);
+  mask-image: var(--perf-mask);
+  -webkit-mask-size: var(--perf-pitch) var(--perf-h);
+  mask-size: var(--perf-pitch) var(--perf-h);
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
+}
+
+.film-band::before {
+  top: var(--perf-inset);
+}
+
+.film-band::after {
+  top: calc(var(--film-h) - var(--perf-inset) - var(--perf-h));
+}
+
+.film-leader {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  width: calc(var(--perf-pitch) * 14);
+  height: var(--film-h);
+  background-image: var(--film-base);
+  background-size: 100% var(--film-h);
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+.film-leader::before,
+.film-leader::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: var(--perf-h);
+  background: var(--film-hole);
+  -webkit-mask-image: var(--perf-mask);
+  mask-image: var(--perf-mask);
+  -webkit-mask-size: var(--perf-pitch) var(--perf-h);
+  mask-size: var(--perf-pitch) var(--perf-h);
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
+}
+
+.film-leader::before {
+  top: var(--perf-inset);
+}
+
+.film-leader::after {
+  top: calc(var(--film-h) - var(--perf-inset) - var(--perf-h));
+}
+
+.film-edge {
+  position: absolute;
+  left: 0;
+  top: calc(var(--film-h) - var(--film-margin));
+  z-index: 2;
+  width: calc(100% - var(--tail-w));
+  height: var(--film-margin);
+  /* 片基底片渐隐到片尾黑边，带 alpha 的那几成正好落在齿孔行。
+     遮板下面必须垫实色，否则收起的字幕会从底片的半透明处透出来 */
+  background-color: #130e08;
+  background-image: var(--film-base);
+  background-size: 100% var(--film-h);
+  background-position: 0 calc(-1 * (var(--film-h) - var(--film-margin)));
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+.film-edge::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: calc(var(--film-margin) - var(--perf-inset) - var(--perf-h));
+  width: round(down, 100%, var(--perf-pitch));
+  height: var(--perf-h);
+  background: var(--film-hole);
+  -webkit-mask-image: var(--perf-mask);
+  mask-image: var(--perf-mask);
+  -webkit-mask-size: var(--perf-pitch) var(--perf-h);
+  mask-size: var(--perf-pitch) var(--perf-h);
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
+}
+
+.film-tail {
+  flex: none;
+  align-self: flex-start;
+  width: var(--tail-w);
+  height: var(--film-h);
+  margin: calc(-1 * var(--film-margin)) 0 0 auto;
+  background-image: var(--film-base);
+  border-radius: 0 calc(var(--mm) * 8) calc(var(--mm) * 8) 0;
+  box-shadow: inset calc(var(--mm) * -1.2) 0 calc(var(--mm) * 2.4) calc(var(--mm) * -1) rgba(0, 0, 0, 0.6);
+}
+
+.filmstrip.side-left .film-band {
+  padding-left: calc(var(--can-w) + var(--mm) * 2);
+}
+
+.filmstrip.side-right .film-viewport {
+  transform: scaleX(-1);
+}
+
+.filmstrip.side-right .film-band {
+  padding-left: calc(var(--can-w) + var(--mm) * 2);
+}
+
+.filmstrip.is-canister-tucked.side-left .film-band,
+.filmstrip.is-canister-tucked.side-right .film-band {
+  padding-left: calc(var(--can-lip) + var(--mm) * 1.2);
+}
+
+.filmroll.is-canister-tucked .roll-meta {
+  padding-inline: 0;
+}
+
+.film-scrub {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.5rem clamp(20px, 4vw, 48px) 0.6rem;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.contact-sheet.empty-state {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 3.5rem);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  text-align: left;
+}
+
+.contact-frame {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+}
+
+.contact-frame span {
+  display: block;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--rule);
+  background:
+    linear-gradient(var(--rule-soft) 0 0) center / 1px 100% no-repeat,
+    linear-gradient(var(--rule-soft) 0 0) center / 100% 1px no-repeat,
+    var(--paper-deep);
+  opacity: 0.75;
+}
+
+.contact-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.contact-copy p,
+.contact-copy h2 {
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .contact-sheet.empty-state {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-frame {
+    max-width: 420px;
+  }
+}
+
+@media (max-width: 560px) {
+  .roll-meta {
+    padding-inline: 0;
+    padding-bottom: calc(var(--can-w) * 0.2 + 0.4rem);
+  }
+
+  .filmstrip.side-left .film-band,
+  .filmstrip.side-right .film-band {
+    padding-left: calc(var(--can-w) + 14px);
+  }
+}

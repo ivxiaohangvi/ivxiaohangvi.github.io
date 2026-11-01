@@ -1,0 +1,623 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AsoulPeek from '../components/AsoulPeek.astro';
+import MobiusMark from '../components/MobiusMark.astro';
+import ProgressiveImg from '../components/ProgressiveImg.astro';
+import { moodInfo } from '../lib/mood';
+import { withBase } from '../config';
+import { beijingIso, beijingMonthDay, beijingYear, beijingYearMonth } from '../lib/date';
+
+const moments = (await getCollection('moments'))
+  .map((entry) => ({
+    id: entry.id,
+    data: entry.data,
+    body: entry.body.replace(/\s+/g, ' ').trim(),
+    ts: entry.data.date.valueOf(),
+  }))
+  .sort((a, b) => b.ts - a.ts);
+
+const total = moments.length;
+
+/** 每个月的第一条（最新那条）挂锚点，货架箱子的链接落在这里 */
+const monthAnchor = new Set<string>();
+{
+  let lastMonth = '';
+  for (const moment of moments) {
+    const month = beijingYearMonth(moment.data.date);
+    if (month !== lastMonth) {
+      monthAnchor.add(moment.id);
+      lastMonth = month;
+    }
+  }
+}
+
+/* —— 顶部弹幕：从最近 POOL_MAX 条里随机抽，池子不够再往更老的抽 —— */
+const POOL_MAX = 30;
+const PER_LANE = 3;
+const LANES = Math.max(2, Math.min(5, Math.ceil(Math.min(total, POOL_MAX) / PER_LANE)));
+const NEED = LANES * PER_LANE;
+const pool = total <= NEED ? moments : moments.slice(0, Math.max(POOL_MAX, NEED));
+
+/** 按条数连续渐变，不设硬边界：第 40 条以后暗到下限 */
+const ageOf = (rank: number) => 1 - Math.min(1, rank / 40) * 0.55;
+/** 字号跟时效同向：越新越大，两端都留在可读区间内（池子小的时候不收满，免得出现阶梯） */
+const FS_HI = 1.04;
+const FS_LO = 0.78;
+const FS_SPAN = Math.max(12, pool.length - 1);
+const sizeOf = (rank: number) => FS_HI - (FS_HI - FS_LO) * Math.min(1, rank / FS_SPAN);
+const laneOf = (k: number) => k % LANES;
+const durOf = (lane: number) => 30 + lane * 3.4;
+const laneCountOf = (lane: number) => Math.ceil((NEED - lane) / LANES);
+/** 同道同速、道内按周期等距，所以飘多久都不会追尾 */
+const delayOf = (k: number) => {
+  const lane = laneOf(k);
+  return -(durOf(lane) * Math.floor(k / LANES) / laneCountOf(lane) + lane * 2.1);
+};
+
+/* —— 下面：居中漫游的时间轴，一根外延挂一条动态 —— */
+/** 慢摆为主、只留一点本地抖动：整条线是一圈圈漂，不是抽搐 */
+const xOf = (i: number) => 50 + 22 * Math.sin(i * 0.42 + 0.6) + 6 * Math.sin(i * 0.95 + 2.1);
+const nodeAt = (j: number) => (j < 0 ? xOf(0) : j < total ? xOf(j) : 50);
+/** 每行一段 Catmull-Rom，行与行共用端点，所以折线永远接得上 */
+const segOf = (i: number) => {
+  const x0 = nodeAt(i);
+  const x1 = nodeAt(i + 1);
+  const c1 = x0 + (x1 - nodeAt(i - 1)) / 6;
+  const c2 = x1 - (nodeAt(i + 2) - x0) / 6;
+  return `M ${x0.toFixed(1)} 0 C ${c1.toFixed(1)} 33.3 ${c2.toFixed(1)} 66.7 ${x1.toFixed(1)} 100`;
+};
+const hash = (i: number) => {
+  const t = Math.sin(i * 12.9898 + 4.1414) * 43758.5453;
+  return t - Math.floor(t);
+};
+
+/** 节点留在行顶，文字框往下坠一格：连线于是重新变成斜线，但两端仍然咬合 */
+const dropOf = (i: number) => 0.3 + hash(i + 2) * 1.15;
+/** 便笺的坠距挂在行上，手绘箭头要从便笺的哪一侧穿出去由它决定 */
+const noteDropOf = (i: number) => 0.2 + hash(i + 7) * 1.5;
+
+const LONG_AT = 62;
+/** 轴上只留一个引子，整段交给便笺 */
+const teaserOf = (text: string) => {
+  const head = text.slice(0, 22);
+  const cut = head.search(/[，。！？；]/);
+  return (cut > 6 ? head.slice(0, cut) : text.slice(0, 16)) + '……';
+};
+const yearChanged = (i: number) => i === 0 || beijingYear(moments[i - 1].data.date) !== beijingYear(moments[i].data.date);
+---
+<BaseLayout title="动态" description="小航的碎碎念与即时的想法。" noindex>
+  <div class="wrap" data-back-to-top>
+    <header class="page-head">
+      <p class="eyebrow">MOMENTS / 动态</p>
+      <div class="page-head-line">
+        <h1>动态</h1>
+        <span class="page-count">{String(total).padStart(2, '0')} 则</span>
+      </div>
+      <p class="page-lede">来不及写成日记的碎碎念，上面飘着，下面排成一串，越往下越旧。</p>
+      <a class="text-link page-head-link" href={withBase('/moments/archive/')}>按月份装罐 · 玻璃罐 <span aria-hidden="true">→</span></a>
+    </header>
+
+    {
+      total > 0 ? (
+        <Fragment>
+          <div
+            class="moment-danmaku"
+            id="moment-danmaku"
+            data-pagefind-ignore
+            data-lanes={LANES}
+            data-need={NEED}
+            style={`--lanes:${LANES}`}
+          >
+            {pool.map((moment, rank) => {
+              const info = moodInfo(moment.data.mood, moment.data.moodKey);
+              const lane = laneOf(rank);
+              return (
+                <article
+                  class:list={[
+                    'dm-item',
+                    rank >= NEED ? 'is-off' : 'is-on',
+                    { 'dm-newest': rank === 0 },
+                    info ? `tone-${info.tone}` : '',
+                  ]}
+                  data-rank={rank}
+                  style={`--lane:${lane};--dur:${durOf(lane).toFixed(1)}s;--delay:${delayOf(rank).toFixed(1)}s;--age:${ageOf(rank).toFixed(3)};--fs:${sizeOf(rank).toFixed(3)}rem`}
+                >
+                  <time class="dm-time" datetime={beijingIso(moment.data.date)}>
+                    {beijingMonthDay(moment.data.date)}
+                  </time>
+                  {info && <span class="dm-mood" aria-hidden="true">{info.emoji}</span>}
+                  <span class="dm-text">{moment.body}</span>
+                  {moment.data.tags.length > 0 && (
+                    <span class="dm-tags">
+                      {moment.data.tags.map((tag) => <span>#{tag}</span>)}
+                    </span>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+          <p class="dm-foot">
+            <button class="dm-toggle" type="button" id="dm-toggle" aria-pressed="false">暂停弹幕</button>
+            <span class="dm-hint">每次刷新从最近 {Math.min(POOL_MAX, total)} 条里随机抽 · 指到谁停谁，点谁跳谁 · 越旧越小越淡</span>
+          </p>
+
+          <ol class="tl" data-pagefind-body>
+            {moments.map((moment, i) => {
+              const info = moodInfo(moment.data.mood, moment.data.moodKey);
+              const long = moment.body.length > LONG_AT;
+              const images = moment.data.images;
+              const side = i % 2 === 0 ? 'right' : 'left';
+              const hasNote = long || images.length > 0;
+              const ny = dropOf(i);
+              const dy = noteDropOf(i);
+
+              const entry = (
+                <article class="tl-entry" data-newest={i === 0 ? '' : undefined} style={`--nx:${xOf(i).toFixed(1)}`}>
+                  <p class="tl-meta">
+                    {yearChanged(i) && <span class="tl-year">{beijingYear(moment.data.date)}</span>}
+                    <time datetime={beijingIso(moment.data.date)}>{beijingMonthDay(moment.data.date)}</time>
+                    {info && <span class="tl-mood" aria-hidden="true">{info.emoji}</span>}
+                    {moment.data.sample && <span class="sample-stamp">示例</span>}
+                  </p>
+                  <p class:list={['tl-text', info ? `tone-${info.tone}` : '']}>{long ? teaserOf(moment.body) : moment.body}</p>
+                  {moment.data.tags.length > 0 && (
+                    <p class="tl-tags">
+                      {moment.data.tags.map((tag) => (
+                        <span>#{tag}</span>
+                      ))}
+                    </p>
+                  )}
+                  <svg class="tl-lead" aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <path d={side === 'left' ? 'M 100 0 L 0 100' : 'M 0 0 L 100 100'} />
+                  </svg>
+                </article>
+              );
+
+              const note = hasNote ? (
+                <figure
+                  class:list={['tl-note', { 'tl-note--pic': images.length > 0 }]}
+                  style={`--tilt:${((hash(i) * 2 - 1) * 3.4).toFixed(2)}deg`}
+                >
+                  {images.length > 0 && (
+                    <div class="note-img">
+                      {images.map((src) => (
+                        <ProgressiveImg src={src} alt={moment.data.sample ? '示例图片' : '动态配图'} />
+                      ))}
+                    </div>
+                  )}
+                  {long && <p class="note-text">{moment.body}</p>}
+                  <figcaption class="note-foot">
+                    <span>{beijingMonthDay(moment.data.date)}</span>
+                  </figcaption>
+                </figure>
+              ) : null;
+
+              return (
+                <li
+                  class="tl-row"
+                  id={monthAnchor.has(moment.id) ? `m-${beijingYearMonth(moment.data.date).replace('.', '-')}` : undefined}
+                  data-side={side}
+                  data-year={yearChanged(i) ? beijingYear(moment.data.date) : undefined}
+                  data-reveal="fade"
+                  style={`--ny:${ny.toFixed(2)}rem;--dy:${dy.toFixed(2)}rem`}
+                >
+                  <div class="tl-cell">{side === 'left' ? entry : note}</div>
+                  <div class="tl-spine" aria-hidden="true" style={`--nx:${xOf(i).toFixed(1)}`}>
+                    <svg class="tl-seg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                      <path d={segOf(i)} />
+                    </svg>
+                    <span class="tl-node" />
+                  </div>
+                  <div class="tl-cell">{side === 'right' ? entry : note}</div>
+                  {hasNote && (
+                    <svg class="tl-tie" aria-hidden="true">
+                      <path class="tie-line" />
+                      <path class="tie-head" />
+                    </svg>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+          <p class="tl-end">— 到这里就旧了 —</p>
+        </Fragment>
+      ) : (
+        <div class="empty-state">
+          <MobiusMark class="empty-mark" />
+          <p class="empty-kicker">NO MOMENTS YET</p>
+          <h2>这里还没有碎片</h2>
+          <p>去生活了。等我回来，可能会带一两句话。</p>
+          <a class="text-link" href={withBase('/diary/')}>先看看日记 <span aria-hidden="true">→</span></a>
+        </div>
+      )
+    }
+  </div>
+
+  <script>
+    import { gsap } from 'gsap';
+    import { glideTo } from '../scripts/scroll-experience';
+
+    let danmakuStop: (() => void) | null = null;
+    let tieStop: (() => void) | null = null;
+    let jumpStop: (() => void) | null = null;
+
+    document.addEventListener('astro:before-swap', () => {
+      jumpStop?.();
+      jumpStop = null;
+    });
+
+    document.addEventListener('astro:page-load', () => {
+      danmakuStop?.();
+      danmakuStop = null;
+      tieStop?.();
+      tieStop = null;
+      jumpStop?.();
+      jumpStop = null;
+
+      const list = document.querySelector<HTMLElement>('.tl');
+      if (list) tieStop = tieLayer(list);
+
+      const field = document.getElementById('moment-danmaku');
+      const btn = document.getElementById('dm-toggle') as HTMLButtonElement | null;
+      if (!field || !btn) return;
+
+      const items = Array.from(field.querySelectorAll<HTMLElement>('.dm-item'));
+      const lanes = Number(field.dataset.lanes);
+      const need = Math.min(Number(field.dataset.need), items.length);
+
+      // 每次刷新重抽一批
+      const order = items.map((_, i) => i);
+      for (let i = order.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
+      }
+      const cands = order.slice(0, need);
+
+      // 量宽（可见但隐形，同一帧内完成）——同道间距 =（场宽+条宽）/条数，长条会压字
+      cands.forEach((idx) => {
+        const el = items[idx];
+        el.classList.replace('is-off', 'is-on');
+        el.style.visibility = 'hidden';
+      });
+      const W = field.clientWidth;
+      const widthOf = new Map(cands.map((idx) => [idx, items[idx].offsetWidth]));
+      cands.forEach((idx) => {
+        items[idx].style.visibility = '';
+      });
+
+      const fits = (list: number[]) => {
+        const n = list.length;
+        const ws = list.map((idx) => widthOf.get(idx) ?? 0);
+        for (let s = 0; s < n * 12; s++) {
+          const t = s / (n * 12);
+          const spans = ws
+            .map((w, i) => {
+              const p = (t + i / n) % 1;
+              const x = W * (1 - p) - w * p;
+              return [x, x + w];
+            })
+            .sort((a, b) => b[0] - a[0]);
+          for (let i = 1; i < n; i++) {
+            if (spans[i - 1][0] >= W || spans[i][1] <= 0) continue; // 还在场外的不算撞
+            if (spans[i][1] + 28 > spans[i - 1][0]) return false;
+          }
+        }
+        return true;
+      };
+
+      // 一条道一条道地收缩到不撞，再按周期等距排相位
+      const groups: number[][] = Array.from({ length: lanes }, () => []);
+      cands.forEach((idx, k) => groups[k % lanes].push(idx));
+      const placed: { idx: number; lane: number; slot: number; count: number }[] = [];
+      groups.forEach((list, lane) => {
+        let keep = list.length;
+        while (keep > 1 && !fits(list.slice(0, keep))) keep -= 1;
+        for (let slot = 0; slot < keep; slot += 1) placed.push({ idx: list[slot], lane, slot, count: keep });
+      });
+
+      items.forEach((el) => {
+        el.classList.replace('is-on', 'is-off');
+        el.style.removeProperty('transform');
+        el.classList.remove('is-hovered');
+      });
+      placed.forEach(({ idx, lane, slot, count }) => {
+        const el = items[idx];
+        const dur = 30 + lane * 3.4;
+        el.style.setProperty('--lane', String(lane));
+        el.style.setProperty('--dur', `${dur.toFixed(1)}s`);
+        el.style.setProperty('--delay', `${(-(dur * slot / count + lane * 2.1)).toFixed(1)}s`);
+        el.classList.replace('is-off', 'is-on');
+      });
+      field.classList.remove('is-hover');
+
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        danmakuStop = flyDanmaku(field, placed.map((p) => items[p.idx]));
+      }
+
+      btn.addEventListener('click', () => {
+        const paused = field.classList.toggle('is-paused');
+        btn.setAttribute('aria-pressed', String(paused));
+        btn.textContent = paused ? '继续弹幕' : '暂停弹幕';
+      });
+
+      jumpStop = dmJump(field);
+    });
+
+    /**
+     * 位移交给逐条 GSAP tween（linear 无限循环），进度握在 tween 手里；
+     * 悬停只调 timeScale——被指着的那条停到 0、其余降到 0.3，变速平滑不跳位；
+     * 缩放同一拍跟：只有被指中的那条放大，power3.out 快攻缓停，指针离开同速收回。
+     * 暂停按钮沿用 is-paused class（无脚本降级也靠它），用 MutationObserver 同步给 tween。
+     */
+    function flyDanmaku(field: HTMLElement, els: HTMLElement[]): () => void {
+      type Part = {
+        el: HTMLElement;
+        w: number;
+        tween: gsap.core.Tween;
+        scaleTo: (value: number) => void;
+      };
+
+      field.classList.add('is-js');
+
+      const parts: Part[] = els.map((el) => {
+        const dur = Math.max(1, parseFloat(el.style.getPropertyValue('--dur')) || 30);
+        const delay = parseFloat(el.style.getPropertyValue('--delay')) || 0;
+        gsap.set(el, { transformOrigin: 'center center' });
+        // quickTo 不认 scale 简写——PropTween 链里只有 scaleX/scaleY，resetTo('scale') 会静默空转；
+        // power3.out 快攻缓停，变速感来自前猛后缓的速度曲线，全程不越过目标值
+        const scaleXTo = gsap.quickTo(el, 'scaleX', { duration: 0.3, ease: 'power3.out' });
+        const scaleYTo = gsap.quickTo(el, 'scaleY', { duration: 0.3, ease: 'power3.out' });
+        const part: Part = {
+          el,
+          w: el.offsetWidth,
+          // 占位，下面立即赋值
+          tween: null as unknown as gsap.core.Tween,
+          scaleTo: (value) => {
+            scaleXTo(value);
+            scaleYTo(value);
+          },
+        };
+        const tween = gsap.fromTo(
+          el,
+          { x: () => field.clientWidth },
+          { x: () => -part.w, duration: dur, ease: 'none', repeat: -1, paused: true },
+        );
+        // 负 delay 换算成相位，接续原先 CSS 动画的等距排布
+        tween.progress((((-delay / dur) % 1) + 1) % 1).play();
+        part.tween = tween;
+        return part;
+      });
+
+      const measure = () => {
+        for (const pt of parts) {
+          pt.w = pt.el.offsetWidth;
+          pt.tween.invalidate();
+        }
+      };
+      window.addEventListener('resize', measure);
+
+      let hovered: Part | null = null;
+      const aim = (el: HTMLElement | null) => {
+        const hit = el ? parts.find((pt) => pt.el === el) ?? null : null;
+        if (hit === hovered) return;
+        hovered?.el.classList.remove('is-hovered');
+        hovered = hit;
+        hit?.el.classList.add('is-hovered');
+        field.classList.toggle('is-hover', hit !== null);
+        for (const pt of parts) {
+          gsap.to(pt.tween, {
+            timeScale: pt === hovered ? 0 : hovered ? 0.3 : 1,
+            duration: 0.18,
+            ease: 'power2.out',
+            overwrite: true,
+          });
+          pt.scaleTo(pt === hovered ? 1.07 : 1);
+        }
+      };
+      const onMove = (e: MouseEvent) => aim((e.target as HTMLElement | null)?.closest('.dm-item') as HTMLElement | null);
+      const onLeave = () => aim(null);
+      field.addEventListener('mousemove', onMove);
+      field.addEventListener('mouseleave', onLeave);
+
+      const classObs = new MutationObserver(() => {
+        const paused = field.classList.contains('is-paused');
+        for (const pt of parts) {
+          if (paused) pt.tween.pause();
+          else pt.tween.play();
+        }
+      });
+      classObs.observe(field, { attributeFilter: ['class'] });
+
+      return () => {
+        classObs.disconnect();
+        window.removeEventListener('resize', measure);
+        field.removeEventListener('mousemove', onMove);
+        field.removeEventListener('mouseleave', onLeave);
+        for (const pt of parts) {
+          pt.tween.kill();
+          gsap.killTweensOf(pt.el);
+          pt.el.style.removeProperty('transform');
+          pt.el.classList.remove('is-hovered');
+        }
+        field.classList.remove('is-js', 'is-hover');
+      };
+    }
+
+    function dmJump(field: HTMLElement): () => void {
+      const rows = Array.from(document.querySelectorAll<HTMLElement>('.tl-row'));
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const rootStyle = getComputedStyle(document.documentElement);
+      const C_CYAN = rootStyle.getPropertyValue('--cyan').trim();
+      const C_RULE = rootStyle.getPropertyValue('--rule').trim();
+
+      field.classList.add('is-click');
+
+      let flashTween: gsap.core.Animation | null = null;
+      let flashing: HTMLElement | null = null;
+
+      const flash = (entry: HTMLElement | null) => {
+        if (!entry) return;
+        flashTween?.kill();
+        if (flashing && flashing !== entry) gsap.set(flashing, { clearProps: 'borderColor,transition' });
+        flashing = entry;
+        // CSS 的 0.3s border 过渡会拖住逐帧内联值，闪的这一拍先关掉它
+        entry.style.transition = 'none';
+        if (reduce.matches) {
+          gsap.set(entry, { borderColor: C_CYAN });
+          flashTween = gsap.delayedCall(1.2, () => {
+            entry.style.transition = '';
+            gsap.set(entry, { clearProps: 'borderColor,transition' });
+          });
+          return;
+        }
+        flashTween = gsap
+          .timeline({ onComplete: () => gsap.set(entry, { clearProps: 'borderColor,transition' }) })
+          .fromTo(entry, { borderColor: C_RULE }, { borderColor: C_CYAN, duration: 0.3, ease: 'power1.inOut', repeat: 3, yoyo: true });
+      };
+
+      const onJump = (e: MouseEvent) => {
+        const item = (e.target as HTMLElement | null)?.closest('.dm-item');
+        if (!(item instanceof HTMLElement)) return;
+        const row = rows[Number(item.dataset.rank)];
+        if (!row) return;
+        const r = row.getBoundingClientRect();
+        const targetY = Math.max(0, window.scrollY + r.top - (window.innerHeight - r.height) / 2);
+        const entry = row.querySelector<HTMLElement>('.tl-entry');
+        glideTo(targetY, () => flash(entry));
+      };
+      field.addEventListener('click', onJump);
+
+      return () => {
+        flashTween?.kill();
+        if (flashing) gsap.set(flashing, { clearProps: 'borderColor,transition' });
+        field.removeEventListener('click', onJump);
+      };
+    }
+
+    /** 便笺那道线要跟着图片加载、字体换回、窗口缩放重画，所以挂在 ResizeObserver 上 */
+    function tieLayer(list: HTMLElement): () => void {
+      let raf = 0;
+      const draw = () => {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => drawTies(list));
+      };
+      draw();
+      const ro = new ResizeObserver(draw);
+      ro.observe(list);
+      window.addEventListener('resize', draw);
+      return () => {
+        cancelAnimationFrame(raf);
+        ro.disconnect();
+        window.removeEventListener('resize', draw);
+      };
+    }
+
+    const jitter = (i: number) => {
+      const t = Math.sin(i * 78.233 + 12.17) * 43758.5453;
+      return t - Math.floor(t);
+    };
+
+    /**
+     * 从便笺甩一条虚线到文字框：一条贝塞尔从便笺近侧边出发、往下沉、穿轴时让一个缺口，
+     * 再从下方挑起来，尖端正对正文那一行的中心（整条收尾都压在"尖端→中心"这条瞄准线上）。
+     * 全程走在"节点→侧边中点"那根实线之下，所以结构上撞不到。
+     */
+    function drawTies(list: HTMLElement) {
+      const rows = Array.from(list.querySelectorAll<HTMLElement>('.tl-row'));
+      rows.forEach((row, i) => {
+        const svg = row.querySelector<SVGSVGElement>('.tl-tie');
+        const line = row.querySelector<SVGPathElement>('.tie-line');
+        const head = row.querySelector<SVGPathElement>('.tie-head');
+        const note = row.querySelector<HTMLElement>('.tl-note');
+        const entry = row.querySelector<HTMLElement>('.tl-entry');
+        if (!svg || !line || !head || !note || !entry) return;
+        if (getComputedStyle(svg).display === 'none') return;
+
+        const rr = row.getBoundingClientRect();
+        const er = entry.getBoundingClientRect();
+        const nr = note.getBoundingClientRect();
+        const mid = rr.width / 2;
+        const u = er.left + er.width / 2 > rr.left + mid ? 1 : -1; // 条目在轴的哪一侧
+        const midY = er.top - rr.top + er.height / 2; // 引线的落脚，也是手绘线必须让开的水平线
+
+        /** 轴在行内某个 y 上的 x（对不上就退回行心） */
+        const axisX = (y: number) => {
+          const box = row.querySelector<SVGSVGElement>('.tl-seg');
+          const path = row.querySelector<SVGPathElement>('.tl-seg path');
+          if (!box || !path) return mid;
+          const b = box.getBoundingClientRect();
+          const target = rr.top + y;
+          let lo = 0;
+          let hi = path.getTotalLength();
+          for (let k = 0; k < 26; k += 1) {
+            const m = (lo + hi) / 2;
+            const p = path.getPointAtLength(m);
+            if (b.top + (p.y / 100) * b.height < target) lo = m;
+            else hi = m;
+          }
+          const p = path.getPointAtLength((lo + hi) / 2);
+          return b.left + ((p.x / 100) * b.width - rr.left);
+        };
+
+        // 便笺是转过的，出口要按 --tilt 反算回它的近侧边
+        const th = ((parseFloat(getComputedStyle(note).rotate) || 0) * Math.PI) / 180;
+        const ncx = nr.left + nr.width / 2 - rr.left;
+        const ncy = nr.top + nr.height / 2 - rr.top;
+        const s = ncx < er.left + er.width / 2 - rr.left ? 1 : -1; // 便笺的近侧是它的右边还是左边
+        const half = (note.offsetWidth / 2) * s + 3;
+        const yoff = note.offsetHeight * (0.3 + jitter(i) * 0.12) - note.offsetHeight / 2;
+        const ex = ncx + half * Math.cos(th) - yoff * Math.sin(th);
+        const ey = ncy + half * Math.sin(th) + yoff * Math.cos(th);
+
+        /** 瞄准点 = 正文那一行的中心，箭头整根轴线都压在"尖端→中心"这条线上 */
+        const tr = (entry.querySelector<HTMLElement>('.tl-text') ?? entry).getBoundingClientRect();
+        const cx = tr.left + tr.width / 2 - rr.left;
+        const cy = tr.top + tr.height / 2 - rr.top;
+        const elev = ((30 + jitter(i + 9) * 15) * Math.PI) / 180; // 从下往上指进去的仰角
+        const dx = Math.cos(elev);
+        const dy = Math.sin(elev);
+        const aim = (v: number): [number, number] => [cx + u * v * dx, cy - v * dy]; // 沿瞄准线往框外退
+        /** 尖端沿瞄准线退到"离框正好 gap 像素"：浅仰角的射线会从底边一路滑过侧边，
+         *  只按出那条边的垂距算，实际距离就成了对角线，各行忽远忽近 */
+        const rectDist = (x: number, y: number) =>
+          Math.hypot(
+            Math.max(er.left - rr.left - x, 0, x - (er.right - rr.left)),
+            Math.max(er.top - rr.top - y, 0, y - (er.bottom - rr.top)),
+          );
+        const gap = 11 + jitter(i + 11) * 6;
+        let stand = 0;
+        while (stand < 260 && rectDist(...aim(-stand)) < gap) stand += 0.5;
+        const [tipX, tipY] = aim(-stand);
+
+        /** 穿轴点：压在引线落脚之下（max 半边是不许撞上实线的硬保证），下坠不出行（min 半边） */
+        const crossY = Math.max(midY + 8, Math.min(rr.height - 30, midY + 14 + jitter(i + 5) * 12));
+        const wx = axisX(crossY);
+        const vx = 40 + jitter(i + 3) * 30; // 交点处的行进方向，两段曲线共用它 → 共切线，接起来是一条曲线
+        const vy = 8 + jitter(i + 1) * 8;
+        const c1x = ex + u * Math.abs(wx - ex) * 0.42;
+        const c1y = ey + (crossY - ey) * 0.3;
+        const c2x = wx - u * vx;
+        const c2y = crossY - vy;
+        const c3x = wx + u * vx;
+        const c3y = crossY + vy;
+        const [c4x, c4y] = aim(-(stand + 30)); // 尖端正后方 30px，落笔方向就锁死在中心
+        const vl = Math.hypot(vx, vy) || 1;
+        const f = (v: number) => v.toFixed(1);
+        // 交点两侧各让 5px：轴从这段空白里穿过去，线就读作走到轴后面去了
+        const line1 = `M ${f(ex)} ${f(ey)} C ${f(c1x)} ${f(c1y)} ${f(c2x)} ${f(c2y)} ${f(wx - (u * vx / vl) * 5)} ${f(crossY - (vy / vl) * 5)}`;
+        const line2 = `M ${f(wx + (u * vx / vl) * 5)} ${f(crossY + (vy / vl) * 5)} C ${f(c3x)} ${f(c3y)} ${f(c4x)} ${f(c4y)} ${f(tipX)} ${f(tipY)}`;
+        line.setAttribute('d', `${line1} ${line2}`);
+
+        const a = Math.atan2(cy - tipY, cx - tipX); // 指向中心，而不是指向边
+        const p1x = tipX - 9 * Math.cos(a - 0.42);
+        const p1y = tipY - 9 * Math.sin(a - 0.42);
+        const p2x = tipX - 8 * Math.cos(a + 0.58);
+        const p2y = tipY - 8 * Math.sin(a + 0.58);
+        head.setAttribute('d', `M ${f(p1x)} ${f(p1y)} L ${f(tipX)} ${f(tipY)} L ${f(p2x)} ${f(p2y)}`);
+        svg.setAttribute('viewBox', `0 0 ${rr.width.toFixed(0)} ${rr.height.toFixed(0)}`);
+      });
+    }
+  </script>
+  <AsoulPeek />
+</BaseLayout>

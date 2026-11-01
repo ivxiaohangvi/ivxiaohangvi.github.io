@@ -1,0 +1,667 @@
+/* 关于页（/about/）：从 global.css 拆出的单页样式。只在关于页用到：doc-section、说明书卡片、折叠区。 */
+
+.about-head {
+  border-bottom: 0;
+  padding-bottom: 0.5rem;
+}
+
+.about-title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 0.5rem;
+  font-size: clamp(3rem, 8vw, 5.4rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.about-slash {
+  font-weight: 300;
+  color: var(--brass);
+}
+
+.about-alias {
+  font-family: var(--font-mono);
+  font-size: 0.26em;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.about-tagline {
+  margin: 1.1rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.2vw, 1.4rem);
+  color: var(--ink-soft);
+}
+
+.about-marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1.3rem;
+}
+
+.about-marks span {
+  padding: 0.18rem 0.7rem;
+  border: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 0.57rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.about-body {
+  padding-top: 1rem;
+}
+
+.about-block {
+  max-width: 44em;
+  padding-block: clamp(1.8rem, 4vw, 2.5rem);
+  border-bottom: 1px solid var(--rule);
+}
+
+.about-block h2 {
+  margin: 0.35rem 0 0.9rem;
+  font-size: clamp(1.35rem, 2.5vw, 1.6rem);
+}
+
+.about-block p {
+  margin: 0 0 0.9rem;
+  font-size: 0.9rem;
+  line-height: 1.95;
+  color: var(--ink-soft);
+}
+
+.about-lede {
+  margin-bottom: 1.2rem !important;
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 2.5vw, 1.7rem) !important;
+  line-height: 1.85 !important;
+  color: var(--ink) !important;
+}
+
+.about-mark {
+  width: min(100%, 280px);
+  margin-top: 1.4rem;
+  color: var(--cyan);
+  opacity: 0.55;
+}
+
+.about-mark svg {
+  width: 100%;
+  height: auto;
+}
+
+.about-list {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.about-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 1.2rem;
+  padding: 0.7rem 0;
+  border-top: 1px dotted var(--rule);
+}
+
+.about-list a {
+  flex-shrink: 0;
+  width: 5.2rem;
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--ink);
+  transition: color 0.2s ease;
+}
+
+.about-list a:hover {
+  color: var(--brass);
+}
+
+.about-list span {
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: var(--ink-soft);
+}
+
+.about-sign {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: clamp(2.5rem, 5vw, 3.5rem);
+  text-align: center;
+}
+
+.about-sign-mark {
+  width: 76px;
+  height: auto;
+  margin-bottom: 0.6rem;
+  color: var(--brass);
+  opacity: 0.8;
+}
+
+.about-sign p {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
+.about-sign .about-sign-name {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.about-links a {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  color: var(--link);
+  border-bottom: 1px solid var(--rule);
+}
+
+.spec-card {
+  position: relative;
+  margin: 2rem 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  perspective: 1100px;
+  translate: 0 var(--lift-y, 0px);
+  transform: perspective(1600px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition:
+    translate 0.55s var(--ease),
+    transform 0.12s var(--ease);
+}
+
+.spec-card.is-hover {
+  --lift-y: -9px;
+  --lift-z: 18px;
+  z-index: 3;
+}
+
+.spec-card-paper {
+  position: relative;
+  transform-style: preserve-3d;
+  translate: 0 0 var(--lift-z, 0px);
+  transition: translate 0.55s var(--ease);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.spec-card-flipper {
+  position: relative;
+  transform-style: preserve-3d;
+  box-shadow: 7px 7px 0 -1px var(--paper-deep);
+  transition:
+    transform 0.7s var(--ease),
+    box-shadow 0.55s var(--ease);
+}
+
+.spec-card.is-hover .spec-card-flipper {
+  box-shadow:
+    3px 3px 0 -1px var(--paper-deep),
+    0 6px 16px -10px color-mix(in srgb, var(--photo-shadow) 55%, transparent),
+    0 32px 58px -26px color-mix(in srgb, var(--photo-shadow) 52%, transparent);
+}
+
+.spec-card.is-flipped .spec-card-flipper {
+  transform: rotateY(180deg);
+}
+
+.unsent {
+  margin-top: 1.4rem;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.unsent summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.7rem;
+  padding: 0.8rem 0;
+  cursor: pointer;
+  list-style: none;
+}
+
+.unsent summary::-webkit-details-marker {
+  display: none;
+}
+
+.unsent-stamp {
+  padding: 0.1rem 0.4rem 0.12rem;
+  border: 1px solid var(--brass);
+  font-family: var(--font-mono);
+  font-size: 0.47rem;
+  letter-spacing: 0.16em;
+  color: var(--brass);
+  transform: rotate(-2deg);
+}
+
+.unsent-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.unsent-toggle {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.unsent-toggle::after {
+  content: '展开';
+}
+
+.unsent[open] .unsent-toggle::after {
+  content: '收起';
+}
+
+.spec-card.is-flipped ~ .unsent {
+  display: none;
+}
+
+.spec-card.is-flipped ~ [data-unsent-back] {
+  display: block;
+}
+
+.unsent-body {
+  max-width: 38em;
+  padding-bottom: 1.2rem;
+}
+
+.unsent-body p {
+  margin: 0 0 0.8rem;
+  font-size: 0.85rem;
+  line-height: 1.9;
+  color: var(--ink-soft);
+}
+
+.unsent-body blockquote {
+  margin: 1rem 0 1.1rem;
+  padding-left: 1rem;
+  border-left: 1px solid var(--brass);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  line-height: 2;
+  color: var(--ink);
+}
+
+.unsent-source {
+  font-family: var(--font-mono);
+  font-size: 0.53rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.unsent-source a {
+  color: var(--link);
+  border-bottom: 1px solid var(--rule);
+}
+
+.unsent-source a:hover {
+  color: var(--brass);
+  border-color: var(--brass);
+}
+
+.spec-card-face {
+  position: relative;
+  border: 1px solid var(--rule);
+  background: var(--card);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: border-color 0.55s ease;
+}
+
+.spec-card-face.is-front {
+  padding: 1.15rem 1.25rem 0.95rem;
+}
+
+.spec-card-face.is-front::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 44px;
+  height: 2px;
+  background: var(--brass);
+}
+
+.spec-card.is-hover .spec-card-face {
+  border-color: var(--brass-soft);
+}
+
+.spec-card.is-pressing .spec-card-face {
+  border-color: var(--brass);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brass) 40%, transparent);
+}
+
+.spec-card-paper::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px dashed color-mix(in srgb, var(--brass) 60%, transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  transform: translateZ(1px);
+  pointer-events: none;
+}
+
+.spec-card.is-hover .spec-card-paper::after {
+  opacity: 0.35;
+}
+
+.spec-card.is-pressing .spec-card-paper::after {
+  opacity: 0.85;
+}
+
+.spec-card-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  transform: translateZ(2px);
+  background: radial-gradient(
+    230px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 252, 240, 0.16),
+    transparent 62%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.spec-card.is-hover .spec-card-glow {
+  opacity: 1;
+}
+
+.spec-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px dotted var(--rule);
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.spec-list {
+  margin: 0.35rem 0 0;
+}
+
+.spec-list > div {
+  display: grid;
+  grid-template-columns: 5.6rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px dotted var(--rule);
+}
+
+.spec-list > div:last-child {
+  border-bottom: 0;
+}
+
+.spec-list dt {
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.12em;
+  color: var(--brass);
+}
+
+.spec-list dd {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.8;
+  color: var(--ink-soft);
+}
+
+.spec-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.45rem 1.2rem;
+  margin-top: 0.55rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  line-height: 1.8;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.spec-playing {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--cyan);
+}
+
+.spec-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  width: 12px;
+  height: 10px;
+}
+
+.spec-eq i {
+  display: block;
+  width: 2px;
+  height: 100%;
+  background: var(--cyan);
+  transform-origin: 50% 100%;
+  animation: spec-eq 1.2s ease-in-out infinite;
+}
+
+.spec-eq i:nth-child(2) {
+  height: 65%;
+  animation-delay: -0.35s;
+}
+
+.spec-eq i:nth-child(3) {
+  height: 82%;
+  animation-delay: -0.7s;
+}
+
+.spec-card-face.is-back {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.3rem 1.45rem 1.15rem;
+  /* 水印 ::before 是"整张卡片 + rotate(-16deg)"的方块，包围盒比卡片宽约 70px。
+     只裁装饰，不裁内容（内容都在卡片宽度以内）；用 clip 而不是 hidden，
+     避免单轴裁切把 overflow-y 变成 auto 多出一个滚动容器。 */
+  overflow: clip;
+  transform: rotateY(180deg);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--card) 94%, white), var(--paper-deep));
+  cursor: pointer;
+}
+
+.spec-card-face.is-back::-webkit-scrollbar {
+  display: none;
+}
+
+.spec-card-face.is-back::before {
+  content: 'm∞';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 4.4vw, 3.2rem);
+  color: color-mix(in srgb, var(--ink) 8%, transparent);
+  transform: rotate(-16deg);
+  pointer-events: none;
+}
+
+.spec-card .spec-back-kicker,
+.spec-card .spec-back-note,
+.spec-card .spec-back-source {
+  position: relative;
+  margin: 0;
+}
+
+.spec-card .spec-back-kicker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+}
+
+.spec-back-stamp {
+  flex-shrink: 0;
+  padding: 0.1rem 0.4rem 0.12rem;
+  border: 1px solid var(--brass);
+  font-family: var(--font-mono);
+  font-size: 0.47rem;
+  letter-spacing: 0.16em;
+  color: var(--brass);
+  transform: rotate(-2deg);
+}
+
+.spec-back-title {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+.spec-card .spec-back-note {
+  font-size: 0.78rem;
+  line-height: 1.9;
+  color: var(--muted);
+  margin-top: auto;
+}
+
+.spec-card .spec-back-quote {
+  position: relative;
+  margin: 0 0 auto;
+  padding-left: 0.95rem;
+  border-left: 1px solid var(--brass);
+  font-family: 'Kaiti SC', 'STKaiti', 'KaiTi', 'BiauKai', var(--font-display);
+  font-size: clamp(0.98rem, 1.5vw, 1.1rem);
+  line-height: 2.05;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.spec-card .spec-back-source {
+  font-family: var(--font-mono);
+  font-size: 0.53rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.spec-back-source a {
+  color: var(--link);
+  border-bottom: 1px solid var(--rule);
+}
+
+.spec-back-source a:hover {
+  color: var(--brass);
+  border-color: var(--brass);
+}
+
+.spec-back-sign {
+  position: relative;
+  align-self: flex-end;
+  padding: 0.26rem 0.52rem;
+  border: 1px solid color-mix(in srgb, var(--stamp) 55%, transparent);
+  color: color-mix(in srgb, var(--stamp) 82%, var(--ink));
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  transform: rotate(-2deg);
+  white-space: nowrap;
+}
+
+.spec-card .spec-card-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.85rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.spec-card-hint {
+  opacity: 0.85;
+}
+
+.spec-card-toggle {
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px dotted var(--rule);
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.08em;
+  color: var(--link);
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.spec-card-toggle:hover {
+  color: var(--brass);
+  border-color: var(--brass);
+}
+
+.spec-card-toggle:focus-visible {
+  outline-offset: 3px;
+}
+
+@media (max-width: 560px) {
+  .about-title {
+    font-size: clamp(2.7rem, 15vw, 4rem);
+  }
+
+  .about-list li {
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .about-list a {
+    width: auto;
+  }
+
+  .spec-list > div {
+    grid-template-columns: 4.8rem minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
+  .spec-head {
+    font-size: 0.47rem;
+  }
+
+  .spec-card {
+    margin-top: 1.7rem;
+  }
+
+  .spec-card-face.is-back {
+    padding: 1.1rem 1.15rem 1rem;
+  }
+
+  .spec-card .spec-card-note {
+    flex-wrap: wrap;
+    gap: 0.4rem 0.8rem;
+  }
+}

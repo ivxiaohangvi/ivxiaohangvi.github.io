@@ -1,0 +1,155 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { moodInfo, type MoodTone } from '../lib/mood';
+import { withBase } from '../config';
+import { beijingDateDot, beijingIso, beijingMonthDay, beijingYear } from '../lib/date';
+import '../styles/diary.css';
+
+interface Props {
+  entries: CollectionEntry<'diary'>[];
+  note?: string;
+}
+
+const { entries, note } = Astro.props;
+
+const recent = entries
+  .filter((entry) => Boolean(moodInfo(entry.data.mood, entry.data.moodKey)))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 10)
+  .reverse();
+
+const starHeights = [50, 44, 56, 47, 53, 42, 58, 49, 55, 46];
+const lights: Record<MoodTone, string> = {
+  joy: '#f2c16e',
+  ease: '#b8d89b',
+  still: '#62d6c8',
+  low: '#6fb5ee',
+  sad: '#9a96ff',
+};
+
+const stops = recent.map((entry, index) => {
+  const info = moodInfo(entry.data.mood, entry.data.moodKey)!;
+  return {
+    entry,
+    info,
+    locked: entry.data.locked === true,
+    light: lights[info.tone],
+    starY: starHeights[index] ?? 50,
+    delay: -(index * 1.7).toFixed(1),
+    float: (6.8 + (index % 4) * 0.9).toFixed(1),
+    ray: (9.4 + (index % 3) * 1.8).toFixed(1),
+  };
+});
+
+const first = recent[0];
+const last = recent[recent.length - 1];
+const startDate = first
+  ? beijingYear(first.data.date) === beijingYear(last.data.date)
+    ? beijingMonthDay(first.data.date)
+    : beijingDateDot(first.data.date)
+  : '';
+const range = first ? `${startDate} — ${beijingMonthDay(last.data.date)}` : '';
+
+const continuum = `linear-gradient(90deg, ${stops
+  .map((stop, index) => {
+    const position = stops.length === 1 ? 50 : (index / (stops.length - 1)) * 100;
+    return `${stop.light} ${position}%`;
+  })
+  .join(', ')})`;
+
+const points = stops.map((stop, index) => ({
+  x: ((index + 0.5) / stops.length) * 1000,
+  y: stop.starY,
+}));
+
+const linePoints = [
+  { x: 0, y: points[0]?.y ?? 50 },
+  ...points,
+  { x: 1000, y: points[points.length - 1]?.y ?? 50 },
+];
+
+const threadPath = linePoints.reduce((path, point, index) => {
+  if (index === 0) return `M ${point.x} ${point.y}`;
+  const previous = linePoints[index - 1];
+  const midpoint = (previous.x + point.x) / 2;
+  return `${path} C ${midpoint} ${previous.y}, ${midpoint} ${point.y}, ${point.x} ${point.y}`;
+}, '');
+---
+{
+  stops.length > 0 && (
+    <div class="spectrum" data-reveal>
+      <div class="spectrum-stage">
+        <div class="spectrum-field" aria-hidden="true">
+          <span class="spectrum-aura" style={`background: ${continuum}`}></span>
+          <span class="spectrum-band" style={`background: ${continuum}`}></span>
+          <span class="spectrum-glint"></span>
+          <svg class="spectrum-thread" viewBox="0 0 1000 100" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="spectrum-thread-gradient" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1000" y2="0">
+                {stops.map((stop, index) => (
+                  <stop
+                    offset={`${stops.length === 1 ? 50 : (index / (stops.length - 1)) * 100}%`}
+                    stop-color={stop.light}
+                  />
+                ))}
+              </linearGradient>
+            </defs>
+            <path
+              class="spectrum-thread-halo"
+              d={threadPath}
+              stroke="url(#spectrum-thread-gradient)"
+              pathLength="1000"
+              vector-effect="non-scaling-stroke"
+            ></path>
+            <path
+              class="spectrum-thread-core"
+              d={threadPath}
+              stroke="url(#spectrum-thread-gradient)"
+              pathLength="1000"
+              vector-effect="non-scaling-stroke"
+            ></path>
+            <path
+              class="spectrum-thread-spark"
+              d={threadPath}
+              pathLength="1000"
+              vector-effect="non-scaling-stroke"
+            ></path>
+          </svg>
+        </div>
+
+        <ol class="spectrum-track" aria-label={`最近 ${stops.length} 次有心情的日记，按时间从左到右`}>
+          {stops.map(({ entry, info, locked, light, starY, delay, float, ray }) => (
+            <li
+              class="spectrum-stop"
+              style={`--light: ${light}; --star-y: ${starY}%; --delay: ${delay}s; --float: ${float}s; --ray: ${ray}s;`}
+            >
+              <a
+                class="spectrum-event"
+                href={withBase(`/diary/${entry.id}/`)}
+                aria-label={`${beijingDateDot(entry.data.date)}，${info.label}。${locked ? '这一页已封存，去解锁' : '读这一页日记'}`}
+              >
+                <span class="spectrum-ray" aria-hidden="true"></span>
+                <span class="spectrum-star" aria-hidden="true"></span>
+                <span class="spectrum-glyph" aria-hidden="true">
+                  {info.emoji}
+                </span>
+                <span class="spectrum-mark">
+                  <span class="spectrum-name">{info.label}</span>
+                  <time class="spectrum-day" datetime={beijingIso(entry.data.date)} aria-hidden="true">
+                    {beijingMonthDay(entry.data.date)}
+                  </time>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div class="spectrum-foot">
+        <span>近 {stops.length} 次心情 · 由左至右</span>
+        <span class="spectrum-range">{range} · BJT</span>
+      </div>
+    </div>
+  )
+}
+{note && <p class="sample-note">{note}</p>}

@@ -1,0 +1,121 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FriendCard from '../components/FriendCard.astro';
+import FriendBadge from '../components/FriendBadge.astro';
+import MobiusMark from '../components/MobiusMark.astro';
+import { withBase } from '../config';
+
+const all = await getCollection('friends');
+const friends = all
+  .filter((entry) => !entry.data.draft)
+  .sort((a, b) => {
+    const groupRank = (group: string) => (group === '常去' ? 0 : 1);
+    const byGroup = groupRank(a.data.group) - groupRank(b.data.group);
+    if (byGroup !== 0) return byGroup;
+    const bySince = b.data.since.getTime() - a.data.since.getTime();
+    if (bySince !== 0) return bySince;
+    return a.data.order - b.data.order;
+  });
+
+/** 人少时不分组：只有超过 2 张名片才出现分组小标 */
+const showGroups = friends.length > 2;
+const grouped = showGroups
+  ? ['常去', '认识的人'].map((group) => ({
+      group,
+      list: friends.filter((entry) => entry.data.group === group),
+    }))
+  : [{ group: '', list: friends }];
+---
+
+<BaseLayout
+  title="友人"
+  description="一些常去的地方，和一些人的名字。"
+>
+  <div class="wrap">
+    <header class="page-head">
+      <p class="eyebrow">FRIENDS / 友人</p>
+      <div class="page-head-line">
+        <h1>友人</h1>
+        <span class="page-count">{String(friends.length).padStart(2, '0')} 位</span>
+      </div>
+      <p class="page-lede">
+        一些我常去的地方，和一些人的名字。大多只在网上见过，有一两个一起吃过饭。
+      </p>
+    </header>
+
+    {
+      friends.length > 0 ? (
+        <div class="friend-book">
+          {grouped.map((section) => (
+            <section class="friend-group">
+              {showGroups && <p class="friend-group-label">{section.group}</p>}
+              <div class="friend-grid">
+                {section.list.map((entry, i) => (
+                  <FriendCard friend={entry.data} index={i} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div class="empty-state">
+          <MobiusMark class="empty-mark" />
+          <p class="empty-kicker">ADDRESS BOOK EMPTY</p>
+          <h2>通讯录还空着</h2>
+          <p>等认识更多人，再把他们写进来。</p>
+          <a class="text-link" href={withBase('/about/')}>
+            看看我是谁 <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      )
+    }
+
+    <FriendBadge />
+
+    <p class="friend-footnote">排名不分先后，按认识的时间排。最后核对：2026.10。</p>
+  </div>
+</BaseLayout>
+
+<style>
+  .friend-book {
+    padding-block: clamp(1.6rem, 3vw, 2.4rem) 0;
+  }
+
+  .friend-group + .friend-group {
+    margin-top: 2.2rem;
+  }
+
+  .friend-group-label {
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule-soft);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    color: var(--brass);
+  }
+
+  .friend-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    padding-block: 0.4rem 0.6rem;
+  }
+
+  .friend-footnote {
+    margin-top: 1.6rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--rule-soft);
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+  }
+
+  @media (max-width: 640px) {
+    .friend-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+  }
+</style>

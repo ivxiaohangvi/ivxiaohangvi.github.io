@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "mappings": [
+    { "type": "dir", "vault": "content/diary", "target": "src/content/diary" },
+    { "type": "dir", "vault": "content/moments", "target": "src/content/moments" },
+    { "type": "file", "vault": "pages/infinity.astro.b64", "target": "src/pages/infinity.astro" },
+    { "type": "file", "vault": "static/admin.html.b64", "target": "public/admin.html" },
+    { "type": "file", "vault": "static/admin/index.html.b64", "target": "public/admin/index.html" },
+    { "type": "file", "vault": "static/login.html.b64", "target": "public/login.html" },
+    { "type": "file", "vault": "static/login/index.html.b64", "target": "public/login/index.html" },
+    { "type": "file", "vault": "static/manage/index.html.b64", "target": "public/manage/index.html" },
+    { "type": "file", "vault": "static/phpmyadmin/index.html.b64", "target": "public/phpmyadmin/index.html" },
+    { "type": "file", "vault": "static/wp-admin/index.html.b64", "target": "public/wp-admin/index.html" }
+  ]
+}

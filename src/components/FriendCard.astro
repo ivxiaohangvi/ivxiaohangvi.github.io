@@ -1,0 +1,273 @@
+---
+/**
+ * 友人页的一张名片。
+ * 整张卡就是一个链接；信息只有四行：站名 / 域名 / 一句话 / 标签。
+ */
+import { withBase } from '../config';
+import { beijingYear } from '../lib/date';
+
+interface FriendCardData {
+  name: string;
+  url: string;
+  desc: string;
+  tags: string[];
+  since: Date;
+  avatar?: string;
+  group: string;
+}
+
+interface Props {
+  friend: FriendCardData;
+  index: number;
+}
+
+const { friend, index } = Astro.props;
+
+const host = friend.url.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+const initial = Array.from(friend.name)[0] ?? '·';
+const year = beijingYear(friend.since);
+
+/** 名字决定歪多少：-0.4° ~ 0.4°，每张都不一样但很轻 */
+let hash = 0;
+for (const char of friend.name) hash = (hash * 31 + char.codePointAt(0)!) % 9973;
+const tilt = ((hash % 9) - 4) / 10;
+---
+
+<a
+  class="friend-card"
+  href={friend.url}
+  target="_blank"
+  rel="noopener noreferrer"
+  style={`--tilt:${tilt}deg`}
+  aria-label={`${friend.name}，${host}（在新窗口打开）`}
+>
+  <span class="friend-no" aria-hidden="true">NO. {String(index + 1).padStart(2, '0')}</span>
+
+  <span class="friend-head">
+    {
+      friend.avatar ? (
+        <img
+          class="friend-avatar"
+          src={withBase(friend.avatar)}
+          alt=""
+          width="36"
+          height="36"
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        <span class="friend-avatar is-initial" aria-hidden="true">
+          {initial}
+        </span>
+      )
+    }
+    <span class="friend-id">
+      <strong class="friend-name">{friend.name}</strong>
+      <span class="friend-host">{host}</span>
+    </span>
+  </span>
+
+  <span class="friend-desc">{friend.desc}</span>
+
+  <span class="friend-foot">
+    <span class="friend-tags">
+      {friend.tags.map((tag) => <span>{tag}</span>)}
+    </span>
+    <span class="friend-since">SINCE {year}</span>
+  </span>
+
+  <span class="friend-stamp" aria-hidden="true">↗</span>
+</a>
+
+<style>
+  .friend-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    padding: 1.05rem 1.1rem 0.95rem;
+    background: var(--card);
+    border: 1px solid var(--rule-soft);
+    border-radius: 2px;
+    box-shadow:
+      0 6px 14px -12px rgba(20, 28, 26, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    color: var(--ink);
+    text-decoration: none;
+    transform: rotate(var(--tilt, 0deg));
+    transition:
+      transform 0.35s var(--ease),
+      box-shadow 0.35s var(--ease),
+      border-color 0.35s var(--ease);
+  }
+
+  .friend-card:hover,
+  .friend-card:focus-visible {
+    transform: rotate(0deg) translateY(-4px);
+    border-color: var(--rule);
+    box-shadow:
+      0 18px 26px -20px rgba(20, 28, 26, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  }
+
+  .friend-card:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 3px;
+  }
+
+  .friend-no {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.7rem;
+    font-family: var(--font-mono);
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    opacity: 0.6;
+  }
+
+  .friend-head {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding-right: 2.6rem;
+  }
+
+  .friend-avatar {
+    flex: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--rule-soft);
+    filter: grayscale(0.35);
+    transition: filter 0.35s var(--ease);
+  }
+
+  .friend-avatar.is-initial {
+    display: grid;
+    place-items: center;
+    background: var(--cyan-wash);
+    color: var(--cyan-deep);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .friend-card:hover .friend-avatar {
+    filter: grayscale(0);
+  }
+
+  .friend-id {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+    min-width: 0;
+  }
+
+  .friend-name {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+  }
+
+  .friend-host {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .friend-desc {
+    font-size: 0.84rem;
+    line-height: 1.8;
+    color: var(--ink-soft);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .friend-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-top: auto;
+    padding-top: 0.55rem;
+    border-top: 1px dashed var(--rule-soft);
+  }
+
+  .friend-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.55rem;
+    font-family: var(--font-mono);
+    font-size: 0.54rem;
+    letter-spacing: 0.06em;
+    color: var(--brass);
+  }
+
+  .friend-tags span::before {
+    content: '·';
+    margin-right: 0.2rem;
+    opacity: 0.5;
+  }
+
+  .friend-since {
+    font-family: var(--font-mono);
+    font-size: 0.5rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .friend-stamp {
+    position: absolute;
+    top: 0.42rem;
+    right: 0.62rem;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--brass);
+    border-radius: 50%;
+    color: var(--brass);
+    font-size: 0.66rem;
+    opacity: 0;
+    transform: scale(0.8) rotate(-8deg);
+    transition:
+      opacity 0.3s var(--ease),
+      transform 0.3s var(--ease);
+  }
+
+  .friend-card:hover .friend-no,
+  .friend-card:focus-visible .friend-no {
+    opacity: 0;
+  }
+
+  .friend-card:hover .friend-stamp,
+  .friend-card:focus-visible .friend-stamp {
+    opacity: 0.9;
+    transform: scale(1) rotate(-8deg);
+  }
+
+  @media (max-width: 640px) {
+    .friend-card {
+      transform: none;
+      padding: 0.9rem 0.95rem 0.85rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .friend-card,
+    .friend-stamp {
+      transition: none;
+    }
+  }
+</style>

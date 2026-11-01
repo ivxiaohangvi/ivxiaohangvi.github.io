@@ -1,0 +1,49 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../config';
+
+const [posts, diaries] = await Promise.all([
+  getCollection('blog', ({ data }) => !data.draft),
+  getCollection('diary'),
+]);
+
+const countByTag = new Map<string, number>();
+const tally = (tags: string[]) => {
+  for (const tag of tags) {
+    countByTag.set(tag, (countByTag.get(tag) ?? 0) + 1);
+  }
+};
+for (const post of posts) tally(post.data.tags);
+for (const entry of diaries) tally(entry.data.tags);
+
+const tags = [...countByTag.entries()].sort((a, b) => b[1] - a[1]);
+---
+<BaseLayout title="标签" description="按标签浏览 moxo 的文章与日记。">
+  <div class="wrap-narrow">
+    <header class="page-head">
+      <p class="eyebrow">TAGS / 标签</p>
+      <div class="page-head-line">
+        <h1>标签</h1>
+        <span class="page-count">{String(tags.length).padStart(2, '0')} 个</span>
+      </div>
+      <p class="page-lede">文章与日记的抽屉。同一个标签下，通常写着同一类心事。</p>
+    </header>
+
+    {
+      tags.length > 0 ? (
+        <div class="tag-ledger">
+          {tags.map(([tag, count]) => (
+            <a class="tag-row" href={withBase(`/tags/${tag}/`)} data-reveal>
+              <span class="tag-name">#{tag}</span>
+              <span class="tag-count">{count} 条</span>
+              <span class="tag-arrow" aria-hidden="true">↗</span>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <p class="muted">还没有标签。写起来之后，这里会自己长出来。</p>
+      )
+    }
+  </div>
+</BaseLayout>

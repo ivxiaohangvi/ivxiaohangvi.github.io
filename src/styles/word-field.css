@@ -1,0 +1,50 @@
+/* 词场（/lab/word-field/）：从 global.css 拆出的单页样式。 */
+
+.word-field {
+  margin-top: 2.4rem;
+}
+
+.word-field[hidden] {
+  display: none;
+}
+
+.word-field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 0.54rem;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.word-field-head > :first-child {
+  color: var(--brass);
+  white-space: nowrap;
+}
+
+.word-field-head h2 {
+  margin: 0;
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+.word-field-note {
+  line-height: 1.6;
+  text-align: right;
+}
+
+@media (max-width: 560px) {
+  .word-field {
+    margin-top: 1.9rem;
+  }
+
+  .word-field-head {
+    gap: 1rem;
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+  }
+}

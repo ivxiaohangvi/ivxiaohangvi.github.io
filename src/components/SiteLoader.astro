@@ -1,0 +1,173 @@
+---
+---
+<div id="site-loader" class="site-loader" aria-hidden="true">
+  <div class="site-loader-inner">
+    <svg class="site-loader-mark" viewBox="0 0 80 48" fill="none">
+      <path class="sl-track" pathLength="1"
+        d="M8 24C8 10 28 8 40 24C52 40 72 38 72 24C72 10 52 8 40 24C28 40 8 38 8 24Z" />
+      <path class="sl-trail sl-trail--long" pathLength="1"
+        d="M8 24C8 10 28 8 40 24C52 40 72 38 72 24C72 10 52 8 40 24C28 40 8 38 8 24Z" />
+      <path class="sl-trail sl-trail--mid" pathLength="1"
+        d="M8 24C8 10 28 8 40 24C52 40 72 38 72 24C72 10 52 8 40 24C28 40 8 38 8 24Z" />
+      <path class="sl-trail sl-trail--head" pathLength="1"
+        d="M8 24C8 10 28 8 40 24C52 40 72 38 72 24C72 10 52 8 40 24C28 40 8 38 8 24Z" />
+    </svg>
+    <span class="site-loader-name">moxo</span>
+  </div>
+</div>
+
+<style is:inline>
+  .site-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e8e4d9;
+    transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+  }
+
+  .site-loader.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  :root[data-theme='dark'] .site-loader {
+    background: #0d1413;
+  }
+
+  body.is-bare .site-loader {
+    background: #080f10;
+  }
+
+  .site-loader-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.15rem;
+  }
+
+  .site-loader-mark {
+    width: min(40vw, 136px);
+    overflow: visible;
+  }
+
+  .site-loader path {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .sl-track {
+    stroke: #1b4d5c;
+    stroke-width: 2;
+    opacity: 0.16;
+  }
+
+  .sl-trail {
+    stroke: #1b4d5c;
+    stroke-width: 2.5;
+    animation: site-loader-trail 2s linear infinite;
+    will-change: stroke-dashoffset;
+  }
+
+  .sl-trail--long {
+    opacity: 0.22;
+    stroke-dasharray: 0.34 0.66;
+  }
+
+  .sl-trail--mid {
+    opacity: 0.55;
+    stroke-dasharray: 0.16 0.84;
+  }
+
+  .sl-trail--head {
+    stroke-width: 3;
+    opacity: 0.95;
+    stroke-dasharray: 0.045 0.955;
+  }
+
+  @keyframes site-loader-trail {
+    to {
+      stroke-dashoffset: -1;
+    }
+  }
+
+  .site-loader-name {
+    font-family: 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', 'STSong', 'SimSun', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.42em;
+    text-indent: 0.42em;
+    text-transform: lowercase;
+    color: #4a5652;
+    opacity: 0.72;
+  }
+
+  :root[data-theme='dark'] .sl-track,
+  :root[data-theme='dark'] .sl-trail {
+    stroke: #79a7ad;
+  }
+
+  :root[data-theme='dark'] .sl-track {
+    opacity: 0.22;
+  }
+
+  :root[data-theme='dark'] .site-loader-name {
+    color: #b5b3a6;
+  }
+
+  body.is-bare .sl-track,
+  body.is-bare .sl-trail {
+    stroke: #79a7ad;
+  }
+
+  body.is-bare .site-loader-name {
+    color: #8c948c;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-loader {
+      transition: none;
+    }
+
+    .sl-trail {
+      animation: none;
+      stroke-dasharray: 1 0;
+    }
+
+    .sl-trail--long {
+      opacity: 0;
+    }
+
+    .sl-trail--mid {
+      opacity: 0.5;
+    }
+
+    .sl-trail--head {
+      opacity: 0.9;
+      stroke-width: 2.5;
+    }
+  }
+</style>
+
+<script is:inline>
+  (() => {
+    const hide = () => {
+      const el = document.getElementById('site-loader');
+      if (!el || el.dataset.slHidden) return;
+      el.dataset.slHidden = '1';
+      el.classList.add('is-hidden');
+      el.addEventListener('transitionend', () => el.remove(), { once: true });
+      setTimeout(() => el.isConnected && el.remove(), 1200);
+    };
+    if (document.readyState === 'complete') {
+      hide();
+    } else {
+      window.addEventListener('load', hide, { once: true });
+      setTimeout(hide, 6000);
+    }
+    document.addEventListener('astro:after-swap', hide);
+  })();
+</script>

@@ -1,0 +1,145 @@
+/* 文章底部的「已上链」提示 —— 档案卡风格：细线 + 铜色 + 等宽小字 */
+.onchain {
+  margin-top: 2.2rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+.onchain-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.52rem;
+  letter-spacing: 0.16em;
+}
+
+.onchain-kicker {
+  color: var(--brass);
+}
+
+.onchain-state {
+  padding: 0.06rem 0.3rem 0.1rem;
+  border: 1px solid color-mix(in srgb, var(--brass) 46%, transparent);
+  color: color-mix(in srgb, var(--brass) 78%, var(--ink));
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.onchain.is-pending .onchain-state,
+.onchain.is-stale .onchain-state,
+.onchain.is-missing .onchain-state {
+  border-color: var(--rule);
+  color: var(--muted);
+}
+
+.onchain-meta {
+  margin: 0.55rem 0 0;
+  font-size: 0.56rem;
+  line-height: 1.9;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+}
+
+.onchain-meta a {
+  color: var(--link);
+  border-bottom: 1px solid var(--rule);
+  text-decoration: none;
+}
+
+.onchain-meta a:hover {
+  color: var(--brass);
+  border-color: var(--brass);
+}
+
+.onchain-num {
+  color: var(--ink);
+  letter-spacing: 0.06em;
+}
+
+.onchain-sep {
+  margin: 0 0.32rem;
+  color: color-mix(in srgb, var(--muted) 60%, transparent);
+}
+
+.onchain-digest {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.7rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.54rem;
+  letter-spacing: 0.04em;
+}
+
+.onchain-digest code {
+  font-size: 0.56rem;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+
+.onchain-file {
+  color: var(--link);
+  border-bottom: 1px solid var(--rule);
+  text-decoration: none;
+}
+
+.onchain-file:hover {
+  color: var(--brass);
+  border-color: var(--brass);
+}
+
+.onchain-how {
+  margin-top: 0.7rem;
+  font-size: 0.54rem;
+}
+
+.onchain-how summary {
+  cursor: pointer;
+  color: var(--muted);
+  list-style: none;
+  letter-spacing: 0.06em;
+}
+
+.onchain-how summary::-webkit-details-marker {
+  display: none;
+}
+
+.onchain-how summary::after {
+  content: ' ↓';
+}
+
+.onchain-how[open] summary::after {
+  content: ' ↑';
+}
+
+.onchain-how summary:hover {
+  color: var(--brass);
+}
+
+.onchain-how ol {
+  margin: 0.55rem 0 0;
+  padding-left: 1.05rem;
+  line-height: 1.95;
+  color: var(--ink-soft);
+}
+
+.onchain-how li + li {
+  margin-top: 0.3rem;
+}
+
+.onchain-how code {
+  padding: 0.02rem 0.24rem;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  font-size: 0.52rem;
+  color: var(--ink);
+}
+
+.onchain-note {
+  margin: 0.55rem 0 0;
+  color: var(--muted);
+  font-size: 0.52rem;
+  line-height: 1.9;
+}

@@ -1,0 +1,26 @@
+---
+// 活体 ∞：细环打底，一段更粗的黄铜弧沿环巡游。
+// 弧长与位移都按路径的实际长度算（见 scripts/live-infinity.ts），
+// 虚线正好铺满一整圈，接缝处不会断；悬停只加转速，不重启动画。
+interface Props {
+  class?: string;
+  /** 巡游弧占整圈的比例（%） */
+  arc?: number;
+}
+
+const { class: className = '', arc = 16 } = Astro.props;
+const LOOP = 'M1.2 7C1.2 2 13.2 1.2 20 7C26.8 12.8 38.8 12 38.8 7C38.8 2 26.8 1.2 20 7C13.2 12.8 1.2 12 1.2 7Z';
+---
+<svg
+  class={`live-inf ${className}`.trim()}
+  viewBox="0 0 40 14"
+  preserveAspectRatio="none"
+  fill="none"
+  aria-hidden="true"
+  focusable="false"
+  data-live-inf
+  data-arc={arc}
+>
+  <path class="live-inf-base" d={LOOP}></path>
+  <path class="live-inf-flow" d={LOOP}></path>
+</svg>

@@ -1,0 +1,1064 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../config';
+import { beijingMonthDay } from '../lib/date';
+
+const diary = (await getCollection('diary')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+const latestDiary = diary[0];
+const latestHref = latestDiary ? withBase(`/diary/${latestDiary.id}/`) : withBase('/diary/');
+const latestLabel = latestDiary ? `最近一页 · ${beijingMonthDay(latestDiary.data.date)}` : '去日记';
+---
+<BaseLayout
+  title="这一页不在环上"
+  description="没有找到这个页面。再沿着莫比乌斯环绕一圈，回到奇点重新出发。"
+  noindex
+>
+  <section class="lost" id="lost-loop" aria-labelledby="lost-title" data-rail="off">
+    <canvas class="lost-canvas" id="lost-canvas" aria-hidden="true"></canvas>
+    <div class="lost-fallback" aria-hidden="true">
+      <svg class="lost-fallback-mark" viewBox="0 0 900 460" fill="none">
+        <defs>
+          <linearGradient
+            id="lost-infinity-stroke"
+            x1="120"
+            y1="90"
+            x2="790"
+            y2="370"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0" style="stop-color: var(--lost-ring-1)" stop-opacity=".08"></stop>
+            <stop offset=".38" style="stop-color: var(--lost-ring-1)" stop-opacity=".6"></stop>
+            <stop offset=".72" style="stop-color: var(--lost-ring-2)" stop-opacity=".52"></stop>
+            <stop offset="1" style="stop-color: var(--lost-ring-1)" stop-opacity=".06"></stop>
+          </linearGradient>
+          <filter
+            id="lost-infinity-glow"
+            x="-20%"
+            y="-45%"
+            width="140%"
+            height="190%"
+          >
+            <feGaussianBlur stdDeviation="16"></feGaussianBlur>
+          </filter>
+        </defs>
+        <path
+          d="M450 230 C500 150 590 118 680 148 C780 181 790 279 690 312 C590 345 505 305 450 230 C395 305 310 345 210 312 C110 279 120 181 220 148 C310 118 400 150 450 230 Z"
+          style="stroke: var(--lost-ring-glow)"
+          stroke-width="30"
+          stroke-linecap="round"
+          opacity=".22"
+          filter="url(#lost-infinity-glow)"></path>
+        <path
+          class="lost-fallback-line"
+          d="M450 230 C500 150 590 118 680 148 C780 181 790 279 690 312 C590 345 505 305 450 230 C395 305 310 345 210 312 C110 279 120 181 220 148 C310 118 400 150 450 230 Z"
+          stroke="url(#lost-infinity-stroke)"
+          stroke-width="1.6"
+          stroke-linejoin="round"></path>
+        <circle
+          class="lost-fallback-dot"
+          cx="450"
+          cy="230"
+          r="4.5"
+          style="fill: var(--lost-spark)"></circle>
+      </svg>
+    </div>
+    <div class="lost-veil" aria-hidden="true"></div>
+
+    <div class="lost-inner wrap">
+      <header class="lost-hud lost-hud-top">
+        <span class="lost-hud-label">
+          <span class="lost-hud-dot" aria-hidden="true"></span>404 / LOST IN THE LOOP
+        </span>
+        <span class="lost-hud-label lost-hud-end">MOXO.CC <span class="inf">∞</span></span>
+      </header>
+
+      <div class="lost-main">
+        <p class="lost-number" aria-hidden="true" data-reveal>4<span class="inf">∞</span>4</p>
+        <div class="lost-copy" data-reveal>
+          <h1 id="lost-title">这一页不在环上</h1>
+          <p class="lost-lede">
+            你要找的地址不存在，或者已经被坍缩进了别处。<br />
+            “光”还在环上流转——再沿着它再绕一圈，或者回到奇点重新出发。
+          </p>
+          <div class="lost-actions">
+            <a class="lost-cta" href={withBase('/')}>回到首页 <span aria-hidden="true">→</span></a>
+            <div class="lost-actions-alt">
+              <a class="lost-link" href={withBase('/search/')}>搜索全站 <span aria-hidden="true">↗</span></a>
+              <a class="lost-link" href={latestHref}>{latestLabel} <span aria-hidden="true">→</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="lost-hud lost-foot">
+        <span class="lost-live"><i aria-hidden="true"></i>环上的一道光</span>
+        <span class="lost-hud-label">SINGLE-SIDED SURFACE / 单侧曲面</span>
+      </footer>
+    </div>
+  </section>
+
+  <script>
+    import type * as ThreeTypes from 'three';
+
+    type ThreeModule = typeof import('three');
+
+    const TAU = Math.PI * 2;
+    const BAND_HALF_WIDTH = 0.38;
+    const BAND_HALF_THICKNESS = 0.026;
+    const INFINITY_HALF_SPAN = 2.65;
+    const INFINITY_LOBE_SCALE = 1.35;
+    const INFINITY_DEPTH = 0.62;
+
+    let cleanupCurrent: (() => void) | null = null;
+    let bootToken = 0;
+
+    function infinityPoint(u: number, out: ThreeTypes.Vector3): ThreeTypes.Vector3 {
+      const c = Math.cos(u);
+      const s = Math.sin(u);
+      const denom = 1 + s * s;
+      return out.set(
+        (INFINITY_HALF_SPAN * c) / denom,
+        (INFINITY_HALF_SPAN * INFINITY_LOBE_SCALE * s * c) / denom,
+        INFINITY_DEPTH * s,
+      );
+    }
+
+    /** 沿 ∞ 中心线取标架：width 为带宽方向，normal 为带面法向，随参数转半圈形成莫比乌斯扭转 */
+    function bandFrameAt(
+      THREE: ThreeModule,
+      u: number,
+      center: ThreeTypes.Vector3,
+      tangent: ThreeTypes.Vector3,
+      width: ThreeTypes.Vector3,
+      normal: ThreeTypes.Vector3,
+    ): void {
+      const epsilon = 0.0001;
+      const before = new THREE.Vector3();
+      const after = new THREE.Vector3();
+      infinityPoint(u - epsilon, before);
+      infinityPoint(u + epsilon, after);
+      infinityPoint(u, center);
+      tangent.subVectors(after, before).normalize();
+
+      width.set(0, 0, 1);
+      if (Math.abs(tangent.z) > 0.96) width.set(0, 1, 0);
+      const reference = width.clone();
+      width.crossVectors(tangent, reference).normalize();
+      normal.crossVectors(width, tangent).normalize();
+
+      const bx = width.x;
+      const by = width.y;
+      const bz = width.z;
+      const nx = normal.x;
+      const ny = normal.y;
+      const nz = normal.z;
+      const twist = u * 0.5;
+      const c = Math.cos(twist);
+      const s = Math.sin(twist);
+      width.set(bx * c + nx * s, by * c + ny * s, bz * c + nz * s);
+      normal.set(nx * c - bx * s, ny * c - by * s, nz * c - bz * s);
+    }
+
+    function bandPoint(
+      THREE: ThreeModule,
+      u: number,
+      theta: number,
+      clearance: number,
+      out: ThreeTypes.Vector3,
+      outNormal: ThreeTypes.Vector3,
+    ): ThreeTypes.Vector3 {
+      const center = new THREE.Vector3();
+      const tangent = new THREE.Vector3();
+      const width = new THREE.Vector3();
+      const normal = new THREE.Vector3();
+      bandFrameAt(THREE, u, center, tangent, width, normal);
+
+      const c = Math.cos(theta);
+      const s = Math.sin(theta);
+      out
+        .copy(center)
+        .addScaledVector(width, BAND_HALF_WIDTH * c)
+        .addScaledVector(normal, BAND_HALF_THICKNESS * s);
+      outNormal.copy(width).multiplyScalar(c).addScaledVector(normal, s).normalize();
+      out.addScaledVector(outNormal, clearance);
+      return out;
+    }
+
+    function buildBand(
+      THREE: ThreeModule,
+      uSegments: number,
+      sideSegments: number,
+    ): ThreeTypes.BufferGeometry {
+      const positions: number[] = [];
+      const uvs: number[] = [];
+      const pathU: number[] = [];
+      const pathV: number[] = [];
+      const indices: number[] = [];
+      const center = new THREE.Vector3();
+      const tangent = new THREE.Vector3();
+      const width = new THREE.Vector3();
+      const normal = new THREE.Vector3();
+
+      for (let i = 0; i <= uSegments; i += 1) {
+        const u = (i / uSegments) * TAU;
+        bandFrameAt(THREE, u, center, tangent, width, normal);
+        const twist = u * 0.5;
+
+        for (let j = 0; j <= sideSegments; j += 1) {
+          const perimeter = (j / sideSegments) * TAU;
+          const theta = perimeter - twist;
+          const c = Math.cos(theta);
+          const s = Math.sin(theta);
+          positions.push(
+            center.x + width.x * BAND_HALF_WIDTH * c + normal.x * BAND_HALF_THICKNESS * s,
+            center.y + width.y * BAND_HALF_WIDTH * c + normal.y * BAND_HALF_THICKNESS * s,
+            center.z + width.z * BAND_HALF_WIDTH * c + normal.z * BAND_HALF_THICKNESS * s,
+          );
+          uvs.push(i / uSegments, j / sideSegments);
+          pathU.push(i / uSegments);
+          pathV.push(c);
+        }
+      }
+
+      const columns = sideSegments + 1;
+      for (let i = 0; i < uSegments; i += 1) {
+        for (let j = 0; j < sideSegments; j += 1) {
+          const a = i * columns + j;
+          const b = a + 1;
+          const c = (i + 1) * columns + j;
+          const d = c + 1;
+          indices.push(a, c, b, b, c, d);
+        }
+      }
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      geometry.setAttribute('aPathU', new THREE.Float32BufferAttribute(pathU, 1));
+      geometry.setAttribute('aPathV', new THREE.Float32BufferAttribute(pathV, 1));
+      geometry.setIndex(indices);
+      geometry.computeVertexNormals();
+
+      // 接缝两侧的顶点位置重合，法向对齐后玻璃表面没有一条硬边
+      const normals = geometry.getAttribute('normal');
+      const lastRing = uSegments * columns;
+      for (let j = 0; j < columns; j += 1) {
+        normals.setXYZ(lastRing + j, normals.getX(j), normals.getY(j), normals.getZ(j));
+      }
+      normals.needsUpdate = true;
+      return geometry;
+    }
+
+    // 光源落在尾迹最前端（uLightHead 那个位置），不跟随尾迹峰值
+    function lightPathPoint(
+      THREE: ThreeModule,
+      phase: number,
+      out: ThreeTypes.Vector3,
+      clearance = 0.05,
+    ): ThreeTypes.Vector3 {
+      const scratch = new THREE.Vector3();
+      bandPoint(THREE, phase * TAU, Math.PI / 2, clearance, out, scratch);
+      return out;
+    }
+
+    function makeGlowTexture(THREE: ThreeModule): ThreeTypes.CanvasTexture {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 128;
+      const context = canvas.getContext('2d');
+      if (context) {
+        const gradient = context.createRadialGradient(64, 64, 0, 64, 64, 64);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        gradient.addColorStop(0.28, 'rgba(255, 255, 255, 0.86)');
+        gradient.addColorStop(0.6, 'rgba(255, 255, 255, 0.22)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, 128, 128);
+      }
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      return texture;
+    }
+
+    function buildEnvironment(
+      THREE: ThreeModule,
+      renderer: ThreeTypes.WebGLRenderer,
+      dark: boolean,
+    ): ThreeTypes.Texture {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 512;
+      const context = canvas.getContext('2d');
+
+      if (context) {
+        // 玻璃感来自锐利的高光：窄而亮的窗光条，粗糙度低时在带面上拉成干净的反光
+        const softbox = (
+          x: number,
+          y: number,
+          radius: number,
+          stretch: number,
+          alpha: number,
+          tint = '255, 251, 242',
+        ) => {
+          context.save();
+          context.translate(x, y);
+          context.scale(1, stretch);
+          const light = context.createRadialGradient(0, 0, 0, 0, 0, radius);
+          light.addColorStop(0, `rgba(${tint}, ${alpha})`);
+          light.addColorStop(0.4, `rgba(${tint}, ${alpha * 0.6})`);
+          light.addColorStop(1, `rgba(${tint}, 0)`);
+          context.fillStyle = light;
+          context.fillRect(-radius, -radius, radius * 2, radius * 2);
+          context.restore();
+        };
+
+        if (dark) {
+          const backdrop = context.createLinearGradient(0, 0, 0, 512);
+          backdrop.addColorStop(0, '#0b1d21');
+          backdrop.addColorStop(0.45, '#0d2426');
+          backdrop.addColorStop(1, '#050c0d');
+          context.fillStyle = backdrop;
+          context.fillRect(0, 0, 1024, 512);
+
+          const cool = context.createRadialGradient(250, 120, 0, 250, 120, 290);
+          cool.addColorStop(0, 'rgba(206, 240, 238, 0.82)');
+          cool.addColorStop(0.22, 'rgba(132, 190, 188, 0.3)');
+          cool.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          context.fillStyle = cool;
+          context.fillRect(0, 0, 1024, 512);
+
+          const warm = context.createRadialGradient(820, 342, 0, 820, 342, 320);
+          warm.addColorStop(0, 'rgba(236, 194, 130, 0.34)');
+          warm.addColorStop(0.4, 'rgba(166, 120, 58, 0.12)');
+          warm.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          context.fillStyle = warm;
+          context.fillRect(0, 0, 1024, 512);
+
+          // 用径向渐变代替模糊矩形：矩形卡片在清漆层上反出带直边的亮板
+          const streakA = context.createRadialGradient(616, 160, 0, 616, 160, 150);
+          streakA.addColorStop(0, 'rgba(240, 244, 235, 0.34)');
+          streakA.addColorStop(0.5, 'rgba(240, 244, 235, 0.1)');
+          streakA.addColorStop(1, 'rgba(240, 244, 235, 0)');
+          context.fillStyle = streakA;
+          context.fillRect(0, 0, 1024, 512);
+          const streakB = context.createRadialGradient(295, 308, 0, 295, 308, 180);
+          streakB.addColorStop(0, 'rgba(240, 244, 235, 0.28)');
+          streakB.addColorStop(0.5, 'rgba(240, 244, 235, 0.08)');
+          streakB.addColorStop(1, 'rgba(240, 244, 235, 0)');
+          context.fillStyle = streakB;
+          context.fillRect(0, 0, 1024, 512);
+
+          softbox(196, 146, 22, 3.6, 0.95);
+          softbox(648, 268, 15, 2.6, 0.7);
+          softbox(886, 96, 42, 1.1, 0.42, '255, 214, 160');
+        } else {
+          const backdrop = context.createLinearGradient(0, 0, 0, 512);
+          backdrop.addColorStop(0, '#f8f5ec');
+          backdrop.addColorStop(0.48, '#f0ece0');
+          backdrop.addColorStop(1, '#d8d2c2');
+          context.fillStyle = backdrop;
+          context.fillRect(0, 0, 1024, 512);
+
+          const cool = context.createRadialGradient(250, 120, 0, 250, 120, 300);
+          cool.addColorStop(0, 'rgba(255, 252, 250, 0.95)');
+          cool.addColorStop(0.24, 'rgba(244, 220, 214, 0.55)');
+          cool.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          context.fillStyle = cool;
+          context.fillRect(0, 0, 1024, 512);
+
+          const warm = context.createRadialGradient(800, 360, 0, 800, 360, 310);
+          warm.addColorStop(0, 'rgba(246, 214, 162, 0.5)');
+          warm.addColorStop(0.4, 'rgba(205, 166, 104, 0.18)');
+          warm.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          context.fillStyle = warm;
+          context.fillRect(0, 0, 1024, 512);
+
+          const cardA = context.createRadialGradient(711, 195, 0, 711, 195, 190);
+          cardA.addColorStop(0, 'rgba(120, 62, 56, 0.34)');
+          cardA.addColorStop(0.5, 'rgba(120, 62, 56, 0.1)');
+          cardA.addColorStop(1, 'rgba(120, 62, 56, 0)');
+          context.fillStyle = cardA;
+          context.fillRect(0, 0, 1024, 512);
+          const cardB = context.createRadialGradient(207, 157, 0, 207, 157, 160);
+          cardB.addColorStop(0, 'rgba(255, 255, 255, 0.72)');
+          cardB.addColorStop(0.5, 'rgba(255, 255, 255, 0.22)');
+          cardB.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          context.fillStyle = cardB;
+          context.fillRect(0, 0, 1024, 512);
+          const cardC = context.createRadialGradient(487, 335, 0, 487, 335, 190);
+          cardC.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
+          cardC.addColorStop(0.5, 'rgba(255, 255, 255, 0.16)');
+          cardC.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          context.fillStyle = cardC;
+          context.fillRect(0, 0, 1024, 512);
+          const cardD = context.createRadialGradient(100, 160, 0, 100, 160, 150);
+          cardD.addColorStop(0, 'rgba(226, 186, 178, 0.34)');
+          cardD.addColorStop(0.5, 'rgba(226, 186, 178, 0.1)');
+          cardD.addColorStop(1, 'rgba(226, 186, 178, 0)');
+          context.fillStyle = cardD;
+          context.fillRect(0, 0, 1024, 512);
+
+          softbox(232, 142, 26, 3.8, 0.95);
+          softbox(676, 236, 16, 2.8, 0.66);
+          softbox(512, 372, 46, 0.7, 0.32, '255, 226, 186');
+        }
+      }
+
+      const source = new THREE.CanvasTexture(canvas);
+      source.mapping = THREE.EquirectangularReflectionMapping;
+      source.colorSpace = THREE.SRGBColorSpace;
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      const environment = pmrem.fromEquirectangular(source).texture;
+      source.dispose();
+      pmrem.dispose();
+      return environment;
+    }
+
+    function initLostLoop(
+      THREE: ThreeModule,
+      panel: HTMLElement,
+      theme: 'light' | 'dark',
+    ): () => void {
+      const canvas = panel.querySelector<HTMLCanvasElement>('#lost-canvas');
+      if (!canvas) return () => {};
+
+      const dark = theme === 'dark';
+
+      let renderer: ThreeTypes.WebGLRenderer;
+      try {
+        renderer = new THREE.WebGLRenderer({
+          canvas,
+          antialias: true,
+          alpha: false,
+          powerPreference: 'high-performance',
+        });
+      } catch (error) {
+        console.warn('[404] WebGL 不可用，保留静态环线。', error);
+        panel.classList.add('is-static');
+        return () => {};
+      }
+
+      renderer.setClearColor(dark ? 0x050d0e : 0xe8e4d9, 1);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = dark ? 1.08 : 1.02;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const compact = window.innerWidth < 760;
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 60);
+
+      type Triple = [number, number, number];
+      const backdropPalette: {
+        bottom: Triple;
+        top: Triple;
+        cool: Triple;
+        warm: Triple;
+        ribbonA: Triple;
+        ribbonB: Triple;
+        vigBase: number;
+        vigGain: number;
+        grain: number;
+      } = dark
+        ? {
+            bottom: [0.016, 0.043, 0.046],
+            top: [0.028, 0.072, 0.076],
+            cool: [0.0465, 0.093, 0.0961],
+            warm: [0.039, 0.027, 0.0144],
+            ribbonA: [0.022, 0.052, 0.058],
+            ribbonB: [0.045, 0.033, 0.018],
+            vigBase: 0.4,
+            vigGain: 0.6,
+            grain: 0.006,
+          }
+        : {
+            bottom: [0.745, 0.73, 0.676],
+            top: [0.82, 0.82, 0.785],
+            cool: [0.05, 0.095, 0.09],
+            warm: [0.045, 0.03, 0.012],
+            ribbonA: [0.012, 0.025, 0.026],
+            ribbonB: [0.024, 0.017, 0.008],
+            vigBase: 0.82,
+            vigGain: 0.18,
+            grain: 0.0045,
+          };
+
+      const backdropUniforms = {
+        uTime: { value: reduceMotion ? 12 : 0 },
+        uBaseBottom: { value: new THREE.Vector3(...backdropPalette.bottom) },
+        uBaseTop: { value: new THREE.Vector3(...backdropPalette.top) },
+        uCool: { value: new THREE.Vector3(...backdropPalette.cool) },
+        uWarm: { value: new THREE.Vector3(...backdropPalette.warm) },
+        uRibbonA: { value: new THREE.Vector3(...backdropPalette.ribbonA) },
+        uRibbonB: { value: new THREE.Vector3(...backdropPalette.ribbonB) },
+        uVigBase: { value: backdropPalette.vigBase },
+        uVigGain: { value: backdropPalette.vigGain },
+        uGrain: { value: backdropPalette.grain },
+      };
+      const backdropMaterial = new THREE.ShaderMaterial({
+        uniforms: backdropUniforms,
+        depthWrite: false,
+        toneMapped: false,
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          varying vec2 vUv;
+          uniform float uTime;
+          uniform vec3 uBaseBottom;
+          uniform vec3 uBaseTop;
+          uniform vec3 uCool;
+          uniform vec3 uWarm;
+          uniform vec3 uRibbonA;
+          uniform vec3 uRibbonB;
+          uniform float uVigBase;
+          uniform float uVigGain;
+          uniform float uGrain;
+
+          float hash(vec2 p) {
+            return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+          }
+
+          void main() {
+            vec2 uv = vUv;
+            vec3 col = mix(uBaseBottom, uBaseTop, smoothstep(0.0, 1.0, uv.y));
+
+            float d1 = length((uv - vec2(0.68, 0.52)) * vec2(1.15, 1.35));
+            col += uCool * exp(-d1 * d1 * 9.0);
+
+            float d2 = length((uv - vec2(0.28, 0.32)) * vec2(1.2, 1.5));
+            col += uWarm * exp(-d2 * d2 * 11.0);
+
+            float ribbon = sin(uv.x * 3.1 + uv.y * 2.2 + uTime * 0.035) * 0.5 + 0.5;
+            ribbon = smoothstep(0.72, 1.0, ribbon) * smoothstep(0.06, 0.55, uv.y) * (1.0 - smoothstep(0.6, 0.98, uv.y));
+            col += uRibbonA * ribbon;
+
+            float ribbon2 = sin(uv.x * 4.3 - uv.y * 1.4 - uTime * 0.022 + 1.8) * 0.5 + 0.5;
+            ribbon2 = smoothstep(0.8, 1.0, ribbon2) * smoothstep(0.04, 0.45, uv.y) * (1.0 - smoothstep(0.5, 0.92, uv.y));
+            col += uRibbonB * ribbon2;
+
+            float vig = 1.0 - smoothstep(0.32, 1.15, length((uv - 0.5) * vec2(1.3, 1.15)));
+            col *= uVigBase + uVigGain * vig;
+            col += (hash(uv * vec2(1920.0, 1080.0)) - 0.5) * uGrain;
+
+            gl_FragColor = vec4(max(col, 0.0), 1.0);
+          }
+        `,
+      });
+      const backdrop = new THREE.Mesh(new THREE.PlaneGeometry(40, 24), backdropMaterial);
+      backdrop.position.set(0, 0, -7);
+      scene.add(backdrop);
+
+      const environment = buildEnvironment(THREE, renderer, dark);
+      scene.environment = environment;
+      scene.environmentIntensity = dark ? 0.62 : 0.9;
+
+      scene.add(
+        new THREE.AmbientLight(dark ? 0x9fbfba : 0xe9f0ea, dark ? 0.3 : 0.62),
+      );
+      const key = new THREE.DirectionalLight(dark ? 0xfff1da : 0xfffaf0, dark ? 2.2 : 2.6);
+      key.position.set(4, 5, 6);
+      scene.add(key);
+      const fill = new THREE.DirectionalLight(dark ? 0x8bc8d0 : 0xecc6bf, dark ? 1.2 : 1.1);
+      fill.position.set(-6, 1.5, 3);
+      scene.add(fill);
+      const rim = new THREE.DirectionalLight(dark ? 0xd5a86b : 0xc08a45, dark ? 1.5 : 1.6);
+      rim.position.set(-2, -4, -4);
+      scene.add(rim);
+
+      const glowTexture = makeGlowTexture(THREE);
+      const dustCount = compact ? 90 : 160;
+      const dustPositions = new Float32Array(dustCount * 3);
+      for (let i = 0; i < dustCount; i += 1) {
+        dustPositions[i * 3] = (Math.random() - 0.5) * 11;
+        dustPositions[i * 3 + 1] = (Math.random() - 0.5) * 6;
+        dustPositions[i * 3 + 2] = -4 + Math.random() * 7;
+      }
+      const dustGeometry = new THREE.BufferGeometry();
+      dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+      const dustMaterial = new THREE.PointsMaterial({
+        color: dark ? 0xaec9c2 : 0x7d7869,
+        size: dark ? 0.045 : 0.036,
+        map: glowTexture,
+        transparent: true,
+        opacity: dark ? 0.46 : 0.24,
+        alphaTest: 0.02,
+        depthWrite: false,
+        blending: dark ? THREE.AdditiveBlending : THREE.NormalBlending,
+        sizeAttenuation: true,
+        toneMapped: false,
+      });
+      const dust = new THREE.Points(dustGeometry, dustMaterial);
+      scene.add(dust);
+
+      const flowUniforms = { uFlowTime: { value: 0 }, uLightHead: { value: 0.18 } };
+      const glassMaterial = new THREE.MeshPhysicalMaterial(
+        dark
+          ? {
+              color: 0xf4faf7,
+              metalness: 0,
+              roughness: 0.05,
+              transmission: 1,
+              thickness: 0.18,
+              ior: 1.45,
+              attenuationColor: 0xa6d2c8,
+              attenuationDistance: 12,
+              clearcoat: 1,
+              clearcoatRoughness: 0.04,
+              iridescence: 0.12,
+              iridescenceIOR: 1.2,
+              iridescenceThicknessRange: [120, 380],
+              sheen: 0.04,
+              sheenColor: 0xcdeee7,
+              sheenRoughness: 0.42,
+              dispersion: compact ? 0 : 0.26,
+              envMapIntensity: 1.2,
+              side: THREE.DoubleSide,
+            }
+          : {
+              color: 0xfffaf6,
+              metalness: 0,
+              roughness: 0.05,
+              transmission: 1,
+              thickness: 0.16,
+              ior: 1.45,
+              attenuationColor: 0xbb6c62,
+              attenuationDistance: 7.5,
+              clearcoat: 1,
+              clearcoatRoughness: 0.04,
+              iridescence: 0.15,
+              iridescenceIOR: 1.24,
+              iridescenceThicknessRange: [140, 420],
+              sheen: 0.05,
+              sheenColor: 0xf7e3dc,
+              sheenRoughness: 0.45,
+              dispersion: compact ? 0 : 0.26,
+              envMapIntensity: 1.25,
+              side: THREE.DoubleSide,
+            },
+      );
+
+      glassMaterial.onBeforeCompile = (shader) => {
+        shader.uniforms.uFlowTime = flowUniforms.uFlowTime;
+        shader.uniforms.uLightHead = flowUniforms.uLightHead;
+        shader.uniforms.uTheme = { value: dark ? 0 : 1 };
+        shader.vertexShader = shader.vertexShader
+          .replace(
+            '#include <common>',
+            `#include <common>
+            attribute float aPathU;
+            attribute float aPathV;
+            varying float vPathU;
+            varying float vPathV;`,
+          )
+          .replace(
+            '#include <begin_vertex>',
+            `#include <begin_vertex>
+            vPathU = aPathU;
+            vPathV = aPathV;`,
+          );
+        shader.fragmentShader = shader.fragmentShader
+          .replace(
+            '#include <common>',
+            `#include <common>
+            uniform float uFlowTime;
+            uniform float uLightHead;
+            uniform float uTheme;
+            varying float vPathU;
+            varying float vPathV;`,
+          )
+          .replace(
+            '#include <emissivemap_fragment>',
+            `#include <emissivemap_fragment>
+            float headDelta = fract(uLightHead - vPathU + 1.0);
+            float across = exp(-pow(vPathV, 2.0) / 0.08);
+            // 尾迹从光头位置起、向身后铺开：两头都渐隐，前端不留硬切边
+            float headTrail =
+              smoothstep(0.0, 0.05, headDelta) * (1.0 - smoothstep(0.08, 0.42, headDelta));
+            vec3 headTint = mix(vec3(1.0, 0.78, 0.45), vec3(0.9, 0.58, 0.18), uTheme);
+            totalEmissiveRadiance += headTint * headTrail * mix(0.8, 0.5, uTheme) * across;
+
+            float flowA = sin(vPathU * 12.56637 - uFlowTime * 0.35 + vPathV * 2.4);
+            float flowB = sin(vPathU * 6.28319 + uFlowTime * 0.16 - vPathV * 3.2 + 1.2);
+            float flowing = smoothstep(0.42, 1.0, flowA) * 0.055 + smoothstep(0.52, 1.0, flowB) * 0.04;
+            vec3 flowCool = mix(vec3(0.2, 0.52, 0.54), vec3(0.36, 0.15, 0.14), uTheme);
+            vec3 flowWarm = mix(vec3(0.58, 0.42, 0.2), vec3(0.44, 0.24, 0.12), uTheme);
+            totalEmissiveRadiance += mix(flowCool, flowWarm, flowA * 0.5 + 0.5) * flowing * mix(1.0, 0.32, uTheme);
+
+            float edge = smoothstep(0.68, 1.0, abs(vPathV));
+            vec3 edgeTint = mix(vec3(0.34, 0.68, 0.66), vec3(0.36, 0.15, 0.14), uTheme);
+            totalEmissiveRadiance += edgeTint * edge * mix(0.045, 0.025, uTheme);
+            float fresnel = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 3.0);
+            vec3 fresnelTint = mix(vec3(0.4, 0.72, 0.7), vec3(0.4, 0.17, 0.16), uTheme);
+            totalEmissiveRadiance += fresnelTint * fresnel * mix(0.14, 0.08, uTheme);`,
+          );
+      };
+
+      const bandGeometry = buildBand(THREE, compact ? 380 : 560, compact ? 12 : 18);
+      const band = new THREE.Mesh(bandGeometry, glassMaterial);
+
+      const rimMaterial = new THREE.LineBasicMaterial({
+        color: dark ? 0xa4cbc5 : 0xa06a61,
+        transparent: true,
+        opacity: dark ? 0.3 : 0.16,
+        blending: dark ? THREE.AdditiveBlending : THREE.NormalBlending,
+        depthWrite: false,
+        toneMapped: false,
+      });
+
+      // 穿玻璃的拖尾：带面自发光走到两层玻璃交叠处会被前层遮住，
+      // 这里沿光头身后的路径补一条始终朝向相机的窄光带，遮挡时也留在画面上
+      const TRAIL_SAMPLES = 44;
+      const TRAIL_SPAN = 0.46;
+      const trailPositions = new Float32Array((TRAIL_SAMPLES + 1) * 2 * 3);
+      const trailUvs = new Float32Array((TRAIL_SAMPLES + 1) * 2 * 2);
+      const trailIndices: number[] = [];
+      for (let i = 0; i <= TRAIL_SAMPLES; i += 1) {
+        trailUvs.set([0, i / TRAIL_SAMPLES, 1, i / TRAIL_SAMPLES], i * 4);
+        if (i < TRAIL_SAMPLES) {
+          const a = i * 2;
+          const next = a + 2;
+          trailIndices.push(a, next, a + 1, a + 1, next, next + 1);
+        }
+      }
+      const trailGeometry = new THREE.BufferGeometry();
+      trailGeometry.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+      trailGeometry.setAttribute('uv', new THREE.BufferAttribute(trailUvs, 2));
+      trailGeometry.setIndex(trailIndices);
+
+      const trailMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          uColor: { value: new THREE.Color(dark ? 0xffc98a : 0xe8ab67) },
+          uStrength: { value: dark ? 0.42 : 0.26 },
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uColor;
+          uniform float uStrength;
+          varying vec2 vUv;
+          void main() {
+            float edge = 1.0 - abs(vUv.x * 2.0 - 1.0);
+            float across = smoothstep(0.0, 1.0, edge);
+            float d = vUv.y * 0.46;
+            float along = smoothstep(0.0, 0.05, d) * (1.0 - smoothstep(0.08, 0.42, d));
+            gl_FragColor = vec4(uColor, pow(across, 1.3) * along * uStrength);
+            #include <colorspace_fragment>
+          }
+        `,
+        transparent: true,
+        depthWrite: false,
+        depthTest: false,
+        blending: dark ? THREE.AdditiveBlending : THREE.NormalBlending,
+        toneMapped: false,
+        side: THREE.DoubleSide,
+      });
+      const trailRibbon = new THREE.Mesh(trailGeometry, trailMaterial);
+      trailRibbon.frustumCulled = false;
+      trailRibbon.renderOrder = 2;
+
+      const ring = new THREE.Group();
+      ring.add(band);
+      ring.add(trailRibbon);
+
+      const addRim = (theta: number) => {
+        const points: ThreeTypes.Vector3[] = [];
+        const point = new THREE.Vector3();
+        const normal = new THREE.Vector3();
+        for (let i = 0; i <= 520; i += 1) {
+          const u = (i / 520) * TAU;
+          bandPoint(THREE, u, theta, 0.0026, point, normal);
+          points.push(point.clone());
+        }
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        ring.add(new THREE.Line(geometry, rimMaterial));
+      };
+      addRim(0);
+      addRim(Math.PI);
+
+      scene.add(ring);
+
+      const baseRotation = { x: -0.62, y: -0.28, z: 0.1 };
+      let wide = true;
+      let baseDistance = 5;
+      let cameraX = 0;
+      let cameraY = 0;
+      let targetX = 0;
+      let targetY = 0;
+      let introStart = performance.now();
+      let time = reduceMotion ? 12 : 0;
+      let last = performance.now();
+      let frameId = 0;
+      let inView = true;
+
+      const trailSamples: ThreeTypes.Vector3[] = Array.from(
+        { length: TRAIL_SAMPLES + 1 },
+        () => new THREE.Vector3(),
+      );
+      const trailCamera = new THREE.Vector3();
+      const trailForward = new THREE.Vector3();
+      const trailSide = new THREE.Vector3();
+      const trailView = new THREE.Vector3();
+
+      const updateTrailRibbon = (phase: number) => {
+        for (let i = 0; i <= TRAIL_SAMPLES; i += 1) {
+          const behind = (i / TRAIL_SAMPLES) * TRAIL_SPAN;
+          lightPathPoint(THREE, (phase - behind + 1) % 1, trailSamples[i], 0.045);
+        }
+
+        ring.updateWorldMatrix(true, false);
+        trailCamera.copy(camera.position);
+        ring.worldToLocal(trailCamera);
+
+        for (let i = 0; i <= TRAIL_SAMPLES; i += 1) {
+          const prev = trailSamples[Math.max(0, i - 1)];
+          const next = trailSamples[Math.min(TRAIL_SAMPLES, i + 1)];
+          trailForward.subVectors(prev, next);
+          trailView.subVectors(trailCamera, trailSamples[i]);
+          trailSide.crossVectors(trailView, trailForward);
+          if (trailSide.lengthSq() < 1e-8) trailSide.set(0, 1, 0);
+          else trailSide.normalize();
+
+          const halfWidth = 0.26 + (0.15 - 0.26) * (i / TRAIL_SAMPLES);
+          const write = i * 6;
+          trailPositions[write] = trailSamples[i].x + trailSide.x * halfWidth;
+          trailPositions[write + 1] = trailSamples[i].y + trailSide.y * halfWidth;
+          trailPositions[write + 2] = trailSamples[i].z + trailSide.z * halfWidth;
+          trailPositions[write + 3] = trailSamples[i].x - trailSide.x * halfWidth;
+          trailPositions[write + 4] = trailSamples[i].y - trailSide.y * halfWidth;
+          trailPositions[write + 5] = trailSamples[i].z - trailSide.z * halfWidth;
+        }
+        trailGeometry.getAttribute('position').needsUpdate = true;
+      };
+
+      const setHead = (phase: number) => {
+        flowUniforms.uLightHead.value = phase;
+        updateTrailRibbon(phase);
+      };
+
+      const layout = () => {
+        const width = panel.clientWidth;
+        const height = panel.clientHeight;
+        if (!width || !height) return;
+
+        const aspect = width / height;
+        wide = width > 820;
+        const visibleWidth = aspect >= 1.3 ? 6.6 : aspect >= 0.9 ? 5.8 : 5;
+        baseDistance =
+          visibleWidth / aspect / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
+
+        camera.aspect = aspect;
+        camera.updateProjectionMatrix();
+
+        ring.position.set(wide ? 1.15 : 0, wide ? 0.04 : -1, 0);
+        baseRotation.x = wide ? -0.62 : -0.48;
+        baseRotation.y = wide ? -0.28 : -0.1;
+        baseRotation.z = wide ? 0.1 : 0.05;
+        if (reduceMotion) ring.rotation.set(baseRotation.x, baseRotation.y, baseRotation.z);
+
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, wide ? 1.9 : 1.6));
+        renderer.setSize(width, height, false);
+      };
+
+      const applyCamera = (intro: number) => {
+        const eased = 1 - Math.pow(1 - intro, 3);
+        camera.position.set(cameraX, 0.03 + cameraY, baseDistance * (1.13 - 0.13 * eased));
+        camera.lookAt(0, 0, 0);
+      };
+
+      const draw = () => {
+        renderer.render(scene, camera);
+      };
+
+      const tick = (now: number) => {
+        frameId = requestAnimationFrame(tick);
+        if (!inView || document.hidden) {
+          last = now;
+          return;
+        }
+
+        const delta = Math.min((now - last) / 1000, 0.05);
+        last = now;
+        time += delta;
+
+        const intro = Math.min(1, (now - introStart) / 2400);
+        cameraX += (targetX * 0.05 - cameraX) * 0.05;
+        cameraY += (targetY * 0.03 - cameraY) * 0.05;
+
+        ring.rotation.x = baseRotation.x + Math.sin(time * 0.11) * 0.02 + cameraY * 0.9;
+        ring.rotation.y = baseRotation.y + Math.sin(time * 0.07) * 0.035 + cameraX * 1.6;
+        ring.rotation.z = baseRotation.z + Math.sin(time * 0.05 + 0.6) * 0.014;
+
+        backdropUniforms.uTime.value = time;
+        flowUniforms.uFlowTime.value = time;
+        dust.rotation.y = time * 0.004;
+        dust.rotation.x = Math.sin(time * 0.03) * 0.02;
+
+        setHead((time / 16) % 1);
+
+        applyCamera(intro);
+        draw();
+      };
+
+      const pause = () => {
+        if (frameId) cancelAnimationFrame(frameId);
+        frameId = 0;
+      };
+
+      const resume = () => {
+        if (reduceMotion || frameId) return;
+        last = performance.now();
+        frameId = requestAnimationFrame(tick);
+      };
+
+      const syncPlayback = () => {
+        if (reduceMotion) return;
+        if (inView && !document.hidden) resume();
+        else pause();
+      };
+
+      const onPointerMove = (event: PointerEvent) => {
+        if (event.pointerType === 'touch') return;
+        const bounds = panel.getBoundingClientRect();
+        targetX = ((event.clientX - bounds.left) / bounds.width - 0.5) * 2;
+        targetY = ((event.clientY - bounds.top) / bounds.height - 0.5) * 2;
+      };
+
+      const onPointerLeave = () => {
+        targetX = 0;
+        targetY = 0;
+      };
+
+      const onVisibility = () => syncPlayback();
+
+      panel.addEventListener('pointermove', onPointerMove, { passive: true });
+      panel.addEventListener('pointerleave', onPointerLeave);
+      document.addEventListener('visibilitychange', onVisibility);
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          inView = entries[0]?.isIntersecting ?? true;
+          syncPlayback();
+        },
+        { threshold: 0.01 },
+      );
+      observer.observe(panel);
+
+      const resizeObserver = new ResizeObserver(() => {
+        layout();
+        applyCamera(1);
+        if (reduceMotion) draw();
+      });
+      resizeObserver.observe(panel);
+
+      layout();
+
+      if (reduceMotion) {
+        setHead(0.78);
+        applyCamera(1);
+        draw();
+        panel.classList.add('is-3d');
+      } else {
+        introStart = performance.now();
+        setHead(0.18);
+        applyCamera(0);
+        draw();
+        panel.classList.add('is-3d');
+        resume();
+      }
+
+      return () => {
+        pause();
+        observer.disconnect();
+        resizeObserver.disconnect();
+        panel.removeEventListener('pointermove', onPointerMove);
+        panel.removeEventListener('pointerleave', onPointerLeave);
+        document.removeEventListener('visibilitychange', onVisibility);
+
+        const materials = new Set<ThreeTypes.Material>();
+        scene.traverse((object) => {
+          const candidate = object as ThreeTypes.Mesh;
+          if (candidate.geometry) candidate.geometry.dispose();
+          const material = candidate.material as ThreeTypes.Material | ThreeTypes.Material[] | undefined;
+          if (!material) return;
+          const list = Array.isArray(material) ? material : [material];
+          for (const item of list) materials.add(item);
+        });
+        for (const material of materials) material.dispose();
+
+        glowTexture.dispose();
+        environment.dispose();
+        renderer.renderLists.dispose();
+        renderer.dispose();
+        renderer.forceContextLoss();
+        panel.classList.remove('is-3d', 'is-static');
+      };
+    }
+
+    let bootedTheme: 'light' | 'dark' | null = null;
+
+    const readTheme = (): 'light' | 'dark' =>
+      document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+
+    function bootLostLoop() {
+      const panel = document.getElementById('lost-loop');
+      if (!panel) return;
+
+      const theme = readTheme();
+      bootedTheme = theme;
+      cleanupCurrent?.();
+      cleanupCurrent = null;
+
+      // 旧 canvas 上的 WebGL 上下文已随上一轮场景销毁，换一块干净的画布再启动
+      const staleCanvas = panel.querySelector<HTMLCanvasElement>('#lost-canvas');
+      staleCanvas?.replaceWith(staleCanvas.cloneNode(false));
+
+      const token = (bootToken += 1);
+
+      void (async () => {
+        try {
+          const THREE = await import('three');
+          if (token !== bootToken) return;
+          const livePanel = document.getElementById('lost-loop');
+          if (!livePanel) return;
+          cleanupCurrent = initLostLoop(THREE, livePanel, theme);
+        } catch (error) {
+          console.warn('[404] 三维环没有启动，保留静态环线。', error);
+          document.getElementById('lost-loop')?.classList.add('is-static');
+        }
+      })();
+    }
+
+    document.addEventListener('astro:page-load', () => {
+      if (!document.getElementById('lost-loop')) return;
+      bootLostLoop();
+    });
+
+    new MutationObserver(() => {
+      if (!document.getElementById('lost-loop')) return;
+      if (readTheme() === bootedTheme) return;
+      bootLostLoop();
+    }).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    });
+
+    document.addEventListener('astro:before-swap', () => {
+      bootToken += 1;
+      cleanupCurrent?.();
+      cleanupCurrent = null;
+    });
+  </script>
+</BaseLayout>

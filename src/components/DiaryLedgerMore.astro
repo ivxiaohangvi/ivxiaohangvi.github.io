@@ -1,0 +1,26 @@
+---
+interface Props {
+  /** 下一页地址（已含 base）；为空表示到底了 */
+  next?: string | null;
+  remaining?: number;
+  /** 全站总篇数：到底时用它写出「共 N 篇。」，与滚动到底后的文案保持一致 */
+  total?: number;
+}
+
+const { next = null, remaining = 0, total } = Astro.props;
+const endStatus = !next && total ? `共 ${total} 篇。` : '';
+---
+
+<div class="ledger-more" data-ledger-more data-next={next ?? undefined} data-pagefind-ignore>
+  {
+    next ? (
+      <a class="text-link ledger-more-link" href={next} data-ledger-next>
+        继续往下翻 <span aria-hidden="true">→</span>
+      </a>
+    ) : (
+      <span class="ledger-more-end">所有日记都在这里了</span>
+    )
+  }
+  {next && remaining > 0 && <span class="ledger-more-hint">后面还有 {remaining} 篇</span>}
+  <span class="ledger-more-status" data-ledger-status role="status" aria-live="polite">{endStatus}</span>
+</div>

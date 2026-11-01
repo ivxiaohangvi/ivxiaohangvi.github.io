@@ -1,0 +1,77 @@
+---
+import { getCollection } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import MobiusMark from '../../components/MobiusMark.astro';
+import { withBase } from '../../config';
+import { beijingYear } from '../../lib/date';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+
+const byYear = new Map<string, CollectionEntry<'blog'>[]>();
+for (const post of posts) {
+  const year = beijingYear(post.data.pubDate);
+  const list = byYear.get(year) ?? [];
+  list.push(post);
+  byYear.set(year, list);
+}
+---
+<BaseLayout title="文章" description="小航写下的长文与技术手记。">
+  <div class="wrap">
+    <header class="page-head">
+      <p class="eyebrow">LONG NOTES / 文章</p>
+      <div class="page-head-line">
+        <h1>文章</h1>
+        <span class="page-count">{String(posts.length).padStart(2, '0')} 篇</span>
+      </div>
+      <p class="page-lede">稍微认真一点写下的长文。关于建站、动画，以及别的什么。</p>
+      <p class="page-head-link">
+        <a class="text-link" href={withBase('/tags/')}>按标签浏览 <span aria-hidden="true">→</span></a>
+        <span class="link-dot" aria-hidden="true">·</span>
+        <a class="text-link" href={withBase('/blog/archive/')}>按年份收进抽屉 <span aria-hidden="true">→</span></a>
+        <span class="link-dot" aria-hidden="true">·</span>
+        <a class="text-link" href={withBase('/guestbook/')}>去留言簿 <span aria-hidden="true">→</span></a>
+      </p>
+    </header>
+
+    {
+      posts.length > 0 ? (
+        [...byYear.entries()].map(([year, list]) => (
+          <section class="year-block" id={`year-${year}`} aria-label={`${year} 年`}>
+            <div class="year-head">
+              <span class="year-number">{year}</span>
+              <span class="year-count">{list.length} 篇</span>
+            </div>
+            <div class="note-list">
+              {list.map((post) => <PostCard post={post} />)}
+            </div>
+          </section>
+        ))
+      ) : (
+        <div class="empty-state">
+          <MobiusMark class="empty-mark" />
+          <p class="empty-kicker">NO NOTES YET</p>
+          <h2>还没落笔</h2>
+          <p>想说的话还在路上。先去日记里坐一会儿。</p>
+          <a class="text-link" href={withBase('/diary/')}>去日记 <span aria-hidden="true">→</span></a>
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .page-head-link {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  .link-dot {
+    color: var(--rule);
+  }
+</style>

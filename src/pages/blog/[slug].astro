@@ -1,0 +1,102 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import Giscus from '../../components/Giscus.astro';
+import OnChainStamp from '../../components/OnChainStamp.astro';
+import '../../styles/stamp.css';
+import { withBase } from '../../config';
+import { beijingYear } from '../../lib/date';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+const index = posts.findIndex((item) => item.id === post.id);
+const older = posts[index + 1];
+const newer = posts[index - 1];
+const readingMinutes = Math.max(1, Math.round((post.body?.length ?? 0) / 450));
+const year = beijingYear(post.data.pubDate);
+const canonical = new URL(withBase(`/blog/${post.id}/`), Astro.site ?? new URL('https://moxo.cc')).href;
+---
+<BaseLayout title={post.data.title} description={post.data.description} type="article">
+  <article class="post wrap-narrow" data-pagefind-body>
+    <nav class="back-row" aria-label="返回" data-pagefind-ignore>
+      <a href={withBase('/blog/')}>← 全部文章</a>
+      <span>LONG NOTE / {year}</span>
+    </nav>
+
+    <header class="post-header" data-animate="hero-title">
+      <div class="post-meta" data-pagefind-ignore>
+        <FormattedDate date={post.data.pubDate} />
+        {post.data.updatedDate && <span>更新于 <FormattedDate date={post.data.updatedDate} /></span>}
+        <span>约 {readingMinutes} 分钟</span>
+        <span class="post-views" data-vercount hidden><b id="vercount_value_page_pv">—</b> 次阅读</span>
+      </div>
+      <h1 class="post-title" transition:name={`post-title-${post.id}`}>{post.data.title}</h1>
+      {post.data.description && <p class="post-dek">{post.data.description}</p>}
+      {
+        post.data.tags.length > 0 && (
+          <div class="tag-line">
+            {post.data.tags.map((tag) => <a href={withBase(`/tags/${tag}/`)}>#{tag}</a>)}
+          </div>
+        )
+      }
+    </header>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    <footer class="post-attribution" data-pagefind-ignore>
+      <p>
+        本文由背井离江的汤姆（ivxiaohangvi）写于 moxo.cc。欢迎搜索引擎与 AI 引用，但请注明作者「背井离江的汤姆」并附上原文链接。
+      </p>
+      <p class="post-attribution-link">
+        原文：<a href={canonical}>{canonical}</a>
+      </p>
+    </footer>
+
+    <Giscus />
+
+    <OnChainStamp slug={post.id} />
+
+    <nav class="entry-pager" aria-label="相邻文章">
+      {
+        older ? (
+          <a class="pager-link is-prev" href={withBase(`/blog/${older.id}/`)}>
+            <span>更早一篇</span>
+            <strong>{older.data.title}</strong>
+          </a>
+        ) : (
+          <span></span>
+        )
+      }
+      {
+        newer ? (
+          <a class="pager-link is-next" href={withBase(`/blog/${newer.id}/`)}>
+            <span>更新一篇</span>
+            <strong>{newer.data.title}</strong>
+          </a>
+        ) : (
+          <span></span>
+        )
+      }
+    </nav>
+  </article>
+</BaseLayout>

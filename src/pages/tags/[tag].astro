@@ -1,0 +1,182 @@
+---
+import { getCollection } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { withBase } from '../../config';
+import { beijingDateDot, beijingIso } from '../../lib/date';
+import { plainText } from '../../lib/diary-list';
+
+export async function getStaticPaths() {
+  const [posts, diaries] = await Promise.all([
+    getCollection('blog', ({ data }) => !data.draft),
+    getCollection('diary'),
+  ]);
+  const tags = [
+    ...new Set([
+      ...posts.flatMap((post) => post.data.tags),
+      ...diaries.flatMap((entry) => entry.data.tags),
+    ]),
+  ];
+  return tags.map((tag) => ({
+    params: { tag },
+    props: {
+      tag,
+      posts: posts.filter((post) => post.data.tags.includes(tag)),
+      diaries: diaries.filter((entry) => entry.data.tags.includes(tag)),
+    },
+  }));
+}
+
+interface Props {
+  tag: string;
+  posts: CollectionEntry<'blog'>[];
+  diaries: CollectionEntry<'diary'>[];
+}
+
+const { tag, posts, diaries } = Astro.props;
+const sortedPosts = [...posts].sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const sortedDiaries = [...diaries].sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const countParts = [
+  sortedPosts.length > 0 ? `文章 ${sortedPosts.length} 篇` : '',
+  sortedDiaries.length > 0 ? `日记 ${sortedDiaries.length} 篇` : '',
+].filter(Boolean);
+const countLabel = countParts.length > 0 ? countParts.join(' · ') : '0 条';
+---
+<BaseLayout title={`标签：${tag}`} description={`标签 #${tag} 下的文章与日记。`}>
+  <div class="wrap">
+    <header class="page-head">
+      <p class="eyebrow">TAGS / 标签</p>
+      <div class="page-head-line">
+        <h1>#{tag}</h1>
+        <span class="page-count">{countLabel}</span>
+      </div>
+      <a class="text-link page-head-link" href={withBase('/tags/')}>全部标签 <span aria-hidden="true">→</span></a>
+    </header>
+
+    {
+      sortedPosts.length > 0 && (
+        <section class="tag-group" aria-labelledby="tag-posts">
+          <h2 class="tag-group-head" id="tag-posts">
+            <span>文章</span>
+            <span class="tag-group-count">{String(sortedPosts.length).padStart(2, '0')}</span>
+          </h2>
+          <div class="note-list">
+            {sortedPosts.map((post) => <PostCard post={post} />)}
+          </div>
+        </section>
+      )
+    }
+
+    {
+      sortedDiaries.length > 0 && (
+        <section class="tag-group" aria-labelledby="tag-diaries">
+          <h2 class="tag-group-head" id="tag-diaries">
+            <span>日记</span>
+            <span class="tag-group-count">{String(sortedDiaries.length).padStart(2, '0')}</span>
+          </h2>
+          <div class="tag-diary-list">
+            {sortedDiaries.map((entry) => {
+              const locked = entry.data.locked === true;
+              const excerpt = locked ? '' : plainText(entry.body).slice(0, 64);
+              const title = entry.data.title?.trim();
+              return (
+                <a class="tag-diary-row" href={withBase(`/diary/${entry.id}/`)} data-reveal>
+                  <time class="tag-diary-date" datetime={beijingIso(entry.data.date)}>
+                    {beijingDateDot(entry.data.date)}
+                  </time>
+                  <span class:list={['tag-diary-text', { 'is-sealed': locked }]}>
+                    {locked ? '已封存' : title || excerpt || '无题'}
+                  </span>
+                  <span class="tag-diary-arrow" aria-hidden="true">↗</span>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .tag-group {
+    margin-top: clamp(2rem, 4vw, 3rem);
+  }
+
+  .tag-group-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 0;
+    padding-bottom: 0.7rem;
+    border-bottom: 1px solid var(--ink);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    color: var(--brass);
+  }
+
+  .tag-group-count {
+    color: var(--muted);
+  }
+
+  .tag-diary-row {
+    display: grid;
+    grid-template-columns: 108px minmax(0, 1fr) 1.2rem;
+    align-items: baseline;
+    gap: 1.5rem;
+    padding: 1rem 0.35rem;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink);
+    transition: background-color 0.25s ease, padding 0.25s var(--ease);
+  }
+
+  .tag-diary-row:hover {
+    padding-left: 0.8rem;
+    background: color-mix(in srgb, var(--cyan-wash) 26%, transparent);
+  }
+
+  .tag-diary-date {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  .tag-diary-text {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .tag-diary-text.is-sealed {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+
+  .tag-diary-arrow {
+    justify-self: end;
+    color: var(--brass);
+    transition: transform 0.3s var(--ease);
+  }
+
+  .tag-diary-row:hover .tag-diary-arrow {
+    transform: translate(3px, -3px);
+  }
+
+  @media (max-width: 560px) {
+    .tag-diary-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.2rem 1rem;
+    }
+
+    .tag-diary-date {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

@@ -1,0 +1,1839 @@
+/* 迹忆（日记）：从 global.css 拆出的单页样式。列表台账、条目、相纸、心情光谱、封存与密钥。 */
+
+.mood-emoji {
+  font-size: 1.5em;
+  line-height: 1;
+  filter: saturate(0.92);
+}
+
+.mood-label {
+  font-family: var(--font-display);
+  font-size: 1em;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+}
+
+.mood-lg {
+  font-size: 0.78rem;
+}
+
+.mood-lg .mood-label {
+  letter-spacing: 0.16em;
+  color: var(--ink);
+}
+
+.index-section,
+.mood-section {
+  margin-top: var(--section-gap);
+}
+
+.spectrum {
+  position: relative;
+  isolation: isolate;
+  margin-top: 1.4rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ink) 34%, transparent);
+  background:
+    radial-gradient(90% 150% at 50% 52%, rgba(16, 33, 33, 0.9), transparent 72%),
+    #061011;
+  color: #ece7da;
+}
+
+.spectrum-stage {
+  position: relative;
+  height: clamp(13.5rem, 23vw, 16.5rem);
+  overflow: hidden;
+}
+
+.spectrum-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.spectrum-aura {
+  position: absolute;
+  inset: -20% -8%;
+  opacity: 0.3;
+  filter: blur(42px) saturate(1.3);
+  mask-image: linear-gradient(
+    180deg,
+    transparent,
+    rgba(0, 0, 0, 0.28) 22%,
+    rgba(0, 0, 0, 0.8) 41%,
+    #000 51%,
+    rgba(0, 0, 0, 0.34) 67%,
+    transparent 84%
+  );
+  animation: spectrum-drift 28s ease-in-out infinite alternate;
+}
+
+.spectrum-band {
+  position: absolute;
+  top: 45%;
+  right: -4%;
+  left: -4%;
+  height: 10%;
+  opacity: 0.56;
+  filter: blur(8px) saturate(1.3);
+  mask-image: linear-gradient(90deg, transparent, #000 3.5%, #000 96.5%, transparent);
+  mix-blend-mode: screen;
+  animation: spectrum-breathe 15s ease-in-out infinite;
+}
+
+.spectrum-thread {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.spectrum-thread-halo {
+  fill: none;
+  stroke-width: 8;
+  opacity: 0.28;
+  filter: blur(5px);
+  mix-blend-mode: screen;
+}
+
+.spectrum-thread-core {
+  fill: none;
+  stroke-width: 1.15;
+  opacity: 0.9;
+  mix-blend-mode: screen;
+}
+
+.spectrum-thread-spark {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.86);
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-dasharray: 30 970;
+  opacity: 0;
+  mix-blend-mode: screen;
+  animation: spectrum-spark 16s linear infinite;
+  animation-delay: -4s;
+}
+
+.spectrum-glint {
+  position: absolute;
+  top: 12%;
+  left: 0;
+  width: 14%;
+  height: 76%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+  filter: blur(11px);
+  opacity: 0;
+  mix-blend-mode: screen;
+  transform: translateX(-120%) skewX(-12deg);
+  animation: spectrum-sweep 17s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+  animation-delay: -5s;
+}
+
+.spectrum-stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(4, 11, 12, 0.38), transparent 10%, transparent 90%, rgba(4, 11, 12, 0.38)),
+    linear-gradient(180deg, rgba(4, 10, 11, 0.22), transparent 24%, transparent 58%, rgba(4, 10, 11, 0.58)),
+    radial-gradient(112% 110% at 50% 46%, transparent 50%, rgba(3, 9, 10, 0.34));
+  box-shadow: inset 0 0 68px rgba(0, 0, 0, 0.32);
+}
+
+.spectrum-track {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spectrum-stop {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.spectrum-event {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+  padding: 0 0.2rem 1.25rem;
+  color: inherit;
+  text-decoration: none;
+  transition: opacity 0.35s ease;
+}
+
+.spectrum-event:focus-visible {
+  outline: none;
+}
+
+.spectrum-event:focus-visible .spectrum-mark {
+  outline: 2px solid var(--brass);
+  outline-offset: 5px;
+}
+
+.spectrum-ray {
+  position: absolute;
+  top: 7%;
+  left: 50%;
+  width: min(12rem, 165%);
+  height: 79%;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 36% 38% at 50% 54%,
+      color-mix(in srgb, var(--light) 58%, transparent),
+      transparent 72%
+    ),
+    linear-gradient(
+      90deg,
+      transparent 8%,
+      color-mix(in srgb, var(--light) 24%, transparent) 50%,
+      transparent 92%
+    ),
+    linear-gradient(
+      180deg,
+      transparent,
+      color-mix(in srgb, var(--light) 18%, transparent) 28%,
+      transparent 84%
+    );
+  filter: blur(13px) saturate(1.12);
+  opacity: 0.52;
+  mix-blend-mode: screen;
+  transform: translateX(-50%);
+  animation: spectrum-ray var(--ray) ease-in-out infinite;
+  animation-delay: var(--delay);
+}
+
+.spectrum-ray::after {
+  content: '';
+  position: absolute;
+  top: 2%;
+  bottom: 2%;
+  left: 50%;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--light) 42%, transparent) 22%,
+    color-mix(in srgb, var(--light) 76%, transparent) 46%,
+    color-mix(in srgb, var(--light) 88%, #fff) 50%,
+    color-mix(in srgb, var(--light) 56%, transparent) 60%,
+    color-mix(in srgb, var(--light) 24%, transparent) 82%,
+    transparent
+  );
+  opacity: 0.72;
+  transform: translateX(-50%);
+}
+
+.spectrum-star {
+  position: absolute;
+  top: var(--star-y);
+  left: 50%;
+  z-index: 2;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--light) 64%, #fff);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--light) 52%, transparent),
+    0 0 11px 2px color-mix(in srgb, var(--light) 76%, transparent),
+    0 0 30px 8px color-mix(in srgb, var(--light) 32%, transparent);
+  transform: translate(-50%, -50%);
+  transition:
+    scale 0.4s var(--ease),
+    box-shadow 0.4s ease;
+  animation: spectrum-float var(--float) ease-in-out infinite;
+  animation-delay: var(--delay);
+}
+
+.spectrum-glyph {
+  position: absolute;
+  top: calc(var(--star-y) - 2.1rem);
+  left: 50%;
+  font-size: clamp(0.8rem, 1.2vw, 1rem);
+  line-height: 1;
+  opacity: 0;
+  filter: saturate(0.7) drop-shadow(0 0 7px color-mix(in srgb, var(--light) 45%, transparent));
+  pointer-events: none;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s var(--ease),
+    filter 0.35s ease;
+}
+
+.spectrum-mark {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  max-width: 100%;
+  white-space: nowrap;
+  transition: transform 0.35s var(--ease);
+}
+
+.spectrum-name {
+  overflow: hidden;
+  max-width: 100%;
+  font-family: var(--font-display);
+  font-size: clamp(0.68rem, 1vw, 0.86rem);
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  color: rgba(236, 231, 218, 0.7);
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.7);
+  transition:
+    color 0.3s ease,
+    letter-spacing 0.3s var(--ease);
+}
+
+.spectrum-day {
+  height: 1em;
+  font-family: var(--font-mono);
+  font-size: 0.48rem;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--light) 70%, #fff);
+  opacity: 0;
+  transform: translateY(-2px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s var(--ease);
+}
+
+.spectrum-event:hover .spectrum-star,
+.spectrum-event:focus-visible .spectrum-star {
+  scale: 1.55;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--light) 72%, #fff),
+    0 0 16px 3px color-mix(in srgb, var(--light) 88%, transparent),
+    0 0 44px 13px color-mix(in srgb, var(--light) 42%, transparent);
+}
+
+.spectrum-event:hover .spectrum-glyph,
+.spectrum-event:focus-visible .spectrum-glyph {
+  opacity: 1;
+  filter: saturate(0.9) drop-shadow(0 0 10px color-mix(in srgb, var(--light) 58%, transparent));
+  transform: translate(-50%, 0);
+}
+
+.spectrum-event:hover .spectrum-name,
+.spectrum-event:focus-visible .spectrum-name {
+  color: #f2eee3;
+  letter-spacing: 0.1em;
+}
+
+.spectrum-event:hover .spectrum-day,
+.spectrum-event:focus-visible .spectrum-day {
+  opacity: 0.72;
+  transform: none;
+}
+
+.spectrum-event:hover .spectrum-mark,
+.spectrum-event:focus-visible .spectrum-mark {
+  transform: translateY(-3px);
+}
+
+@media (hover: hover) {
+  .spectrum-track:hover .spectrum-event:not(:hover) {
+    opacity: 0.5;
+  }
+}
+
+.spectrum-track:focus-within .spectrum-event:not(:focus-visible) {
+  opacity: 0.5;
+}
+
+.spectrum-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.62rem 0.95rem 0.66rem;
+  border-top: 1px solid rgba(236, 231, 218, 0.09);
+  background: rgba(4, 11, 12, 0.24);
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  line-height: 1.5;
+  letter-spacing: 0.12em;
+  color: rgba(236, 231, 218, 0.44);
+}
+
+.spectrum-range {
+  color: rgba(236, 231, 218, 0.62);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.spectrum-block {
+  margin-block: 2rem 3.2rem;
+}
+
+.spectrum-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+:root:not([data-theme='dark']) .spectrum {
+  border-color: color-mix(in srgb, var(--ink) 20%, transparent);
+  background:
+    radial-gradient(92% 150% at 50% 50%, rgba(255, 255, 255, 0.46), transparent 72%),
+    linear-gradient(180deg, var(--card), color-mix(in srgb, var(--card) 68%, var(--paper-deep)));
+  color: var(--ink);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+    0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+:root:not([data-theme='dark']) .spectrum-aura {
+  opacity: 0.2;
+  filter: blur(38px) saturate(1.45);
+  mix-blend-mode: multiply;
+}
+
+:root:not([data-theme='dark']) .spectrum-band {
+  opacity: 0.26;
+  filter: blur(10px) saturate(1.35);
+  mix-blend-mode: multiply;
+  animation-name: spectrum-breathe-day;
+}
+
+:root:not([data-theme='dark']) .spectrum-thread-halo {
+  opacity: 0.22;
+  filter: blur(4px) brightness(0.66) saturate(1.5);
+  mix-blend-mode: multiply;
+}
+
+:root:not([data-theme='dark']) .spectrum-thread-core {
+  opacity: 0.74;
+  filter: brightness(0.58) saturate(1.6);
+  mix-blend-mode: multiply;
+}
+
+:root:not([data-theme='dark']) .spectrum-thread-spark {
+  stroke: color-mix(in srgb, var(--brass) 72%, var(--ink));
+  mix-blend-mode: normal;
+}
+
+:root:not([data-theme='dark']) .spectrum-glint {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.62), transparent);
+  mix-blend-mode: soft-light;
+  animation-name: spectrum-sweep-day;
+}
+
+:root:not([data-theme='dark']) .spectrum-stage::after {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(236, 232, 221, 0.45),
+      transparent 10%,
+      transparent 90%,
+      rgba(236, 232, 221, 0.45)
+    ),
+    linear-gradient(
+      180deg,
+      rgba(240, 236, 226, 0.18),
+      transparent 24%,
+      transparent 58%,
+      rgba(226, 221, 209, 0.55)
+    ),
+    radial-gradient(112% 110% at 50% 46%, transparent 52%, rgba(190, 183, 168, 0.28));
+  box-shadow: inset 0 0 68px rgba(120, 110, 92, 0.07);
+}
+
+:root:not([data-theme='dark']) .spectrum-ray {
+  opacity: 0.4;
+  filter: blur(14px) saturate(1.2);
+  mix-blend-mode: multiply;
+  animation-name: spectrum-ray-day;
+}
+
+:root:not([data-theme='dark']) .spectrum-ray::after {
+  opacity: 0.4;
+}
+
+:root:not([data-theme='dark']) .spectrum-star {
+  background: color-mix(in srgb, var(--light) 52%, var(--ink));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--light) 55%, var(--ink)),
+    0 0 11px 2px color-mix(in srgb, var(--light) 55%, transparent),
+    0 0 28px 7px color-mix(in srgb, var(--light) 26%, transparent);
+  mix-blend-mode: multiply;
+}
+
+:root:not([data-theme='dark']) .spectrum-event:hover .spectrum-star,
+:root:not([data-theme='dark']) .spectrum-event:focus-visible .spectrum-star {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--light) 50%, var(--ink)),
+    0 0 15px 3px color-mix(in srgb, var(--light) 68%, transparent),
+    0 0 38px 11px color-mix(in srgb, var(--light) 34%, transparent);
+}
+
+:root:not([data-theme='dark']) .spectrum-glyph {
+  filter: saturate(0.85) drop-shadow(0 2px 5px rgba(28, 36, 34, 0.18));
+}
+
+:root:not([data-theme='dark']) .spectrum-event:hover .spectrum-glyph,
+:root:not([data-theme='dark']) .spectrum-event:focus-visible .spectrum-glyph {
+  filter: saturate(0.95) drop-shadow(0 2px 7px rgba(28, 36, 34, 0.24));
+}
+
+:root:not([data-theme='dark']) .spectrum-name {
+  color: color-mix(in srgb, var(--light) 26%, var(--ink));
+  text-shadow: none;
+}
+
+:root:not([data-theme='dark']) .spectrum-event:hover .spectrum-name,
+:root:not([data-theme='dark']) .spectrum-event:focus-visible .spectrum-name {
+  color: var(--ink);
+}
+
+:root:not([data-theme='dark']) .spectrum-day {
+  color: color-mix(in srgb, var(--light) 38%, var(--ink-soft));
+}
+
+:root:not([data-theme='dark']) .spectrum-foot {
+  border-top-color: color-mix(in srgb, var(--ink) 12%, transparent);
+  background: color-mix(in srgb, var(--paper) 40%, transparent);
+  color: color-mix(in srgb, var(--ink) 56%, transparent);
+}
+
+:root:not([data-theme='dark']) .spectrum-range {
+  color: color-mix(in srgb, var(--ink) 76%, transparent);
+}
+
+.diary-epigraph {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  max-width: 42em;
+  margin: 1.7rem 0 0;
+}
+
+.diary-epigraph-mark {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 2.8rem;
+  line-height: 0.75;
+  color: var(--brass);
+  opacity: 0.8;
+}
+
+.diary-epigraph p {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  line-height: 1.95;
+  color: var(--ink-soft);
+}
+
+.diary-epigraph cite {
+  display: block;
+  margin-top: 0.55rem;
+  font-family: var(--font-mono);
+  font-size: 0.53rem;
+  font-style: normal;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.ledger {
+  border-top: 1px solid var(--ink);
+}
+
+.ledger-entry {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  padding: 2.1rem 0;
+  border-bottom: 1px solid var(--rule);
+  /* 屏外条目跳过排版/绘制；估算值按有无配图分开，误差比统一值小得多 */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 133px;
+}
+
+.ledger-entry.has-thumbs {
+  contain-intrinsic-size: auto 397px;
+}
+
+.entry-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.entry-date {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  color: var(--ink);
+}
+
+.entry-day {
+  font-family: var(--font-display);
+  font-size: 2.9rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.entry-ym {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.entry-main {
+  max-width: 46em;
+}
+
+.entry-weekday {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  color: var(--brass);
+}
+
+.entry-dot {
+  color: var(--brass);
+}
+
+.entry-time {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+
+.entry-weekday-tail {
+  color: var(--brass);
+}
+
+.entry-text {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.06rem;
+  line-height: 2;
+  color: var(--ink);
+}
+
+.entry-no-mood {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.entry-thumbs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+}
+
+.entry-thumbs img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid var(--rule);
+  filter: saturate(0.9);
+}
+
+.entry-thumbs.is-single {
+  grid-template-columns: minmax(0, 420px);
+}
+
+.entry-thumbs.is-single img {
+  aspect-ratio: 3 / 2;
+}
+
+/* 带 +N 的那张点了是进详情页，不是开灯箱 */
+.entry-thumb.is-more {
+  cursor: pointer;
+}
+
+.entry-thumb.is-more::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  /* 固定用暗色蒙层：--ink 在暗色主题里是浅色，混出来反而把图提亮。
+     中间重、四角轻的软晕，比整块压暗更不抢戏 */
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgb(9 15 14 / 0.6) 0%,
+    rgb(9 15 14 / 0.34) 62%,
+    rgb(9 15 14 / 0.22) 100%
+  );
+  opacity: 0.85;
+  transition: opacity 0.35s var(--ease);
+}
+
+.entry-thumb.is-more.is-hover::before,
+.entry-thumb.is-more:focus-visible::before {
+  opacity: 0.5;
+}
+
+.thumb-more {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+  letter-spacing: 0.1em;
+  color: #fffdf5;
+  text-shadow: 0 1px 10px rgb(6 10 9 / 0.6);
+}
+
+.entry-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.7rem 1.4rem;
+  margin-top: 1.2rem;
+}
+
+.entry-attach {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.diary-page {
+  padding-top: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.diary-hero {
+  margin-bottom: clamp(1.8rem, 4vw, 2.8rem);
+}
+
+.diary-date-title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.2rem 1rem;
+  margin: 0;
+  line-height: 1;
+}
+
+.diary-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 1.3rem;
+}
+
+.diary-page {
+  /* 一张图的显示上限：按这个高度把整张图等比缩下来，不再裁切 */
+  --figure-max-h: min(78vh, 720px);
+}
+
+.diary-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 0.8rem;
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+  /* 一格里放了张长图时，别把同一行的其它图也拉到一样高（那会留下大片空相纸） */
+  align-items: start;
+}
+
+.diary-figure {
+  margin: 0;
+  padding: 0.45rem;
+  border: 1px solid var(--rule);
+  background: var(--card);
+  justify-self: center;
+  max-width: 100%;
+}
+
+.diary-figure img {
+  display: block;
+  /* 宽度跟列走、高度封顶：竖图按比例缩窄并居中，不会被撑成一面墙 */
+  width: auto;
+  max-width: 100%;
+  max-height: var(--figure-max-h);
+  margin-inline: auto;
+}
+
+/* 长截图（宽高比 < 0.62）：整张等比缩到 --figure-max-h 那么高，
+   相纸按 --ar 算出来的宽度收紧，图会缩成一条窄的、但一眼能看全，不再裁掉下半截 */
+.diary-figure.is-tall {
+  width: calc(var(--figure-max-h) * var(--ar, 0.45) + 0.9rem);
+}
+
+/* 超级长条（宽高比 < 0.2，整条聊天记录那种）：同样的高度下只剩几十像素宽，
+   所以给它单独放宽高度预算——几乎占满一屏，宽度才勉强够看清，下面是真是假一眼也就知道了 */
+.diary-figure.is-ultra {
+  --figure-max-h: min(92vh, 1100px);
+}
+
+.diary-figure.is-tall img {
+  width: 100%;
+  height: auto;
+  max-height: none;
+}
+
+/* 宽屏：0.35–0.62 的竖图浮到正文右侧的边栏，完整显示、不裁切 ----------------
+   正文栏固定 720px 居中，1440 下两侧各留 360px，正好放一张 260px 左右的图。
+   用 float + 负右外边距把它推进留白里：文字紧贴着它绕排（不再是一张图独占一屏、
+   两边的留白全空着），容器开了 flow-root，所以文章高度照样把它算进去，
+   不会压到下面的随日记和页码。窄屏没有边栏可用，退回行内、整张等比缩小。 */
+@media (min-width: 1280px) {
+  .diary-typing {
+    display: flow-root;
+    --margin-w: clamp(200px, 17vw, 272px);
+    --margin-gap: 1.8rem;
+  }
+
+  .diary-figure.is-margin {
+    float: right;
+    justify-self: end;
+    width: var(--margin-w);
+    margin: 0.35rem calc(-1 * (var(--margin-w) + var(--margin-gap))) 1.4rem var(--margin-gap);
+  }
+
+  .diary-figure.is-margin img {
+    width: 100%;
+    height: auto;
+    max-height: none;
+    object-fit: contain;
+  }
+}
+
+.diary-prose {
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 1.5vw, 1.15rem);
+  line-height: 2.05;
+  color: var(--ink);
+}
+
+.diary-typing {
+  position: relative;
+  --typing-pending: color-mix(in srgb, var(--ink) 24%, transparent);
+}
+
+.js .diary-typing[data-typing-state='pending']:not([data-typing-ready]) .diary-typing-source {
+  opacity: 0.24;
+}
+
+.diary-typing-token {
+  transition:
+    color 300ms ease,
+    background-color 220ms ease,
+    text-decoration-color 220ms ease;
+}
+
+.diary-typing-token.is-pending {
+  color: var(--typing-pending);
+}
+
+.diary-typing-token.is-typo {
+  color: var(--stamp);
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: color-mix(in srgb, var(--stamp) 62%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+
+.diary-typing-token.is-deleting {
+  color: transparent;
+  background-color: transparent;
+  text-decoration-color: transparent;
+}
+
+.diary-typing-atomic {
+  transition: opacity 320ms ease;
+}
+
+.diary-typing-atomic.is-pending {
+  opacity: 0.16;
+}
+
+.diary-typing-source a.is-pending {
+  border-bottom-color: color-mix(in srgb, var(--brass) 16%, transparent);
+}
+
+.diary-typing-skip {
+  position: fixed;
+  right: clamp(0.9rem, 2.4vw, 1.8rem);
+  bottom: clamp(0.9rem, 2.2vw, 1.4rem);
+  z-index: 79;
+  display: none;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.36rem 0.5rem 0.38rem 0.62rem;
+  border: 1px solid color-mix(in srgb, var(--rule) 82%, transparent);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.js .diary-typing[data-typing-state='typing'] .diary-typing-skip {
+  display: inline-flex;
+}
+
+.diary-typing-skip:hover {
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+.diary-typing-skip:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+  color: var(--ink);
+}
+
+.diary-typing-skip kbd {
+  padding: 0.04rem 0.22rem 0.08rem;
+  border: 1px solid var(--rule-soft);
+  font-family: inherit;
+  font-size: 0.46rem;
+  letter-spacing: 0.12em;
+  color: var(--brass);
+}
+
+.diary-caret {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 80;
+  width: 1.5px;
+  border-radius: 1px;
+  background: var(--brass);
+  box-shadow: 0 0 0.35rem color-mix(in srgb, var(--brass) 42%, transparent);
+  pointer-events: none;
+  will-change: transform;
+  animation: diary-caret-blink 1.08s steps(1, end) infinite;
+}
+
+.diary-ime {
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
+  z-index: 81;
+  min-width: 168px;
+  max-width: min(380px, calc(100vw - 24px));
+  padding: 0.42rem 0.5rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--rule) 88%, var(--brass));
+  background: var(--card);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.16),
+    0 1px 0 color-mix(in srgb, var(--paper) 72%, transparent) inset;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.11s ease, transform 0.11s ease;
+  pointer-events: none;
+}
+
+.diary-ime::before {
+  content: '';
+  position: absolute;
+  inset: 0.35rem auto 0.35rem 0;
+  width: 2px;
+  background: var(--brass);
+  opacity: 0.72;
+}
+
+.diary-ime.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.diary-ime-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.18rem 0.55rem;
+  padding: 0 0.2rem 0.32rem 0.35rem;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.diary-ime-compose {
+  flex: 1 1 7rem;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.diary-ime-compose::after {
+  content: '';
+  display: inline-block;
+  width: 1px;
+  height: 0.82em;
+  margin-left: 2px;
+  vertical-align: -0.06em;
+  background: var(--cyan);
+  animation: diary-caret-blink 1.08s steps(1, end) infinite;
+}
+
+.diary-ime-mode {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.44rem;
+  letter-spacing: 0.2em;
+  color: var(--brass);
+}
+
+.diary-ime-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.06rem 0.08rem;
+  padding: 0.34rem 0 0 0.1rem;
+}
+
+.diary-ime-item {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 0.2rem;
+  padding: 0.12rem 0.28rem 0.15rem;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: background-color 0.1s ease, border-color 0.1s ease;
+}
+
+.diary-ime-item.is-active {
+  background: color-mix(in srgb, var(--cyan-wash) 68%, transparent);
+  border-color: color-mix(in srgb, var(--cyan) 26%, transparent);
+}
+
+.diary-ime-index {
+  font-family: var(--font-mono);
+  font-size: 0.46rem;
+  color: var(--muted);
+}
+
+.diary-ime-item.is-active .diary-ime-index {
+  color: var(--cyan-deep);
+}
+
+:root[data-theme='dark'] .diary-ime-item.is-active .diary-ime-index {
+  color: var(--cyan);
+}
+
+.diary-ime-glyph {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+@media (max-width: 560px) {
+  .diary-ime {
+    min-width: 150px;
+    padding: 0.36rem 0.42rem 0.42rem;
+  }
+
+  .diary-ime-compose {
+    font-size: 0.72rem;
+  }
+
+  .diary-ime-list {
+    gap: 0.04rem;
+    padding-top: 0.3rem;
+  }
+
+  .diary-ime-item {
+    gap: 0.16rem;
+    padding: 0.1rem 0.22rem 0.12rem;
+  }
+
+  .diary-ime-glyph {
+    font-size: 0.92rem;
+  }
+
+  .diary-typing-skip {
+    right: 0.9rem;
+    bottom: 0.9rem;
+    padding: 0.36rem 0.55rem 0.38rem;
+  }
+
+  .diary-typing-skip kbd {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .diary-typing[data-typing-state='pending'] .diary-typing-source {
+    opacity: 1 !important;
+  }
+
+  .diary-typing-token,
+  .diary-typing-atomic {
+    transition: none;
+  }
+
+  .diary-typing-token.is-pending {
+    color: inherit;
+  }
+
+  .diary-typing-atomic.is-pending {
+    opacity: 1;
+  }
+
+  .diary-typing-source a.is-pending {
+    border-bottom-color: color-mix(in srgb, var(--brass) 45%, transparent);
+  }
+
+  .diary-typing-skip,
+  .diary-caret,
+  .diary-ime {
+    display: none !important;
+  }
+}
+
+@media print {
+  .diary-typing-source {
+    opacity: 1 !important;
+  }
+
+  .diary-typing-token.is-pending {
+    color: inherit !important;
+  }
+
+  .diary-typing-atomic.is-pending {
+    opacity: 1 !important;
+  }
+
+  .diary-typing-skip,
+  .diary-caret,
+  .diary-ime {
+    display: none !important;
+  }
+}
+
+.redact {
+  display: inline-block;
+  width: 2.4em;
+  height: 0.72em;
+  margin: 0 0.12em;
+  overflow: hidden;
+  vertical-align: -0.04em;
+  border-radius: 1px;
+  color: transparent;
+  background: #070b0a;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 26%, transparent);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.redaction-note {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule-soft);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.redaction-note .redact {
+  width: 1.8em;
+  height: 0.58em;
+  margin: 0;
+}
+
+.ledger-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 2.8rem 0 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  text-align: center;
+}
+
+.ledger-more .text-link {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  letter-spacing: 0.02em;
+}
+
+.ledger-more.is-loading .ledger-more-link {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.ledger-more-status {
+  min-height: 1.1em;
+  font-size: 0.58rem;
+  color: var(--brass);
+}
+
+.ledger-more.is-error .ledger-more-status {
+  color: var(--stamp);
+}
+
+.ledger-more.is-end {
+  padding-top: 2.2rem;
+}
+
+.ledger-pager {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.4rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+body:has(.diary-typing[data-typing-state='typing']) .dm-top {
+  bottom: calc(clamp(0.9rem, 2.2vw, 1.4rem) + 37px);
+}
+
+@media (max-width: 760px) {
+  .ledger-entry {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    padding-block: 1.7rem;
+    contain-intrinsic-size: auto 196px;
+  }
+
+  .ledger-entry.has-thumbs {
+    contain-intrinsic-size: auto 420px;
+  }
+
+  .entry-side {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.8rem;
+  }
+
+  .entry-day {
+    font-size: 2.1rem;
+  }
+
+  .entry-weekday {
+    margin-bottom: 0.55rem;
+  }
+
+  .entry-thumbs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .diary-date-title {
+    gap: 0.15rem 0.8rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .spectrum-stage {
+    height: clamp(13rem, 54vw, 15.5rem);
+  }
+
+  .spectrum-event {
+    padding-inline: 0.08rem;
+    padding-bottom: 1.1rem;
+  }
+
+  .spectrum-name {
+    font-size: 0.58rem;
+    letter-spacing: 0.02em;
+  }
+
+  .spectrum-day {
+    font-size: 0.44rem;
+    letter-spacing: 0.02em;
+  }
+
+  .spectrum-glyph {
+    font-size: 0.7rem;
+  }
+
+  .spectrum-ray {
+    width: 170%;
+  }
+
+  .spectrum-foot {
+    padding-inline: 0.7rem;
+    font-size: 0.46rem;
+    letter-spacing: 0.06em;
+  }
+
+  .entry-thumbs {
+    gap: 0.4rem;
+  }
+
+  .diary-figures {
+    grid-template-columns: 1fr;
+  }
+
+  .diary-epigraph {
+    gap: 0.65rem;
+  }
+
+  .diary-epigraph-mark {
+    font-size: 2.4rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry-thumb,
+  .diary-figure {
+    transform: none !important;
+  }
+
+  .entry-thumb::after,
+  .diary-figure::after {
+    display: none;
+  }
+}
+
+
+/* 26.1 · 可点的照片：按钮归零，倾角挂在按钮上 --------------------------------
+   不能挂在 img 上：.pimg.is-full 的 filter 过渡（两个类）会整块覆盖掉
+   img 的 transition，上浮就变成 0 帧起落；按钮没有这个冲突 */
+.entry-thumb,
+.diary-figure-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  text-align: inherit;
+}
+
+.entry-thumb {
+  position: relative;
+  transform: perspective(720px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))
+    translateY(var(--lift-y, 0px)) scale(var(--tilt-z, 1));
+  transition:
+    transform 0.55s var(--ease),
+    box-shadow 0.55s var(--ease);
+  box-shadow: 0 0 0 rgba(12, 20, 18, 0);
+}
+
+.entry-thumb.is-tilting {
+  transition-duration: 0.12s;
+}
+
+.entry-thumb.is-hover,
+.entry-thumb:focus-visible {
+  --lift-y: -7px;
+  --tilt-z: 1.025;
+  z-index: 3;
+  box-shadow: 0 18px 34px -14px color-mix(in srgb, var(--photo-shadow) 46%, transparent);
+}
+
+.entry-thumb img,
+.entry-thumb .pimg.is-full {
+  transition:
+    filter 0.55s var(--ease),
+    border-color 0.55s ease;
+}
+
+.entry-thumb.is-hover img,
+.entry-thumb:focus-visible img {
+  border-color: var(--brass-soft);
+  filter: saturate(1);
+}
+
+.entry-thumb::after,
+.diary-figure::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(
+    230px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 252, 240, 0.16),
+    transparent 62%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.entry-thumb.is-hover::after,
+.entry-thumb:focus-visible::after,
+.diary-figure.is-hover::after {
+  opacity: 1;
+}
+
+.diary-figure::after {
+  translate: 0 0 var(--lift-z, 0px);
+  transition:
+    translate 0.55s var(--ease),
+    opacity 0.35s ease;
+}
+
+.diary-figure {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  perspective: 1100px;
+  translate: 0 var(--lift-y, 0px);
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition:
+    translate 0.55s var(--ease),
+    transform 0.12s var(--ease);
+}
+
+/* Z 抬升走相纸自己的 translate 通道：透视投影下相纸连影子一起被放大，
+   与倾角（0.12s）、翻面（0.7s）各是一条时间线，互不抢过渡 */
+.diary-figure-paper {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  padding: 0.45rem;
+  border: 1px solid var(--rule);
+  background: var(--card);
+  user-select: none;
+  -webkit-user-select: none;
+  translate: 0 0 var(--lift-z, 0px);
+  transition:
+    translate 0.55s var(--ease),
+    border-color 0.55s ease;
+}
+
+.diary-figure.is-hover,
+.diary-figure:has(:focus-visible) {
+  --lift-y: -9px;
+  --lift-z: 80px;
+  z-index: 3;
+}
+
+.diary-figure-paper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  box-shadow:
+    0 2px 6px -2px color-mix(in srgb, var(--photo-shadow) 20%, transparent),
+    0 14px 30px -14px color-mix(in srgb, var(--photo-shadow) 18%, transparent);
+  transition: box-shadow 0.55s var(--ease);
+  pointer-events: none;
+}
+
+.diary-figure.is-hover .diary-figure-paper::before,
+.diary-figure:has(:focus-visible) .diary-figure-paper::before {
+  box-shadow:
+    0 6px 14px -6px color-mix(in srgb, var(--photo-shadow) 28%, transparent),
+    0 36px 68px -24px color-mix(in srgb, var(--photo-shadow) 38%, transparent);
+}
+
+.diary-figure.is-hover .diary-figure-paper,
+.diary-figure:has(:focus-visible) .diary-figure-paper {
+  border-color: var(--brass-soft);
+}
+
+.diary-figure.is-pressing .diary-figure-paper {
+  border-color: var(--brass);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brass) 40%, transparent);
+}
+
+.diary-figure-btn:focus-visible {
+  outline-offset: 2px;
+}
+
+.diary-lightbox {
+  max-width: min(94vw, 1100px);
+  max-height: 94vh;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  /* 超长图要能在弹层里上下翻：内容比 94vh 高时这里就变成滚动容器 */
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ink) 34%, transparent) transparent;
+}
+
+.diary-lightbox::backdrop {
+  background: rgba(5, 10, 10, 0);
+  -webkit-backdrop-filter: blur(0px);
+  backdrop-filter: blur(0px);
+  transition:
+    background 0.28s ease,
+    -webkit-backdrop-filter 0.28s ease,
+    backdrop-filter 0.28s ease;
+}
+
+.diary-lightbox.is-open::backdrop {
+  background: rgba(5, 10, 10, 0.86);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.diary-lightbox-img {
+  display: block;
+  margin-inline: auto;
+  max-width: 100%;
+  max-height: 84vh;
+  object-fit: contain;
+  border: 1px solid rgba(228, 223, 210, 0.25);
+  opacity: 0;
+  transform: translateY(10px) scale(0.965);
+  transition:
+    opacity 0.3s var(--ease),
+    transform 0.34s var(--ease);
+}
+
+/* 超级长图（高宽比 > 2.6，比如手机长截图）：不把它压成一条，
+   改成按原宽显示、在弹层里上下滚，这样图里的字才看得清 */
+.diary-lightbox-img.is-tall-scroll {
+  max-height: none;
+  width: auto;
+  max-width: min(100%, 660px);
+}
+
+.diary-lightbox.is-open .diary-lightbox-img {
+  opacity: 1;
+  transform: none;
+}
+
+.diary-lightbox-hint {
+  margin: 0.7rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-align: center;
+  color: #a8b3a6;
+  opacity: 0;
+  transition: opacity 0.3s ease 0.1s;
+}
+
+.diary-lightbox.is-open .diary-lightbox-hint {
+  opacity: 0.85;
+}
+
+/* 长图模式下提示跟着滚动条钉在底部，不然要滚到底才看得见 */
+.diary-lightbox-img.is-tall-scroll + .diary-lightbox-hint {
+  position: sticky;
+  bottom: 0.4rem;
+  width: max-content;
+  margin-inline: auto;
+  padding: 0.2rem 0.55rem;
+  border-radius: 2px;
+  background: rgba(7, 12, 11, 0.72);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.diary-figure.is-flippable {
+  perspective: 1100px;
+}
+
+.diary-figure.is-flippable .diary-figure-paper {
+  transform-style: preserve-3d;
+  transition:
+    transform 0.7s var(--ease),
+    translate 0.55s var(--ease),
+    border-color 0.3s ease;
+}
+
+.diary-figure.is-flipped .diary-figure-paper {
+  transform: rotateY(180deg);
+}
+
+.diary-figure.is-flippable .diary-figure-btn {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.diary-figure-back {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.9rem;
+  padding: 1.35rem 1.5rem;
+  overflow: auto;
+  scrollbar-width: none;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(180deg);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--card) 94%, white), var(--paper-deep));
+  cursor: pointer;
+}
+
+.diary-figure-back::-webkit-scrollbar {
+  display: none;
+}
+
+.diary-figure-back::before {
+  content: 'm∞';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 5vw, 3.6rem);
+  color: color-mix(in srgb, var(--ink) 8%, transparent);
+  transform: rotate(-16deg);
+  pointer-events: none;
+}
+
+.diary-figure-back-note {
+  margin: 0;
+  font-family: 'Kaiti SC', 'STKaiti', 'KaiTi', 'BiauKai', var(--font-display);
+  font-size: clamp(0.98rem, 1.6vw, 1.12rem);
+  line-height: 2.1;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  position: relative;
+}
+
+.diary-figure-back-stamp {
+  position: relative;
+  align-self: flex-end;
+  padding: 0.28rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--stamp) 55%, transparent);
+  color: color-mix(in srgb, var(--stamp) 82%, var(--ink));
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  transform: rotate(-2deg);
+  white-space: nowrap;
+}
+
+.diary-figure.is-flippable .diary-figure-paper::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px dashed color-mix(in srgb, var(--brass) 60%, transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.diary-figure.is-flippable.is-hover .diary-figure-paper::after {
+  opacity: 0.35;
+}
+
+.diary-figure.is-flippable.is-pressing .diary-figure-paper::after {
+  opacity: 0.85;
+}
+
+html.has-cursor-mark .diary-lightbox[open],
+html.has-cursor-mark .diary-lightbox[open] * {
+  cursor: auto !important;
+}
+
+html.has-cursor-mark .diary-lightbox[open] .lightbox-close {
+  cursor: pointer !important;
+}
+
+.diary-lock {
+  position: relative;
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+  padding: clamp(1.7rem, 4vw, 2.5rem) clamp(1.3rem, 4vw, 2.4rem) clamp(1.25rem, 3vw, 1.8rem);
+  border: 1px solid var(--rule);
+  background:
+    radial-gradient(420px 220px at 16% -30%, color-mix(in srgb, var(--brass) 12%, transparent), transparent 70%),
+    var(--card);
+}
+
+.diary-lock[hidden] {
+  display: none;
+}
+
+.diary-lock::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 1px solid color-mix(in srgb, var(--rule) 55%, transparent);
+  pointer-events: none;
+}
+
+.diary-lock.is-busy .lock-field::after {
+  opacity: 1;
+  animation: lock-scan 1.2s var(--ease) infinite;
+}
+
+.diary-lock.is-busy .lock-submit {
+  cursor: progress;
+}
+
+.diary-lock.is-shaking {
+  animation: lock-shake 0.5s var(--ease);
+}
+
+.diary-lock.is-broken {
+  opacity: 0;
+  transform: translateY(-5px) scale(0.995);
+  transition:
+    opacity 0.26s ease,
+    transform 0.26s var(--ease);
+  pointer-events: none;
+}
+
+.diary-lock.is-voiding {
+  opacity: 0;
+  filter: blur(4px);
+  transition:
+    opacity 0.6s ease,
+    filter 0.6s ease;
+  pointer-events: none;
+}
+
+.diary-unsealed:focus {
+  outline: none;
+}
+
+.diary-unsealed:not([hidden]) {
+  animation: unseal-in 0.55s var(--ease) both;
+}
+
+.entry-sealed {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  line-height: 2;
+  color: var(--ink-soft);
+}
+
+.entry-sealed-lock {
+  flex: none;
+  width: 15px;
+  margin-top: 0.55em;
+  color: var(--brass);
+}
+
+.entry-sealed-lock svg {
+  width: 100%;
+  height: auto;
+}
+
+.entry-thumb.is-sealed {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.55rem;
+  aspect-ratio: 4 / 3;
+  border: 1px dashed color-mix(in srgb, var(--rule) 88%, transparent);
+  background-color: color-mix(in srgb, var(--card) 55%, transparent);
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 9px,
+    color-mix(in srgb, var(--rule) 22%, transparent) 9px 10px
+  );
+  color: var(--muted);
+  cursor: default;
+  box-shadow: none;
+}
+
+.entry-thumbs.is-single .entry-thumb.is-sealed {
+  aspect-ratio: 3 / 2;
+}
+
+.entry-thumb.is-sealed svg {
+  width: 26px;
+  height: 26px;
+  color: color-mix(in srgb, var(--brass) 72%, var(--muted));
+}
+
+.entry-thumb.is-sealed span {
+  font-family: var(--font-mono);
+  font-size: 0.54rem;
+  letter-spacing: 0.16em;
+}
+
+.entry-thumb.is-sealed::after {
+  display: none;
+}
+
+@media (max-width: 560px) {
+  .diary-lock {
+    padding: 1.35rem 1.15rem 1.2rem;
+  }
+
+  .entry-sealed {
+    font-size: 0.92rem;
+  }
+
+  .entry-thumb.is-sealed span {
+    font-size: 0.5rem;
+  }
+}
+
+/* 日记标签：细边框、单色，克制到不抢正文 */
+.diary-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  margin: 1.1rem 0 0;
+}
+
+.diary-tag {
+  padding: 0.16rem 0.42rem;
+  border: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  line-height: 1.7;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.diary-tag:hover {
+  color: var(--brass);
+  border-color: color-mix(in srgb, var(--brass) 60%, var(--rule));
+}

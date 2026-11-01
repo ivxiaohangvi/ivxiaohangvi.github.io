@@ -1,0 +1,119 @@
+---
+import { navItems, siteConfig, withBase } from '../config';
+import Wordmark from './Wordmark.astro';
+
+const pathname = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === '/' ? pathname === withBase('/') : pathname.startsWith(withBase(href));
+const searchActive = pathname.startsWith(withBase('/search'));
+---
+<header class="site-header">
+  <div class="masthead wrap">
+    <a class="brand" href={withBase('/')} aria-label={`${siteConfig.title} 首页`}>
+      <Wordmark />
+    </a>
+    <p class="brand-note">
+      <span>{siteConfig.author}的无限空间</span>
+      <span class="brand-sep" aria-hidden="true">/</span>
+      <span>{siteConfig.tagline}</span>
+    </p>
+    <div class="masthead-actions">
+      <a class={`search-link${searchActive ? ' active' : ''}`} href={withBase('/search/')} aria-label="搜索全站">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.5"></circle>
+          <path d="m16 16 4.5 4.5"></path>
+        </svg>
+        <span>搜索</span>
+      </a>
+      <button id="theme-toggle" type="button" aria-label="切换深色 / 浅色主题" title="切换主题">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <nav class="site-nav wrap" aria-label="主导航">
+    {
+      navItems.map((item) => {
+        const active = isActive(item.href);
+        return (
+          <a href={withBase(item.href)} class={active ? 'active' : ''} aria-current={active ? 'page' : undefined}>
+            {item.label}
+          </a>
+        );
+      })
+    }
+  </nav>
+</header>
+
+<script>
+  // 主题切换：从按钮处做一圈圆形扩散，新主题从孔里长出来。
+  // 幕布 = 旧主题的整页底色（body 计算样式原样拷贝，含辉光渐变），
+  // mask 挖孔的半径交给 GSAP tween；翻转本身藏在幕布后面瞬间完成。
+  import { gsap } from 'gsap';
+
+  function flipTheme(origin: { x: number; y: number }): void {
+    const root = document.documentElement;
+    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      root.dataset.theme = next;
+      localStorage.setItem('theme', next);
+      return;
+    }
+
+    // 上一枚幕布还在就先收掉：连续快切时永远以最新主题为准
+    document.querySelectorAll('.theme-wipe').forEach((el) => el.remove());
+
+    const bodyStyle = getComputedStyle(document.body);
+    const wipe = document.createElement('div');
+    wipe.className = 'theme-wipe';
+    wipe.style.backgroundColor = bodyStyle.backgroundColor;
+    wipe.style.backgroundImage = bodyStyle.backgroundImage;
+    const radius =
+      Math.ceil(
+        Math.hypot(
+          Math.max(origin.x, window.innerWidth - origin.x),
+          Math.max(origin.y, window.innerHeight - origin.y),
+        ),
+      ) + 2;
+    gsap.set(wipe, {
+      '--wipe-x': `${origin.x}px`,
+      '--wipe-y': `${origin.y}px`,
+      '--wipe-r': '0px',
+    });
+    document.body.append(wipe);
+    root.classList.add('theme-wiping');
+
+    root.dataset.theme = next;
+    localStorage.setItem('theme', next);
+
+    gsap.to(wipe, {
+      '--wipe-r': `${radius}px`,
+      duration: 0.75,
+      ease: 'power2.in',
+      onComplete: () => {
+        wipe.remove();
+        root.classList.remove('theme-wiping');
+      },
+    });
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    document.getElementById('theme-toggle')?.addEventListener('click', (event) => {
+      const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      flipTheme({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+    });
+  });
+
+  // 换页时幕布与过渡抑制无论如何都要清掉
+  document.addEventListener('astro:before-swap', () => {
+    document.querySelectorAll('.theme-wipe').forEach((el) => el.remove());
+    document.documentElement.classList.remove('theme-wiping');
+  });
+</script>

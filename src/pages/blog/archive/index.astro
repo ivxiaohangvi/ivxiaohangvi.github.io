@@ -1,0 +1,47 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ArchiveFurniture from '../../../components/ArchiveFurniture.astro';
+import { getBlogFurniture } from '../../../lib/archive';
+import { withBase } from '../../../config';
+
+const units = await getBlogFurniture();
+const total = units[0].items.reduce((sum, item) => sum + item.count, 0);
+const years = units[0].items.length;
+---
+
+<BaseLayout title="文章抽屉" description="按年份收进抽屉的文章归档。">
+  <div class="wrap">
+    <header class="page-head">
+      <p class="eyebrow">Archive / 抽屉</p>
+      <div class="page-head-line">
+        <h1>抽屉</h1>
+        <span class="page-count">{String(total).padStart(2, '0')} 篇 · {String(years).padStart(2, '0')} 年</span>
+      </div>
+      <p class="page-lede">长文不用按月份装订，一年收进一只抽屉。拉开哪一格，就是哪一年的全部文章。</p>
+      <a class="text-link page-head-link" href={withBase('/blog/')}>回到文章 <span aria-hidden="true">→</span></a>
+    </header>
+
+    <div class="archive-room">
+      <ArchiveFurniture skin="drawer" units={units} legend="一格 = 一年 · 铜把手 = 拉开那一年" />
+    </div>
+
+    <p class="archive-note">
+      抽屉是横着叠的，年份越多，柜子越高；翻旧年份的时候，视线只需要往下走，不用横着找。
+    </p>
+  </div>
+</BaseLayout>
+
+<style>
+  .archive-room {
+    padding-block: clamp(2.2rem, 5vw, 3.4rem) clamp(1.6rem, 3.5vw, 2.4rem);
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .archive-note {
+    margin: clamp(1.4rem, 3vw, 2rem) 0 clamp(2.5rem, 6vw, 4rem);
+    max-width: 34em;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.9;
+  }
+</style>

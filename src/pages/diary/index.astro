@@ -1,0 +1,96 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AsoulPeek from '../../components/AsoulPeek.astro';
+import MoodSpectrum from '../../components/MoodSpectrum.astro';
+import MobiusMark from '../../components/MobiusMark.astro';
+import DiaryLedger from '../../components/DiaryLedger.astro';
+import DiaryLedgerMore from '../../components/DiaryLedgerMore.astro';
+import DiaryLightbox from '../../components/DiaryLightbox.astro';
+import { withBase } from '../../config';
+import { DIARY_PAGE_SIZE, diaryPath, getSortedDiaryEntries } from '../../lib/diary-list';
+import { moodInfo } from '../../lib/mood';
+
+const entries = await getSortedDiaryEntries();
+const firstPage = entries.slice(0, DIARY_PAGE_SIZE);
+const moodEntries = entries.filter((entry) => Boolean(moodInfo(entry.data.mood, entry.data.moodKey)));
+const allSample = entries.length > 0 && entries.every((entry) => entry.data.sample);
+const nextPage = entries.length > DIARY_PAGE_SIZE ? withBase(diaryPath(2)) : null;
+
+const hasRedactions = entries.some((entry) => entry.body?.includes('class="redact"'));
+---
+<BaseLayout
+  title="迹忆"
+  description="小航的迹忆：每天的心情与记录，从 Daily You 同步推送而来。"
+  noindex
+  darkroomPrefetch="intent"
+>
+  <div class="wrap" data-back-to-top>
+    <header class="page-head">
+      <p class="eyebrow">FIELD NOTES / 日记</p>
+      <div class="page-head-line">
+        <h1>迹忆</h1>
+        <span class="page-count">{String(entries.length).padStart(2, '0')} 篇</span>
+      </div>
+      <p class="page-lede">
+        从 Daily You 同步来的日子。心情用一行色谱标出，在这里无需评判。
+      </p>
+      <a class="text-link page-head-link" href={withBase('/diary/archive/')}>
+        按月份装订 · 书架 <span>→</span>
+      </a>
+    </header>
+
+    <aside class="diary-epigraph" data-reveal>
+      <span class="diary-epigraph-mark" aria-hidden="true">“</span>
+      <div>
+        <p>你作出抉择的那一日，在日记上，相当的沉闷和平凡，当时还以为是生命中普通的一天。</p>
+        <cite>陶杰《杀鹌鹑的少女·当时只道是寻常》</cite>
+      </div>
+    </aside>
+
+    {
+      entries.length > 0 ? (
+        <>
+          {moodEntries.length > 0 && (
+            <section class="spectrum-block" aria-label="心情光谱">
+              <div class="spectrum-head">
+                <span>心情光谱 / MOOD TRACE</span>
+                <span>{moodEntries.length} 次有心情</span>
+              </div>
+              <MoodSpectrum
+                entries={moodEntries}
+                note={allSample ? '目前这些是导入测试留下的示例记录，会在你导入真实日记后替换。' : undefined}
+              />
+            </section>
+          )}
+
+          <div class="ledger" data-ledger data-ledger-infinite data-ledger-total={entries.length}>
+            <DiaryLedger entries={firstPage} lqipBudget={10} />
+          </div>
+
+          <DiaryLedgerMore
+            next={nextPage}
+            remaining={entries.length - firstPage.length}
+            total={entries.length}
+          />
+
+          {hasRedactions && (
+            <p class="redaction-note" data-reveal>
+              <span class="redact" data-pagefind-ignore aria-hidden="true">██</span>
+              有些人或事，我涂黑了，我想我的迹忆不应该影响他人。
+            </p>
+          )}
+        </>
+      ) : (
+        <div class="empty-state">
+          <MobiusMark class="empty-mark" />
+          <p class="empty-kicker">NO ENTRIES YET</p>
+          <h2>第一页还空着</h2>
+          <p>把 Daily You 的导出包带过来，这里就会慢慢长出日子。</p>
+          <a class="text-link" href={withBase('/about/')}>了解这个站 <span aria-hidden="true">→</span></a>
+        </div>
+      )
+    }
+  </div>
+  <DiaryLightbox />
+  <AsoulPeek />
+</BaseLayout>

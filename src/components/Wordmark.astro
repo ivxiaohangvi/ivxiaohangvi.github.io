@@ -1,0 +1,16 @@
+---
+import LiveInfinity from './LiveInfinity.astro';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+---
+<span class={`wordmark ${className}`.trim()}>
+  <span class="wordmark-m">m</span>
+  <span class="wordmark-ring-wrap">
+    <span class="wordmark-ring-space" aria-hidden="true">oxo</span>
+    <LiveInfinity class="wordmark-ring" />
+  </span>
+</span>

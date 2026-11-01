@@ -1,0 +1,72 @@
+---
+---
+<div class="nav-progress" aria-hidden="true"><i class="nav-progress-bar"></i></div>
+
+<script>
+  // Astro 5 的 ClientRouter 不再自带进度条，这里按转场事件补一条：
+  // 延迟 160ms 才显示，快切网络下用户完全看不到，只有慢跳转才浮现。
+  // scaleX 交给 GSAP timeline（缓入到 0.7 → 慢速 creep），比 setInterval 步进平滑。
+  import { gsap } from 'gsap';
+
+  const REVEAL = 160;
+  const CAP = 10000;
+  let bar: HTMLElement | null = null;
+  let revealTimer: number | undefined;
+  let capTimer: number | undefined;
+  let creep: gsap.core.Timeline | null = null;
+  let active = false;
+
+  const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const getBar = () => {
+    const el = document.querySelector<HTMLElement>('.nav-progress-bar');
+    // 换页后 DOM 是新的：GSAP 接管 scaleX，别让 CSS 上的 transform transition 再插一手
+    if (el && el !== bar) {
+      el.style.transition = 'none';
+      bar = el;
+    }
+    return el;
+  };
+
+  const stop = () => {
+    window.clearTimeout(revealTimer);
+    window.clearTimeout(capTimer);
+    creep?.kill();
+    creep = null;
+    active = false;
+  };
+
+  const start = () => {
+    stop();
+    revealTimer = window.setTimeout(() => {
+      const el = getBar();
+      if (!el) return;
+      active = true;
+      el.parentElement?.classList.add('is-active');
+      creep = gsap
+        .timeline()
+        .set(el, { scaleX: 0 })
+        .to(el, { scaleX: 0.7, duration: reduced() ? 0 : 0.6, ease: 'power2.out' })
+        .to(el, { scaleX: 0.94, duration: reduced() ? 0 : 9.4, ease: 'none' });
+    }, REVEAL);
+    capTimer = window.setTimeout(finish, CAP);
+  };
+
+  const finish = () => {
+    const wasActive = active;
+    stop();
+    if (!wasActive) return;
+    const el = bar;
+    if (!el) return;
+    gsap
+      .timeline()
+      .to(el, { scaleX: 1, duration: reduced() ? 0 : 0.28, ease: 'power2.out' })
+      .add(() => el.parentElement?.classList.remove('is-active'))
+      // 等 is-active 的透明度过渡走完再归零，肉眼看不到归零那一帧
+      .set(el, { scaleX: 0 }, '+=0.32');
+  };
+
+  document.addEventListener('astro:before-preparation', start);
+  document.addEventListener('astro:page-load', finish);
+  document.addEventListener('astro:after-render', finish);
+</script>

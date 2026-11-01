@@ -1,0 +1,53 @@
+---
+import { navItems, siteConfig, withBase } from '../config';
+import { beijingYear } from '../lib/date';
+import Wordmark from './Wordmark.astro';
+
+const year = beijingYear(new Date());
+const github = siteConfig.social.github.trim();
+const steam = siteConfig.social.steam.trim();
+const footerIndex = navItems.filter(({ href }) => href !== '/');
+---
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div class="footer-id">
+      <a class="footer-brand" href={withBase('/')} aria-label={`${siteConfig.title} 首页`}>
+        <Wordmark />
+      </a>
+      <p>{siteConfig.description}</p>
+      <p class="footer-since">SINCE {siteConfig.startYear} · MOXO.CC</p>
+    </div>
+
+    <nav class="footer-index" aria-label="页脚索引">
+      <p class="footer-label">索引</p>
+      <div class="footer-index-grid">
+        {
+          footerIndex.map((item) => (
+            <a href={withBase(item.href)}>{item.label}</a>
+          ))
+        }
+        <a href={withBase('/friends/')}>友人</a>
+        <a href={withBase('/guestbook/')}>留言</a>
+      </div>
+    </nav>
+
+    <div class="footer-col footer-connect">
+      <p class="footer-label">订阅与连接</p>
+      <a href={withBase('/rss.xml')}>RSS</a>
+      <a href={withBase('/llms.txt')}>llms.txt</a>
+      {github && <a href={github} target="_blank" rel="noopener noreferrer">GitHub ↗</a>}
+      {steam && <a href={steam} target="_blank" rel="noopener noreferrer">Steam ↗</a>}
+    </div>
+  </div>
+
+  <div class="wrap footer-base">
+    <span>© {year} {siteConfig.author} · {siteConfig.tagline}</span>
+    <span class="footer-stats" data-vercount hidden title="由 Vercount 计数">
+      <span>访问 <b id="vercount_value_site_pv">—</b></span>
+      <span aria-hidden="true">·</span>
+      <span>访客 <b id="vercount_value_site_uv">—</b></span>
+    </span>
+    <span class="colophon">纸 · 蓝晒 · 黄铜 / Astro + GSAP + three.js</span>
+    <a class="infinity-link" href={withBase('/infinity/')} title="∞ 彩蛋" aria-label="进入无限彩蛋">∞</a>
+  </div>
+</footer>

@@ -1,0 +1,45 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ArchiveFurniture from '../../../components/ArchiveFurniture.astro';
+import { getPhotoFurniture } from '../../../lib/archive';
+import { withBase } from '../../../config';
+
+const units = await getPhotoFurniture();
+const total = units[0].items.reduce((sum, item) => sum + item.count, 0);
+const rolls = units[0].items.length;
+---
+
+<BaseLayout title="胶卷柜" description="按相册归档的摄影：一罐胶卷是一卷相册。">
+  <div class="wrap">
+    <header class="page-head">
+      <p class="eyebrow">Archive / 胶卷柜</p>
+      <div class="page-head-line">
+        <h1>胶卷柜</h1>
+        <span class="page-count">{String(rolls).padStart(2, '0')} 卷 · {String(total).padStart(2, '0')} 格</span>
+      </div>
+      <p class="page-lede">一卷相册是一只暗盒，跟摄影页上从片缝里抽出底片的是同一种桶。装得多的卷，桶身也大一圈；标签上写着卷名，抽出来就能过片。</p>
+      <a class="text-link page-head-link" href={withBase('/photos/')}>回到摄影 <span aria-hidden="true">→</span></a>
+    </header>
+
+    <div class="archive-room">
+      <ArchiveFurniture skin="canister" units={units} legend="一桶 = 一卷相册 · 桶身大小 = 画幅数量 · 标签 = 卷名" />
+    </div>
+
+    <p class="archive-note">胶卷柜不按年份分层，按卷放。新拍的卷子放在最右边，旧卷子一直往左排。</p>
+  </div>
+</BaseLayout>
+
+<style>
+  .archive-room {
+    padding-block: clamp(2.2rem, 5vw, 3.4rem) clamp(1.6rem, 3.5vw, 2.4rem);
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .archive-note {
+    margin: clamp(1.4rem, 3vw, 2rem) 0 clamp(2.5rem, 6vw, 4rem);
+    max-width: 34em;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.9;
+  }
+</style>

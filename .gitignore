@@ -1,0 +1,45 @@
+# 构建产物
+dist/
+.astro/
+
+# 依赖
+node_modules/
+
+# 环境变量与本地设置
+.env
+.env.production
+.DS_Store
+Thumbs.db
+npm-debug.log*
+
+# Base64 vault 的解码产物：源文件保存在 vault/，构建前由 scripts/decode-vault.mjs 还原
+# 只忽略解码出来的正文，保留目录本身（.gitkeep 需要入库）
+src/content/diary/*.md
+src/content/moments/*.md
+src/pages/infinity.astro
+public/admin.html
+public/admin/
+public/login.html
+public/login/
+public/manage/
+public/phpmyadmin/
+public/wp-admin/
+
+# 私密日记的一切落盘产物：导入的正文/图片、封印后的钥匙环与密文、封印前原图备份
+# 整个目录挡住，避免以后跑 import:diary 或 seal 之后被 git add 带上来
+public/diary/
+backups/
+日记/
+daily-you/
+
+# LQIP 构建期中间档（清单 src/lib/image-lqip.json 入库，图档重建）
+public/photos/med/
+public/photos/thumb/
+public/moments/med/
+public/moments/thumb/
+
+# 本机分享码记录（主密码加密，绝不入库）
+分享码.sealed.json
+
+# 构建期生成的推送信息
+src/data/push-info.json

@@ -1,0 +1,275 @@
+---
+/**
+ * 日记灯箱：日记列表缩略图与内页配图共用的轻量大图查看器。
+ * 页面里任何带 data-lightbox 的元素被点击，就读其中第一张图的原图地址
+ * 打开这层原生 dialog；悬浮上浮与鼠标倾角（--rx/--ry/--lift-y）全在 CSS，
+ * 这里只负责开关与事件委托。
+ */
+import '../styles/diary.css';
+import '../styles/lightbox.css';
+---
+
+<dialog id="diary-lightbox" class="diary-lightbox" aria-label="查看日记图片">
+  <button class="lightbox-close" type="button" aria-label="关闭">×</button>
+  <img class="diary-lightbox-img" src="" alt="" />
+  <p class="diary-lightbox-hint" data-pagefind-ignore aria-hidden="true">点击任意处或按 ESC 关闭</p>
+</dialog>
+
+<script>
+  // 事件全部委托在 document 上，一次绑定、视图过渡换页后依然生效；
+  // dialog 元素每次事件现查（换页后 DOM 已换新）。
+  const MAX_TILT = 6.5; // 悬浮倾角上限（度）
+  const CLOSE_MS = 260; // 与 CSS 退场过渡时长保持一致
+  // 高宽比超过这个数就按「长图」处理：不塞进一屏，改成弹层里上下滚
+  const TALL_RATIO = 2.6;
+  const HINT_TEXT = '点击任意处或按 ESC 关闭';
+
+  const lightbox = () => document.getElementById('diary-lightbox') as HTMLDialogElement | null;
+  const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // 走站点路由（ClientRouter）的站内跳转：造一只临时 a 交给它自己的点击监听，
+  // 拿不到时原生默认行为也会照常导航，两条路都通
+  function goTo(href: string) {
+    const a = document.createElement('a');
+    a.href = href;
+    a.hidden = true;
+    document.body.append(a);
+    a.click();
+    a.remove();
+  }
+
+  let trigger: HTMLElement | null = null;
+  let closing = 0;
+
+  function openFrom(el: Element) {
+    const dialog = lightbox();
+    const img = dialog?.querySelector<HTMLImageElement>('.diary-lightbox-img');
+    const hint = dialog?.querySelector<HTMLElement>('.diary-lightbox-hint');
+    const pic = el.querySelector<HTMLImageElement>('img');
+    if (!dialog || !img || !pic) return;
+    const full = pic.dataset.full || pic.currentSrc || pic.src;
+    if (!full) return;
+    // 关闭后焦点还给触发处：列表页是按钮本身，内页是 figure 里那只按钮
+    trigger = el.querySelector<HTMLElement>('button') ?? (el as HTMLElement);
+    clearTimeout(dwell);
+    pending = null;
+    // 弹层接管指针后页面收不到 pointerout，悬浮状态就地清掉；
+    // 关闭后鼠标若还在图上，下一次 pointermove 会立刻重新浮起
+    disengage();
+    clearTimeout(closing);
+    // 超高长图不压进一屏，改成原宽显示、让弹层自己上下滚
+    img.classList.remove('is-tall-scroll');
+    const markTall = () => {
+      const tall = img.naturalHeight > 0 && img.naturalHeight / img.naturalWidth > TALL_RATIO;
+      img.classList.toggle('is-tall-scroll', tall);
+      if (hint) hint.textContent = tall ? '上下滚动看完整 · 点击任意处或按 ESC 关闭' : HINT_TEXT;
+    };
+    img.addEventListener('load', markTall, { once: true });
+    img.src = full;
+    img.alt = pic.alt;
+    if (img.complete) markTall();
+    if (hint) hint.textContent = HINT_TEXT;
+    dialog.scrollTop = 0;
+    if (!dialog.open) dialog.showModal();
+    // 下一帧再挂 is-open，让「未打开」样式先完成首帧绘制，过渡才起得来
+    requestAnimationFrame(() => dialog.classList.add('is-open'));
+  }
+
+  function close() {
+    const dialog = lightbox();
+    if (!dialog || !dialog.open) return;
+    dialog.classList.remove('is-open');
+    closing = window.setTimeout(() => dialog.close(), CLOSE_MS);
+  }
+
+  document.addEventListener('click', (e) => {
+    const target = e.target instanceof Element ? e.target : null;
+    const hit = target?.closest<HTMLElement>('[data-lightbox]');
+    if (hit) {
+      // 长按翻面后的松手点击：是长按的尾声，吞掉，别开灯箱
+      if (suppressClick) {
+        const armed = suppressClick;
+        suppressClick = null;
+        if (target && armed.contains(target)) return;
+      }
+      // 带「+N」的那张：点了直接进这一页，不开灯箱
+      const link = hit.dataset.lightboxLink;
+      if (link) {
+        goTo(link);
+        return;
+      }
+      openFrom(hit);
+      return;
+    }
+    // 灯箱开着时，点哪里（遮罩 / 大图 / ×）都是关闭
+    if (lightbox()?.open) close();
+  });
+
+  // 边缘长按翻面：按住相片四条边附近（内侧 35% 带内）半秒翻面，
+  // 中间区域怎么按都不翻。触屏同样可用。
+  // 注意不做减少动态拦截——翻面是看内容的功能，动画时长由 CSS 全局兜底。
+  document.addEventListener('pointerdown', (e) => {
+    // 新的一次按下，说明上一轮长按的松手 click 无论如何不会再来了
+    suppressClick = null;
+    if (e.button !== 0) return;
+    const fig = e.target instanceof Element
+      ? e.target.closest<HTMLElement>('[data-lightbox].is-flippable')
+      : null;
+    if (!fig) return;
+    const r = fig.getBoundingClientRect();
+    const band = Math.min(90, Math.min(r.width, r.height) * 0.35);
+    const nearEdge =
+      e.clientX < r.left + band ||
+      e.clientX > r.right - band ||
+      e.clientY < r.top + band ||
+      e.clientY > r.bottom - band;
+    if (!nearEdge) return;
+    pressFig = fig;
+    pressOrigin = { x: e.clientX, y: e.clientY };
+    fig.classList.add('is-pressing');
+    pressTimer = window.setTimeout(() => {
+      pressTimer = 0;
+      pressFig = null;
+      fig.classList.remove('is-pressing');
+      fig.classList.toggle('is-flipped');
+      suppressClick = fig;
+    }, HOLD_MS);
+  });
+
+  // 按住期间挪动（拖动/滚屏）视为放弃
+  document.addEventListener('pointermove', (e) => {
+    if (!pressFig || !pressOrigin) return;
+    if (Math.hypot(e.clientX - pressOrigin.x, e.clientY - pressOrigin.y) > 8) cancelPress();
+  });
+
+  document.addEventListener('pointerup', () => cancelPress());
+  document.addEventListener('pointercancel', () => cancelPress());
+
+  // 触屏长按别弹出系统菜单/选择框；桌面右键不受影响（只拦主键长按）
+  document.addEventListener('contextmenu', (e) => {
+    if (pressFig && e.target instanceof Element && pressFig.contains(e.target)) {
+      e.preventDefault();
+    }
+  });
+
+  document.addEventListener('dragstart', (e) => {
+    if (e.target instanceof Element && e.target.closest('[data-lightbox].is-flippable')) {
+      e.preventDefault();
+    }
+  });
+
+  // ESC 走同一套退场动画：拦下 cancel，手动放行。
+  // 原生 dialog 的 cancel / close 事件不冒泡（bubbles=false），必须用捕获相才能在 document 上收到
+  document.addEventListener('cancel', (e) => {
+    const dialog = lightbox();
+    if (dialog && e.target === dialog) {
+      e.preventDefault();
+      close();
+    }
+  }, true);
+
+  document.addEventListener('close', (e) => {
+    const dialog = lightbox();
+    if (dialog && e.target === dialog) {
+      dialog.classList.remove('is-open');
+      trigger?.focus();
+      trigger = null;
+    }
+  }, true);
+
+  // 悬浮倾角：把指针位置写进 CSS 变量，倾斜/上浮/高光的动效本体在样式里。
+  // 列表页缩略图要「停留片刻」才触发（防止滚动时鼠标划过一路起落、白耗性能），
+  // 内页配图少、通常就是冲着它去的，悬浮即触发。触屏与减少动态不参与。
+  const DWELL_MS = 170; // 列表页停留多久才算「真的想看」
+  // 迟滞带：悬浮本身会让元素位移（上浮 7px + 倾角），边缘一带会「追着鼠标」
+  // 反复 pointerout/pointerover 打摆。判定离开时放宽一圈，带内不收，带外才落。
+  const BAND = 14;
+  // 边缘长按翻面：按住相片四条边附近约半秒翻面，中间区域按了不翻；
+  // 挪动超过 8px（拖动/滚屏）即取消。长按翻面后松手的那次 click 要吞掉。
+  const HOLD_MS = 500;
+  let engaged: HTMLElement | null = null;
+  let pending: HTMLElement | null = null;
+  let dwell = 0;
+  let pressFig: HTMLElement | null = null;
+  let pressOrigin: { x: number; y: number } | null = null;
+  let pressTimer = 0;
+  let suppressClick: HTMLElement | null = null;
+
+  const inBand = (el: HTMLElement, x: number, y: number) => {
+    const r = el.getBoundingClientRect();
+    return x >= r.left - BAND && x <= r.right + BAND && y >= r.top - BAND && y <= r.bottom + BAND;
+  };
+
+  const disengage = () => {
+    if (!engaged) return;
+    // 悬浮态一并收回翻面：相片放回原位时总是正面朝上
+    engaged.classList.remove('is-hover', 'is-tilting', 'is-flipped');
+    engaged.style.setProperty('--rx', '0deg');
+    engaged.style.setProperty('--ry', '0deg');
+    engaged = null;
+  };
+
+  const cancelPress = () => {
+    clearTimeout(pressTimer);
+    pressTimer = 0;
+    pressFig?.classList.remove('is-pressing');
+    pressFig = null;
+    pressOrigin = null;
+  };
+
+  document.addEventListener('pointerover', (e) => {
+    if (e.pointerType !== 'mouse' || reduced()) return;
+    const el = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-lightbox]') : null;
+    if (el) {
+      // pending/engaged 都是指同一个目标：只是指针在按钮和 img 之间挪，别重启计时
+      if (el === engaged || el === pending) return;
+      clearTimeout(dwell);
+      disengage();
+      pending = el;
+      const wait = el.closest('.entry-thumbs') ? DWELL_MS : 0;
+      dwell = window.setTimeout(() => {
+        pending = null;
+        engaged = el;
+        el.classList.add('is-hover');
+      }, wait);
+      return;
+    }
+    // 指针落到别的元素上：多半是 pointerout 被吞掉（滚动/弹层截走）后的补救信号。
+    // 迟滞带内不算离开，带外立即收
+    clearTimeout(dwell);
+    pending = null;
+    if (engaged && !inBand(engaged, e.clientX, e.clientY)) disengage();
+  });
+
+  document.addEventListener('pointerout', (e) => {
+    const el = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-lightbox]') : null;
+    if (!el || (e.relatedTarget instanceof Node && el.contains(e.relatedTarget))) return;
+    clearTimeout(dwell);
+    pending = null;
+    // 元素自己的悬浮位移造成的 pointerout：指针其实还贴着图，收下就会打摆
+    if (engaged === el && !inBand(el, e.clientX, e.clientY)) disengage();
+  });
+
+  document.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse' || reduced() || !engaged) return;
+    if (!(e.target instanceof Element) || !engaged.contains(e.target)) {
+      // 指针不在图上（贴边迟滞带 / 被弹层截走后的移动）：滑出带宽才收，
+      // 这条是 pointerout 丢失时最可靠的补救路径
+      if (!inBand(engaged, e.clientX, e.clientY)) disengage();
+      return;
+    }
+    const el = engaged;
+    const r = el.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) return;
+    const px = (e.clientX - r.left) / r.width;
+    const py = (e.clientY - r.top) / r.height;
+    // is-tilting 只服务列表缩略图（一条 transform 的快慢切换）；
+    // 相纸已拆成 translate/scale/transform 三通道，倾角通道恒为 0.12s，不再需要它
+    if (el.classList.contains('entry-thumb')) el.classList.add('is-tilting');
+    // 卡片迎向指针：鼠标在哪一侧，那一侧轻轻翘起
+    el.style.setProperty('--ry', `${((px - 0.5) * 2 * MAX_TILT).toFixed(2)}deg`);
+    el.style.setProperty('--rx', `${((py - 0.5) * 2 * MAX_TILT).toFixed(2)}deg`);
+    el.style.setProperty('--mx', `${(px * 100).toFixed(1)}%`);
+    el.style.setProperty('--my', `${(py * 100).toFixed(1)}%`);
+  });
+</script>

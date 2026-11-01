@@ -1,0 +1,54 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import MobiusMark from '../components/MobiusMark.astro';
+import { withBase } from '../config';
+import '../styles/tools.css';
+
+const tools = (await getCollection('tools')).sort((a, b) => a.data.order - b.data.order);
+const hrefOf = (url: string) => (/^https?:\/\//.test(url) ? url : withBase(url));
+---
+<BaseLayout title="工具" description="小航自己动手做的小工具。">
+  <div class="wrap">
+    <header class="page-head">
+      <p class="eyebrow">SMALL TOOLS / 工具</p>
+      <div class="page-head-line">
+        <h1>工具</h1>
+        <span class="page-count">{String(tools.length).padStart(2, '0')} 件</span>
+      </div>
+      <p class="page-lede">自己搓的小东西，解决自己的小麻烦。顺手放在这里，也许你用得上。</p>
+    </header>
+
+    {
+      tools.length > 0 ? (
+        <div class="tool-ledger">
+          {tools.map((tool, i) => (
+            <a
+              class="tool-row"
+              href={hrefOf(tool.data.url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-reveal
+            >
+              <span class="tool-index">{String(i + 1).padStart(2, '0')}</span>
+              <span class="tool-icon" aria-hidden="true">{tool.data.icon}</span>
+              <span class="tool-main">
+                <strong>{tool.data.name}</strong>
+                <span>{tool.data.description}</span>
+              </span>
+              <span class="tool-arrow" aria-hidden="true">↗</span>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div class="empty-state">
+          <MobiusMark class="empty-mark" />
+          <p class="empty-kicker">WORKBENCH EMPTY</p>
+          <h2>工具箱还空着</h2>
+          <p>下一件小东西正在路上。等它做出来，我会把它放在这里。</p>
+          <a class="text-link" href={withBase('/about/')}>看看我是谁 <span aria-hidden="true">→</span></a>
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>

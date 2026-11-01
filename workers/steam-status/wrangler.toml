@@ -1,0 +1,20 @@
+# Cloudflare Worker：把 Steam 在线状态代理成同源 JSON
+#
+# 部署前先把两个值写进 secret（不要写进仓库）：
+#   wrangler secret put STEAM_API_KEY   # https://steamcommunity.com/dev/apikey 申请
+#   wrangler secret put STEAM_ID        # 你的 64 位 SteamID
+#
+# 然后：wrangler deploy
+# 路由挂在已经开小黄云的 moxo.cc 上，主站其余路径仍回源 GitHub Pages。
+
+name = 'moxo-steam-status'
+main = 'src/index.js'
+compatibility_date = '2026-10-30'
+
+# 只接管这一个路径，避免动到页面缓存和 3D 模型的 Range 请求
+routes = [{ pattern = 'moxo.cc/api/steam-status', zone_name = 'moxo.cc' }]
+
+# 预览域名（*.workers.dev）不需要暴露
+workers_dev = false
+
+observability = { enabled = true }
