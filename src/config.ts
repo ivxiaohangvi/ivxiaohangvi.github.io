@@ -31,10 +31,10 @@ export const siteConfig = {
    * 留空（repo 为空字符串）则前端完全不渲染评论区。
    */
   giscus: {
-    repo: '', // 例：'your-username/your-repo'
-    repoId: '',
-    category: 'Announcements',
-    categoryId: '',
+    repo: 'ivxiaohangvi/ivxiaohangvi.github.io', // 例：'your-username/your-repo'
+    repoId: 'R_kgDOVenZHA',
+    category: 'General',
+    categoryId: 'DIC_kwDOVenZHM4DKI_K',
   },
 };
 
