@@ -1,6 +1,7 @@
 ---
 name: Lucky_Nicke
 url: https://lanxige.club
+avatar: /friends/nicke.jpg
 desc: 蓝溪阁的创始人，为此我占了两个板块。
 tags:
   - 友人A

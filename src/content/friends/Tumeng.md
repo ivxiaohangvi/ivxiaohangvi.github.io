@@ -1,6 +1,7 @@
 ---
 name: Tumeng.
 url: https://null
+avatar: /friends/tumeng.jpg
 desc: 一个22世纪知名音乐家、作曲家、著名摇滚乐手、著名吉他手
 tags:
   - 音乐

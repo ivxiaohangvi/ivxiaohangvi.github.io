@@ -1,6 +1,7 @@
 ---
 name: Quhe
 url: https://quhe.top
+avatar: /friends/quhe.jpg
 desc: 2021-2026这段人生中的一个过客，至少他本人是这么形容的。
 tags:
   - 逗比
