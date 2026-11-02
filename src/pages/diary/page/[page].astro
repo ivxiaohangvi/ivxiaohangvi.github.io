@@ -28,16 +28,16 @@ const prevPage = withBase(diaryPath(page - 1));
 const nextPage = page < totalPages ? withBase(diaryPath(page + 1)) : null;
 ---
 <BaseLayout
-  title={`日记 · 第 ${page} 页`}
-  description="小航的日记：每天的心情与记录，从 Daily You 同步推送而来。"
+  title={`迹忆 · 第 ${page} 页`}
+  description="小航的迹忆：每天的心情与记录，从 Daily You 同步推送而来。"
   noindex
   darkroomPrefetch="intent"
 >
   <div class="wrap" data-back-to-top>
     <header class="page-head">
-      <p class="eyebrow">FIELD NOTES / 日记</p>
+      <p class="eyebrow">FIELD NOTES / 迹忆</p>
       <div class="page-head-line">
-        <h1>日记</h1>
+        <h1>迹忆</h1>
         <span class="page-count">{String(entries.length).padStart(2, '0')} 篇</span>
       </div>
       <p class="page-lede">
@@ -55,7 +55,7 @@ const nextPage = page < totalPages ? withBase(diaryPath(page + 1)) : null;
       total={entries.length}
     />
 
-    <nav class="ledger-pager" aria-label="日记分页">
+    <nav class="ledger-pager" aria-label="迹忆分页">
       <a class="text-link" href={prevPage}>← 上一页</a>
       <span class="ledger-pager-count">第 {page} / {totalPages} 页</span>
       {

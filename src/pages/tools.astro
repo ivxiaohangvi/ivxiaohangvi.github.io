@@ -8,7 +8,7 @@ import '../styles/tools.css';
 const tools = (await getCollection('tools')).sort((a, b) => a.data.order - b.data.order);
 const hrefOf = (url: string) => (/^https?:\/\//.test(url) ? url : withBase(url));
 ---
-<BaseLayout title="工具" description="小航自己动手做的小工具。">
+<BaseLayout title="工具" description="小航自己动手搓的些小工具。">
   <div class="wrap">
     <header class="page-head">
       <p class="eyebrow">SMALL TOOLS / 工具</p>

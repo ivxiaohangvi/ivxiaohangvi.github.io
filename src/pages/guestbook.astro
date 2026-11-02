@@ -10,7 +10,7 @@ const giscusEnabled = Boolean(giscus.repo && giscus.repoId && giscus.categoryId)
 ---
 <BaseLayout
   title="留言簿"
-  description="没有对应文章的话，写在这里。留言保存在 GitHub Discussions，公开可见。"
+  description="要是想对我说些什么，写在这里。留言保存在 GitHub Discussions，公开可见。"
 >
   <div class="wrap-narrow">
     <header class="page-head">
@@ -20,7 +20,7 @@ const giscusEnabled = Boolean(giscus.repo && giscus.repoId && giscus.categoryId)
         <span class="page-count">OPEN</span>
       </div>
       <p class="page-lede">
-        没有对应文章的话，写在这里。一句问候、一个建议，或者只是告诉我你来过。
+        要是想对我说些什么，写在这里。一句问候、一个建议，或者只是告诉我你来过。
       </p>
       <p class="guestbook-meta">
         {giscusEnabled ? '公开可见 · Giscus 留言需要 GitHub 账号' : '公开可见 · 留言入口稍后开放'}
@@ -28,7 +28,7 @@ const giscusEnabled = Boolean(giscus.repo && giscus.repoId && giscus.categoryId)
           steamComments.length > 0 && (
             <>
               {' · '}
-              <a href="#steam-notes">Steam 旧留言 {steamComments.length} 条 ↓</a>
+              <a href="#steam-notes">Steam 留言 {steamComments.length} 条 ↓</a>
             </>
           )
         }

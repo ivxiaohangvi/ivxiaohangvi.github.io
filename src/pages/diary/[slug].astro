@@ -100,8 +100,8 @@ const typingBoot = typingJson
   : null;
 ---
 <BaseLayout
-  title={locked ? `已封存的日记 · ${stamped(entry.data.date, entry.data.timeKnown)}` : heading ? `${heading} · 日记 · ${stamped(entry.data.date, entry.data.timeKnown)}` : `日记 · ${stamped(entry.data.date, entry.data.timeKnown)}`}
-  description={locked ? `小航写于${stamped(entry.data.date, entry.data.timeKnown)}的日记，正文与图片已封存。` : `${heading ? `《${heading}》——` : ''}小航写于${stamped(entry.data.date, entry.data.timeKnown)}的日记。`}
+  title={locked ? `已封存的迹忆 · ${stamped(entry.data.date, entry.data.timeKnown)}` : heading ? `${heading} · 迹忆 · ${stamped(entry.data.date, entry.data.timeKnown)}` : `迹忆 · ${stamped(entry.data.date, entry.data.timeKnown)}`}
+  description={locked ? `小航写于${stamped(entry.data.date, entry.data.timeKnown)}的迹忆，正文与图片已封存。` : `${heading ? `《${heading}》——` : ''}小航写于${stamped(entry.data.date, entry.data.timeKnown)}的迹忆。`}
   type="article"
   noindex
 >
@@ -113,7 +113,7 @@ const typingBoot = typingJson
     data-back-to-top
   >
     <nav class="back-row" aria-label="返回" data-pagefind-ignore>
-      <a href={withBase('/diary/')}>← 全部日记</a>
+      <a href={withBase('/diary/')}>← 全部迹忆</a>
       <span>FIELD NOTE / {year}</span>
     </nav>
 
@@ -214,7 +214,7 @@ const typingBoot = typingJson
                         <button class="diary-figure-btn" type="button" aria-label="查看日记图片大图">
                           <ProgressiveImg
                             src={src}
-                            alt={`${longDate(entry.data.date)}的日记配图`}
+                            alt={`${longDate(entry.data.date)}的迹忆配图`}
                             variant="srcset"
                             sizes={
                               entry.data.images.length === 1
@@ -256,7 +256,7 @@ const typingBoot = typingJson
                     <button class="diary-figure-btn" type="button" aria-label="查看日记图片大图">
                       <ProgressiveImg
                         src={marginImage}
-                        alt={`${longDate(entry.data.date)}的日记配图`}
+                        alt={`${longDate(entry.data.date)}的迹忆配图`}
                         variant="srcset"
                         sizes="(max-width: 1279px) calc(100vw - 2rem), 272px"
                       />
@@ -298,7 +298,7 @@ const typingBoot = typingJson
     {
       !locked && entry.data.attachments.length > 0 && (
         <section class="attachments" aria-labelledby="attachments-title">
-          <h2 id="attachments-title" class="small-heading">随日记带上来的东西</h2>
+          <h2 id="attachments-title" class="small-heading">随迹忆带上来的东西</h2>
           <ul class="attachment-list">
             {entry.data.attachments.map((att) => (
               <li class={`attachment is-${att.kind}`}>
@@ -317,7 +317,7 @@ const typingBoot = typingJson
       )
     }
 
-    <nav class="entry-pager" aria-label="相邻日记">
+    <nav class="entry-pager" aria-label="相邻迹忆">
       {
         older ? (
           <a class="pager-link is-prev" href={withBase(`/diary/${older.id}/`)}>

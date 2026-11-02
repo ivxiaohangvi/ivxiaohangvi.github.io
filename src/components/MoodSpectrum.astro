@@ -117,7 +117,7 @@ const threadPath = linePoints.reduce((path, point, index) => {
           </svg>
         </div>
 
-        <ol class="spectrum-track" aria-label={`最近 ${stops.length} 次有心情的日记，按时间从左到右`}>
+        <ol class="spectrum-track" aria-label={`最近 ${stops.length} 次有心情的迹忆，按时间从左到右`}>
           {stops.map(({ entry, info, locked, light, starY, delay, float, ray }) => (
             <li
               class="spectrum-stop"
@@ -126,7 +126,7 @@ const threadPath = linePoints.reduce((path, point, index) => {
               <a
                 class="spectrum-event"
                 href={withBase(`/diary/${entry.id}/`)}
-                aria-label={`${beijingDateDot(entry.data.date)}，${info.label}。${locked ? '这一页已封存，去解锁' : '读这一页日记'}`}
+                aria-label={`${beijingDateDot(entry.data.date)}，${info.label}。${locked ? '这一页已封存，去解锁' : '读这一页迹忆'}`}
               >
                 <span class="spectrum-ray" aria-hidden="true"></span>
                 <span class="spectrum-star" aria-hidden="true"></span>

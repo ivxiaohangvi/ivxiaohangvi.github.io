@@ -40,11 +40,11 @@ const sortedDiaries = [...diaries].sort((a, b) => b.data.date.valueOf() - a.data
 
 const countParts = [
   sortedPosts.length > 0 ? `文章 ${sortedPosts.length} 篇` : '',
-  sortedDiaries.length > 0 ? `日记 ${sortedDiaries.length} 篇` : '',
+  sortedDiaries.length > 0 ? `迹忆 ${sortedDiaries.length} 篇` : '',
 ].filter(Boolean);
 const countLabel = countParts.length > 0 ? countParts.join(' · ') : '0 条';
 ---
-<BaseLayout title={`标签：${tag}`} description={`标签 #${tag} 下的文章与日记。`}>
+<BaseLayout title={`标签：${tag}`} description={`标签 #${tag} 下的文章与迹忆。`}>
   <div class="wrap">
     <header class="page-head">
       <p class="eyebrow">TAGS / 标签</p>
@@ -73,7 +73,7 @@ const countLabel = countParts.length > 0 ? countParts.join(' · ') : '0 条';
       sortedDiaries.length > 0 && (
         <section class="tag-group" aria-labelledby="tag-diaries">
           <h2 class="tag-group-head" id="tag-diaries">
-            <span>日记</span>
+            <span>迹忆</span>
             <span class="tag-group-count">{String(sortedDiaries.length).padStart(2, '0')}</span>
           </h2>
           <div class="tag-diary-list">

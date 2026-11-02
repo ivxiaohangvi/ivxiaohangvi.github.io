@@ -27,7 +27,7 @@ for (const post of posts) {
         <h1>文章</h1>
         <span class="page-count">{String(posts.length).padStart(2, '0')} 篇</span>
       </div>
-      <p class="page-lede">稍微认真一点写下的长文。关于建站、动画，以及别的什么。</p>
+      <p class="page-lede">稍微认真一点写下的长文。</p>
       <p class="page-head-link">
         <a class="text-link" href={withBase('/tags/')}>按标签浏览 <span aria-hidden="true">→</span></a>
         <span class="link-dot" aria-hidden="true">·</span>
@@ -55,8 +55,8 @@ for (const post of posts) {
           <MobiusMark class="empty-mark" />
           <p class="empty-kicker">NO NOTES YET</p>
           <h2>还没落笔</h2>
-          <p>想说的话还在路上。先去日记里坐一会儿。</p>
-          <a class="text-link" href={withBase('/diary/')}>去日记 <span aria-hidden="true">→</span></a>
+          <p>想说的话还在路上。先去迹忆里坐一会儿。</p>
+          <a class="text-link" href={withBase('/diary/')}>回忆 <span aria-hidden="true">→</span></a>
         </div>
       )
     }

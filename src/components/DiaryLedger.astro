@@ -122,9 +122,9 @@ const weekdayOf = (date: Date) => beijingWeekday(date);
                   type="button"
                   data-lightbox
                   data-lightbox-link={more > 0 ? withBase(`/diary/${entry.id}/`) : undefined}
-                  aria-label={more > 0 ? `进这一页看另外 ${more} 张` : '查看日记图片大图'}
+                  aria-label={more > 0 ? `进这一页看另外 ${more} 张` : '查看迹忆图片大图'}
                 >
-                  <ProgressiveImg src={src} alt="日记配图" variant="thumb" upgrade={false} lqip={useLqip} />
+                  <ProgressiveImg src={src} alt="迹忆配图" variant="thumb" upgrade={false} lqip={useLqip} />
                   {more > 0 && <span class="thumb-more" aria-hidden="true">+{more}</span>}
                 </button>
               );

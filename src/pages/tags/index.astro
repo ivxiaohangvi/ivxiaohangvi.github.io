@@ -19,7 +19,7 @@ for (const entry of diaries) tally(entry.data.tags);
 
 const tags = [...countByTag.entries()].sort((a, b) => b[1] - a[1]);
 ---
-<BaseLayout title="标签" description="按标签浏览 moxo 的文章与日记。">
+<BaseLayout title="标签" description="按标签浏览 moxo 的文章与迹忆。">
   <div class="wrap-narrow">
     <header class="page-head">
       <p class="eyebrow">TAGS / 标签</p>
@@ -27,7 +27,7 @@ const tags = [...countByTag.entries()].sort((a, b) => b[1] - a[1]);
         <h1>标签</h1>
         <span class="page-count">{String(tags.length).padStart(2, '0')} 个</span>
       </div>
-      <p class="page-lede">文章与日记的抽屉。同一个标签下，通常写着同一类心事。</p>
+      <p class="page-lede">文章与迹忆的抽屉。同一个标签下，通常写着同一类心事。</p>
     </header>
 
     {

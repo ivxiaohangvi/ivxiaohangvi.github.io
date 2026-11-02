@@ -2,29 +2,29 @@
 
 个人站点的源码：<https://moxo.cc>
 
-用 [Astro](https://astro.build) 5 写的纯静态博客，构建产物直接丢给 GitHub Pages；Steam 在线状态那条接口挂在 Cloudflare Workers 上。仓库里只有站点本身需要的东西——私人日记、每日记录的原始导出、摄影测量的重建缓存都不在这里。
+用 [Astro](https://astro.build) 5 写的纯静态博客，构建产物直接丢给 GitHub Pages；Steam 在线状态那条接口挂在 Cloudflare Workers 上。仓库里只有站点本身需要的东西——私人日记、每日记录的原始导出。
 
 ## 技术栈
 
 - **Astro 5** + TypeScript，零客户端框架，输出纯静态页面
 - **GitHub Pages** 托管，`.github/workflows/deploy.yml` 自动构建部署
 - **Cloudflare Workers** 跑一个小接口：`moxo.cc/api/steam-status`
-- **Pagefind** 做站内搜索，**GSAP** 做页面动效，**three.js** 只用在彩蛋页 `/infinity/`
+- **Pagefind** 做站内搜索，**GSAP** 做页面动效，**three.js** 只用在彩蛋页
 - Node.js 22（构建脚本用到 `node --test` 与 `--experimental-strip-types`）
 
 ## 目录
 
 ```
 src/
-  config.ts            站点标题、作者、导航、社交链接（改站名先看这里）
+  config.ts            站点标题、作者、导航、社交链接
   content.config.ts    内容集合的 schema
   content/
     blog/              文章（Markdown）
     friends/           友链
     tools/             工具页说明
-    diary/             日记——只留占位，正文不入库
-    moments/           动态——同上
-    photos/            摄影——同上
+    diary/             日记
+    moments/           动态
+    photos/            摄影
   components/          页头页脚、抽屉柜、灯箱、Steam 留言墙等
   layouts/             页面骨架
   lib/                 归档、排版、LQIP、拼音词库等纯函数
@@ -33,11 +33,11 @@ src/
   styles/              全局样式
 public/                静态资源：CNAME、robots.txt、图标、贴纸、Steam 头像
 scripts/               构建与维护脚本（vault 编解码、LQIP、OTS、Steam 同步）
-vault/                 Base64 存档：彩蛋页与几张隐蔽页面（不是加密，见下）
+vault/                 Base64 存档
 workers/steam-status/  Cloudflare Worker：Steam 状态接口
 .github/workflows/     自动部署
-base3                  旧站归档：一串 Base32 文本（原名 base3?，Windows 文件名不允许 ?）
-test.zip               旧站归档：加密压缩包（约 4.4 MB，不进构建产物）
+base3                  旧站归档：这是老彩蛋
+test.zip               旧站归档：给旧人留的迹忆
 ```
 
 > `base3` 与 `test.zip` 只作为存档放在仓库根目录，不属于站点内容，部署时不会被发布。`public/tools/shamir.html` 是旧站那份混淆单页（`src/content/tools/shamir.md` 指向它）。
@@ -68,25 +68,13 @@ npm run preview      # 预览 dist/
 
 站点地址集中在两处：`astro.config.mjs` 的 `site` 和 `public/CNAME`。换域名时两处一起改，并同步 `public/robots.txt` 里的 sitemap 地址。
 
-### 域名接入顺序（重要）
-
-`moxo.cc` 同时要跑 Cloudflare 代理（CDN）和 GitHub Pages，顺序错了证书签不下来：
-
-1. Cloudflare 先把根域 `moxo.cc` 指向 GitHub Pages，**此时必须是灰云（DNS only）**。两种写法都行：
-   - CNAME 拉平（推荐，少一条记录）：类型 CNAME、名称 `@`、目标 `ivxiaohangvi.github.io`。DNS 规范本身不许根域挂 CNAME，但 Cloudflare 会在根域自动把它「拉平」成 A 记录返回，GitHub 看到的仍然是 Pages 的 IP。
-   - A 记录（GitHub 文档的标准写法）：`185.199.108.153` / `.109.153` / `.110.153` / `.111.153`，外加 `www` 的 CNAME → `ivxiaohangvi.github.io`
-2. 在仓库 Settings → Pages 填 `moxo.cc` 并保存，等 GitHub 校验 DNS、签发证书（Pages 页面会显示 Certificate issued）
-3. 证书就绪后再把 Cloudflare 切回橙云代理，SSL/TLS 模式选 **Full (strict)**
-4. Worker 路由 `moxo.cc/api/steam-status` 在橙云下由 Worker 直接应答，其余路径回源到 GitHub Pages
-
-先橙云后绑域名的做法，GitHub 的 DNS 校验会失败，站点可能长期停在「无有效证书」。
 
 ## 内容写在哪
 
 - 文章：`src/content/blog/<slug>.md`，frontmatter 里的 `draft: true` 不会进构建
 - 友链：`src/content/friends/*.md`
 - 工具页：`src/content/tools/*.md` + `public/tools/` 下的单页
-- 日记、动态、摄影：schema 在 `src/content.config.ts`，但正文属于私人内容，不进这个仓库
+- 日记、动态、摄影：schema 在 `src/content.config.ts`
 
 ## vault：Base64 存档，不是加密
 
@@ -124,15 +112,6 @@ npx wrangler deploy
 
 `npm run ots` 会先为每篇文章生成规范化的文本（`public/ots/blog/<slug>.txt`），再用 `opentimestamps-client` 打时间戳（`*.txt.ots`），最后把结果写进 `src/data/ots.json` 供页面展示。CI 里装的是 `opentimestamps-client`，本地需要自己准备 `python`（或用 `OTS_PYTHON` 指定解释器）。离线只想重建清单时加 `--offline`。
 
-## 免费额度
-
-站点是纯静态的，落在 GitHub 的免费范围里：
-
-- GitHub Pages：单站 1 GB、每月 100 GB 带宽（软限制）
-- GitHub Actions：公开仓库不计量分钟数；这里的定时任务是每 6 小时一次，单次两三分钟
-- Cloudflare Workers：免费套餐每天 10 万次请求，这个接口的调用量远低于此
-
-图片和模型都已经压到「够用就好」的尺寸，`dist/` 在几十 MB 量级。
 
 ## 许可
 

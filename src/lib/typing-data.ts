@@ -3,7 +3,7 @@ import { pinyin } from 'pinyin-pro';
 /**
  * 日记打字效果的服务端数据：
  * c = 单字默认全拼；w = 正文里可连打的 2–4 字词及上下文全拼；s = 同音候选池。
- * 只从已经过脱敏的正文生成；含鱼字的词与字永远不进候选池。
+ * 只从已经过脱敏的正文生成；
  */
 export interface TypingLexicon {
   c: Record<string, string>;

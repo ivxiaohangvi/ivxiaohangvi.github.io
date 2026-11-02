@@ -16,12 +16,11 @@
  *   1. 每条日记 → src/content/diary/<日期>.md（同日多篇自动 -2/-3 后缀）
  *   2. 自动寻找同级的 Daily You 备份，用正文内容哈希匹配 time_create，写入北京时间
  *   3. 图片转成 1600px 以内的 WebP，剥掉 EXIF / GPS；附件原样复制到 public/diary/
- *   4. “小鱼 / 鱼 / 🐟”在写入前替换成黑条，原文不会进入仓库
- *   5. 心情 emoji 原文捕获到 frontmatter mood
- *   6. 日记里的单行换行会转成 Markdown 硬换行，页面上不再挤成一团
- *   7. 重复导入安全：同名日记覆盖，已转换且比原图新的图片直接跳过
- *   8. 成功导入后移除旧的 sample 示例日记
- *   9. 导入完成后自动把 src/content/diary 同步编码进 vault（只编码，不删明文）
+ *   4. 心情 emoji 原文捕获到 frontmatter mood
+ *   5. 日记里的单行换行会转成 Markdown 硬换行，页面上不再挤成一团
+ *   6. 重复导入安全：同名日记覆盖，已转换且比原图新的图片直接跳过
+ *   7. 成功导入后移除旧的 sample 示例日记
+ *   8. 导入完成后自动把 src/content/diary 同步编码进 vault（只编码，不删明文）
  */
 import { readdir, readFile, writeFile, mkdir, copyFile, access, stat, unlink } from 'node:fs/promises';
 import path from 'node:path';
@@ -73,7 +72,6 @@ const IMAGE_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif', '.
 const AUDIO_EXT = new Set(['.m4a', '.mp3', '.wav', '.ogg', '.aac', '.flac', '.opus']);
 const VIDEO_EXT = new Set(['.mp4', '.mov', '.webm', '.mkv', '.avi']);
 
-/** 需要涂黑的词。按“长词优先”排列，避免“小鱼”被拆成两个块。 */
 const SENSITIVE_RE = /小[鱼魚]|[鱼魚]|[🐟🐠🐡]/gu;
 const REDACT_HTML =
   '<span class="redact" data-pagefind-ignore role="img" aria-label="已隐去">██</span>';

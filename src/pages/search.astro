@@ -37,14 +37,14 @@ const driftMobile = layoutWordCloud(wordField.words, {
   ampScale: 0.8,
 });
 ---
-<BaseLayout title="搜索" description="搜索 moxo 里的日记、动态与文章。">
+<BaseLayout title="搜索" description="搜索 moxo 里的迹忆、动态与文章。">
   <div class="wrap-narrow">
     <header class="page-head">
       <p class="eyebrow">SEARCH / 搜索</p>
       <div class="page-head-line">
         <h1>搜索</h1>
       </div>
-      <p class="page-lede">在日记、动态和文章里找一句话。按 <kbd>/</kbd> 直接开始，或从词场点一个词。</p>
+      <p class="page-lede">在迹忆、动态和文章里找一句话。按 <kbd>/</kbd> 直接开始，或从词场点一个词。</p>
     </header>
 
     <div class="search-box">
@@ -148,7 +148,7 @@ const driftMobile = layoutWordCloud(wordField.words, {
                   <a class="search-result" href="${item.url}">
                     <span class="search-result-kind">${
                       item.url.includes('/diary/')
-                        ? '日记'
+                        ? '迹忆'
                         : item.url.includes('/moments/')
                           ? '动态'
                           : item.url.includes('/blog/')
