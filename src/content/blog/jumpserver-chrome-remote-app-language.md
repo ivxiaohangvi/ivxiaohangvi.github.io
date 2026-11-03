@@ -1,0 +1,41 @@
+---
+title: 解决 JumpServer Chrome 远程应用中网页语言显示异常的问题（强制设置为中文）
+description: Chrome 远程应用会按系统语言自动设置 intl.accept_languages，拿到的 zh-Hans 或 zh 不被网站识别，页面就退回了英文。改 app.py 里那一行，手动指定 zh-CN 即可。
+pubDate: 2025-08-19
+tags:
+  - JumpServer
+  - Chrome
+  - 折腾
+---
+
+修改 Chrome 远程应用包中的 `app.py`。
+
+在 Chrome 远程应用包的 1.2 版本中，`app.py` 的第 256 行代码：
+
+```python
+self._chrome_options.add_experimental_option('prefs', {'intl.accept_languages': lang})
+```
+
+修改为：
+
+```python
+self._chrome_options.add_experimental_option('prefs', {'intl.accept_languages': 'zh-hans,zh-CN,zh'})
+```
+
+也就是手动指定你想让网页显示的语言为中文。
+
+然后重新部署远程应用包。
+
+或者修改发布机中已部署的 Chrome 远程应用的 `app.py` 文件，位置如下，代码位置与上方相同：
+
+```
+"C:\Program Files\JumpServer\applets\chrome\app.py"
+```
+
+## 原因
+
+Chrome 远程应用在初始化时会自动获取系统语言并设置 `intl.accept_languages` 参数。然而，在某些情况下，自动获取的语言值可能仅为 `zh-Hans` 或 `zh`，而缺少标准的 `zh-CN` 标识。许多网站在进行语言匹配时，仅识别 `zh-CN` 作为简体中文的明确标识，导致语言协商失败，最终回退到默认语言（通常是英文）。
+
+---
+
+> 本文最初发布于哔哩哔哩：[解决 JumpServer Chrome 远程应用中网页语言显示异常的问题（强制设置为中文）](https://www.bilibili.com/opus/1102495195576926215)
