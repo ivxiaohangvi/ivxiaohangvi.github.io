@@ -102,9 +102,24 @@ const rows = [
 const moodDiary = diary.filter((entry) => Boolean(moodInfo(entry.data.mood, entry.data.moodKey)));
 const allSample = diary.length > 0 && diary.every((entry) => entry.data.sample);
 const nowMood = latestDiary ? moodInfo(latestDiary.data.mood, latestDiary.data.moodKey) : null;
-const nightFlight = diary.find((entry) => entry.id === '2026-10-25-night-flight');
-const nightExcerpt = nightFlight ? plain(nightFlight.body).slice(0, 104) : '';
-const nightMore = nightFlight ? plain(nightFlight.body).length > 104 : false;
+// 深夜的一句：优先挑「夜里写的」迹忆，按北京时间每 6 小时换一次
+const nightHour = (date: Date) => Number(beijingTime(date).slice(0, 2));
+const nightCandidates = diary.filter(
+  (entry) => entry.data.timeKnown && (nightHour(entry.data.date) >= 22 || nightHour(entry.data.date) < 5),
+);
+const nightIsLate = nightCandidates.length > 0;
+const nightPool = nightIsLate ? nightCandidates : diary;
+const nightPick = nightPool.length > 0 ? nightPool[Math.floor(Date.now() / 21_600_000) % nightPool.length] : undefined;
+// 引文取正文里第一行像人话的（跳过 "be" 这种零碎行与图片语法）
+const nightLines = (nightPick?.body ?? '')
+  .split(/\r?\n/)
+  .map((line) => plain(line))
+  .filter((line) => line.length >= 6);
+const nightBody = nightLines.join(' ');
+const nightExcerpt = nightBody.slice(0, 96).replace(/[“"'‘「『]+$/, '');
+const nightMore = nightBody.length > 96;
+// 原文自己带引号时就不再套一层
+const nightWrap = !/^[“"‘'「『]/.test(nightExcerpt);
 ---
 <BaseLayout>
   <div class="home wrap">
@@ -214,7 +229,7 @@ const nightMore = nightFlight ? plain(nightFlight.body).length > 104 : false;
     }
 
     {
-      nightFlight && (
+      nightPick && (
         <section class="night-section" aria-labelledby="night-title">
           <div class="night-scene" aria-hidden="true">
             <svg class="night-route" viewBox="0 0 560 380" fill="none">
@@ -239,7 +254,7 @@ const nightMore = nightFlight ? plain(nightFlight.body).length > 104 : false;
             <span class="night-star star-3"></span>
             <span class="night-star star-4"></span>
             <span class="night-star star-5"></span>
-            <span class="night-scene-label">NIGHT FLIGHT / BJT</span>
+            <span class="night-scene-label">NIGHT NOTES / BJT</span>
             <svg class="night-sea" viewBox="0 0 600 120" preserveAspectRatio="none" fill="none">
               <path
                 d="M0 66C68 48 124 48 192 66S316 84 384 66 508 48 600 66"
@@ -255,14 +270,14 @@ const nightMore = nightFlight ? plain(nightFlight.body).length > 104 : false;
             </svg>
           </div>
           <div class="night-copy" data-reveal>
-            <p class="section-no">03 / NIGHT FLIGHT</p>
-            <h2 id="night-title">夜航</h2>
-            <p class="night-excerpt">“{nightExcerpt}{nightMore ? '…' : ''}”</p>
+            <p class="section-no">03 / NIGHT NOTES</p>
+            <h2 id="night-title">深夜的一句</h2>
+            <p class="night-excerpt">{nightWrap ? '“' : ''}{nightExcerpt}{nightMore ? '…' : ''}{nightWrap ? '”' : ''}</p>
             <p class="night-meta">
-              <time datetime={beijingIso(nightFlight.data.date)}>{stamped(nightFlight.data.date, nightFlight.data.timeKnown)}</time>
-              <span>深夜的这一页 · BJT</span>
+              <time datetime={beijingIso(nightPick.data.date)}>{stamped(nightPick.data.date, nightPick.data.timeKnown)}</time>
+              <span>{nightIsLate ? '夜里写的 · 每 6 小时换一句' : '迹忆里的一句 · 每 6 小时换一句'}</span>
             </p>
-            <a class="text-link night-link" href={withBase(`/diary/${nightFlight.id}/`)}>
+            <a class="text-link night-link" href={withBase(`/diary/${nightPick.id}/`)}>
               读这一页 <span aria-hidden="true">→</span>
             </a>
           </div>
