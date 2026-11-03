@@ -29,7 +29,6 @@ public/wp-admin/
 # 整个目录挡住，避免以后跑 import:diary 或 seal 之后被 git add 带上来
 public/diary/
 backups/
-日记/
 daily-you/
 
 # LQIP 构建期中间档（清单 src/lib/image-lqip.json 入库，图档重建）
@@ -43,9 +42,6 @@ public/moments/thumb/
 
 # 构建期生成的推送信息
 src/data/push-info.json
-
-# 临时素材目录（相机导出的原图放这里再挑，挑完即可删除）
-新建文件夹/
 
 # 本地构建日志
 build.log
