@@ -1,8 +1,14 @@
 {
-  "generatedAt": "2026-11-02T23:25:33.296Z",
+  "generatedAt": "2026-11-03T00:10:18.066Z",
   "explorer": "https://mempool.space",
   "blocks": {},
   "items": {
+    "jumpserver-chrome-remote-app-language": {
+      "digest": "73a9455fa49c81aeb617d39d97e70a4d64e34a6c45242ca3db1970e183f8be34",
+      "content": "/ots/blog/jumpserver-chrome-remote-app-language.txt",
+      "status": "pending",
+      "stamp": "/ots/blog/jumpserver-chrome-remote-app-language.txt.ots"
+    },
     "winserver-security-policy": {
       "digest": "65181ebe4d08d074758fc75d1d1d6dba51e4e1eeb2a9198c304b7ac7d2028286",
       "content": "/ots/blog/winserver-security-policy.txt",
