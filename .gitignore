@@ -43,3 +43,6 @@ public/moments/thumb/
 
 # 构建期生成的推送信息
 src/data/push-info.json
+
+# 临时素材目录（相机导出的原图放这里再挑，挑完即可删除）
+新建文件夹/
