@@ -102,7 +102,7 @@ const rows = [
 const moodDiary = diary.filter((entry) => Boolean(moodInfo(entry.data.mood, entry.data.moodKey)));
 const allSample = diary.length > 0 && diary.every((entry) => entry.data.sample);
 const nowMood = latestDiary ? moodInfo(latestDiary.data.mood, latestDiary.data.moodKey) : null;
-// 深夜的一句：优先挑「夜里写的」迹忆，按北京时间每 6 小时换一次
+// 夜航：优先挑「夜里写的」迹忆，按北京时间每 6 小时换一次
 const nightHour = (date: Date) => Number(beijingTime(date).slice(0, 2));
 const nightCandidates = diary.filter(
   (entry) => entry.data.timeKnown && (nightHour(entry.data.date) >= 22 || nightHour(entry.data.date) < 5),
@@ -254,7 +254,7 @@ const nightWrap = !/^[“"‘'「『]/.test(nightExcerpt);
             <span class="night-star star-3"></span>
             <span class="night-star star-4"></span>
             <span class="night-star star-5"></span>
-            <span class="night-scene-label">NIGHT NOTES / BJT</span>
+            <span class="night-scene-label">NIGHT FLIGHT / BJT</span>
             <svg class="night-sea" viewBox="0 0 600 120" preserveAspectRatio="none" fill="none">
               <path
                 d="M0 66C68 48 124 48 192 66S316 84 384 66 508 48 600 66"
@@ -270,8 +270,8 @@ const nightWrap = !/^[“"‘'「『]/.test(nightExcerpt);
             </svg>
           </div>
           <div class="night-copy" data-reveal>
-            <p class="section-no">03 / NIGHT NOTES</p>
-            <h2 id="night-title">深夜的一句</h2>
+            <p class="section-no">03 / NIGHT FLIGHT</p>
+            <h2 id="night-title">夜航</h2>
             <p class="night-excerpt">{nightWrap ? '“' : ''}{nightExcerpt}{nightMore ? '…' : ''}{nightWrap ? '”' : ''}</p>
             <p class="night-meta">
               <time datetime={beijingIso(nightPick.data.date)}>{stamped(nightPick.data.date, nightPick.data.timeKnown)}</time>

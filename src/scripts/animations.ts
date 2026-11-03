@@ -90,7 +90,7 @@ function initAnimations(): void {
       );
     });
 
-    // 深夜的一句：虚线航线缓流、一枚光点沿路径巡游、星星呼吸、海面轻晃。
+    // 夜航场景：虚线航线缓流、一枚光点沿路径巡游、星星呼吸、海面轻晃。
     // 虚线周期是 10 个用户单位，dashoffset 位移取整百保证循环无接缝
     const nightScene = document.querySelector('.night-scene');
     if (nightScene) {
