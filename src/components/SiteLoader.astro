@@ -25,22 +25,35 @@
   //    只有 link.sheet 挂上才算数），以及 astro:page-load（动效在那一刻初始化，
   //    hero 的 gsap.from 会先把元素设成透明再入场，早撤会看到内容「跳」一下）。
   // 所以慢网络下是「立刻一直转圈」，页面准备好了才撤，而不是白屏若干秒后闪一瞬。
+  //
+  // 站内换页的坑：Astro 的 ClientRouter 按脚本正文去重，同一段内联脚本在换页后
+  // 不会再执行一次（deselectScripts 会把它标成 data-astro-exec=""）。而换页是把
+  // 整个 body 换掉，加载层因此变成一个全新的 DOM 节点——旧闭包里的 el 已经不在
+  // 文档里了，拿它 hide 等于空转，新节点就会一直转圈，只能 F5 才好。
+  // 所以这里用单例闭包常驻，换页时在 astro:after-swap 里重新认领节点。
   (() => {
-    const el = document.getElementById('site-loader');
-    if (!el) return;
+    if (window.__moxoLoader) return;
+    window.__moxoLoader = true;
 
-    let finished = false;
+    let el = null;
+    let finished = true;
+    let startedAt = 0;
+    let stylesReadyAt = 0;
+    let deadline = 0;
+    let minVisible = 450;
+    let pageLoaded = false;
+    let navigating = false;
+    let timer = 0;
 
-    const hide = (reason) => {
-      if (finished) return;
-      finished = true;
-      el.dataset.slHidden = '1';
-      el.classList.add('is-hidden');
-      el.dispatchEvent(new CustomEvent('site-loader:hide', { detail: { reason } }));
-      el.addEventListener('transitionend', () => el.remove(), { once: true });
-      // transition 被 prefers-reduced-motion 关掉时不会有 transitionend，兜底移除
-      setTimeout(() => el.isConnected && el.remove(), 1400);
-    };
+    // 首次进入：给加载层一点存在感，避免一闪而过
+    const MIN_VISIBLE = 450;
+    // 站内换页：新页面已经换进 DOM 了，加载层不该露脸，样式一到位立刻撤掉
+    const MIN_VISIBLE_NAV = 0;
+    // 样式到位后再等动效初始化的宽限期
+    const GRACE_AFTER_STYLES = 4000;
+    // 极端情况（样式彻底回不来 / page-load 一直不来）：到点也撤
+    const GIVE_UP_AFTER = 30000;
+    const GIVE_UP_AFTER_NAV = 10000;
 
     // 还有没有没落地的主样式表（加载失败的按已结束处理，别把加载层卡死）
     const stylesPending = () =>
@@ -49,36 +62,89 @@
         (link) => !link.sheet && link.dataset.deferStyleError !== '1',
       );
 
-    const startedAt = performance.now();
-    let stylesReadyAt = 0;
-    // 再快也给加载层留一点存在感，避免一闪而过
-    const MIN_VISIBLE = 450;
-    // 样式到位后再等动效初始化的宽限期
-    const GRACE_AFTER_STYLES = 4000;
-    // 极端情况（样式彻底回不来 / page-load 一直不来）：到点也撤
-    const GIVE_UP_AFTER = 30000;
+    const hide = (reason, instant) => {
+      if (finished || !el) return;
+      finished = true;
+      clearTimeout(timer);
+      const node = el;
+      el = null;
+      node.dataset.slHidden = '1';
+      if (instant) {
+        // 换页时直接摘掉：这时候新页面的内容已经在 DOM 里了，淡出反而像闪一下
+        node.remove();
+        return;
+      }
+      node.classList.add('is-hidden');
+      node.dispatchEvent(new CustomEvent('site-loader:hide', { detail: { reason } }));
+      node.addEventListener(
+        'transitionend',
+        (event) => {
+          if (event.target === node) node.remove();
+        },
+        { once: true },
+      );
+      // transition 被 prefers-reduced-motion 关掉时不会有 transitionend，兜底移除
+      setTimeout(() => {
+        if (node.isConnected) node.remove();
+      }, 1400);
+    };
 
     const tick = () => {
-      if (finished) return;
-      const elapsed = performance.now() - startedAt;
-      if (stylesReadyAt === 0 && !stylesPending()) stylesReadyAt = performance.now();
-      if (elapsed >= GIVE_UP_AFTER) return hide('timeout');
+      if (finished || !el) return;
+      const now = performance.now();
+      if (stylesReadyAt === 0 && !stylesPending()) stylesReadyAt = now;
+      if (now >= deadline) return hide('timeout', navigating);
+      // 两件事都到齐就撤（换页时动效与样式通常同步就位，不用再等宽限期）
+      if (stylesReadyAt > 0 && pageLoaded) return settle('styles-settled');
       // astro:page-load 迟迟不来时，样式到位后再等一小会儿就撤，别被某张慢图拖住
-      if (stylesReadyAt > 0 && performance.now() - stylesReadyAt >= GRACE_AFTER_STYLES) {
-        return hide('styles-settled');
+      if (stylesReadyAt > 0 && now - stylesReadyAt >= GRACE_AFTER_STYLES) {
+        return hide('styles-settled', navigating);
       }
-      setTimeout(tick, 100);
+      timer = setTimeout(tick, 100);
     };
-    tick();
 
-    // 正常路径：astro:page-load 在 load 之后、动效初始化之后触发
+    // 认领当前文档里的加载层；换页后必须重新调一次
+    const adopt = (nav) => {
+      clearTimeout(timer);
+      const node = document.getElementById('site-loader');
+      if (!node) {
+        el = null;
+        finished = true;
+        return false;
+      }
+      el = node;
+      finished = false;
+      navigating = nav;
+      pageLoaded = false;
+      startedAt = performance.now();
+      stylesReadyAt = 0;
+      minVisible = nav ? MIN_VISIBLE_NAV : MIN_VISIBLE;
+      deadline = startedAt + (nav ? GIVE_UP_AFTER_NAV : GIVE_UP_AFTER);
+      tick();
+      return true;
+    };
+
+    // 真正可以撤的时机：样式生效 + 动效初始化（page-load）都到齐
+    const settle = (reason) => {
+      if (finished || !el) return;
+      if (!pageLoaded || stylesPending()) return; // 交给 tick 的兜底
+      const wait = Math.max(0, minVisible - (performance.now() - startedAt));
+      const instant = navigating;
+      setTimeout(() => {
+        if (!finished && el && el.isConnected) hide(reason, instant);
+      }, wait);
+    };
+
+    adopt(false);
+
     document.addEventListener('astro:page-load', () => {
-      if (stylesPending()) return; // 样式没到先别撤，等轮询兜底
-      const wait = Math.max(0, MIN_VISIBLE - (performance.now() - startedAt));
-      setTimeout(() => hide('page-load'), wait);
+      pageLoaded = true;
+      settle('page-load');
     });
 
-    // 站内换页：新文档已经到手就撤，别把转场动画压在加载层下面
-    document.addEventListener('astro:after-swap', () => hide('swap'));
+    // 站内换页：新 body 里的加载层是另一个节点，先认领再等着撤
+    document.addEventListener('astro:after-swap', () => {
+      adopt(true);
+    });
   })();
 </script>
