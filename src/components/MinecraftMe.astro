@@ -19,7 +19,6 @@ const { variant = 'block' } = Astro.props;
   <div class="mc-stage">
     <div class="mc-model" data-mc-model></div>
   </div>
-  <p class="mc-caption"><span>MC · mc123</span><span class="mc-hint">转头看我</span></p>
 </div>
 
 <style is:global>
@@ -27,7 +26,6 @@ const { variant = 'block' } = Astro.props;
     --mc-texel: 4px;
     --mc-scale: 1.3;
     display: grid;
-    gap: 0.6rem;
     justify-items: center;
   }
 
@@ -117,7 +115,6 @@ const { variant = 'block' } = Astro.props;
     right: 0;
     /* 往下压一个 rail-label 的高度，脚正好落在「STATUS / 状态」下面那条横线上 */
     bottom: calc(100% - 1.2rem);
-    gap: 0;
     justify-items: end;
     pointer-events: none;
   }
@@ -127,10 +124,6 @@ const { variant = 'block' } = Astro.props;
     height: calc(128px * var(--mc-scale));
   }
 
-  .mc-me--rail .mc-caption {
-    display: none;
-  }
-
   @media (max-width: 900px) {
     .mc-me--rail {
       position: static;
@@ -138,28 +131,6 @@ const { variant = 'block' } = Astro.props;
       pointer-events: auto;
     }
 
-    .mc-me--rail .mc-caption {
-      display: flex;
-    }
-  }
-
-  .mc-caption {
-    display: flex;
-    gap: 0.5rem;
-    align-items: baseline;
-    margin: 0;
-    font-family: var(--font-mono);
-    font-size: 0.52rem;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-  }
-
-  .mc-hint {
-    color: var(--rule);
-    letter-spacing: 0.06em;
-  }
-
-  @media (max-width: 900px) {
     .mc-me {
       --mc-scale: 1.05;
     }
