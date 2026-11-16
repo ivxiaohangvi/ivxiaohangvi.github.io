@@ -64,6 +64,7 @@ logging.basicConfig(level=logging.ERROR)
 
 import opentimestamps.calendar  # noqa: E402
 import otsclient.cmds as cmds  # noqa: E402
+from otsclient.cache import TimestampCache  # noqa: E402
 from opentimestamps.core.notary import BitcoinBlockHeaderAttestation, PendingAttestation  # noqa: E402
 from opentimestamps.core.serialize import BytesSerializationContext, StreamSerializationContext, StreamDeserializationContext  # noqa: E402
 from opentimestamps.core.timestamp import DetachedTimestampFile  # noqa: E402
@@ -87,7 +88,9 @@ class Args:
         self.timeout = 12
         self.calendar_urls = calendars
         self.whitelist = whitelist
-        self.cache = {}
+        # upgrade_timestamp() 要求这里是个 TimestampCache（支持 [msg] 与 merge()），
+        # 不是 dict；传 None 表示只用内存缓存，不落盘。
+        self.cache = TimestampCache(None)
         self.wait = False
         self.wait_interval = 8
 
@@ -157,9 +160,10 @@ def main(argv):
         return 2
     mode, paths = argv[1], argv[2:]
     out = []
-    try:
-        for path in paths:
-            single = {"path": path}
+    failed = 0
+    for path in paths:
+        single = {"path": path}
+        try:
             if mode == "stamp":
                 if os.path.exists(path + ".ots"):
                     single = report(path + ".ots")
@@ -169,12 +173,15 @@ def main(argv):
                 single = upgrade_file(path)
             else:
                 single = report(path + ".ots" if not path.endswith(".ots") else path)
-            out.append(single)
-    except Exception as exc:  # 网络、日历、格式，任何一种都不该炸掉整次构建
-        print(json.dumps({"ok": False, "error": "%s: %s" % (type(exc).__name__, exc), "files": out}))
-        return 1
-    print(json.dumps({"ok": True, "files": out}))
-    return 0
+        except SystemExit as exc:  # create_timestamp 内部 sys.exit(1)：日历没凑够数
+            single = {"path": path, "error": "SystemExit(%s)" % (exc.code,)}
+            failed += 1
+        except Exception as exc:  # 网络、日历、格式：单个文件失败不该拖垮其余文件
+            single = {"path": path, "error": "%s: %s" % (type(exc).__name__, exc)}
+            failed += 1
+        out.append(single)
+    print(json.dumps({"ok": failed == 0, "failed": failed, "files": out}))
+    return 0 if failed == 0 else 1
 
 
 if __name__ == "__main__":
