@@ -851,23 +851,23 @@ body.is-bare .grain {
 
 .hero-inf {
   display: inline-block;
-  width: 0.99em;
-  height: 0.49em;
-  margin-left: 0.1em;
-  font-size: 0.58em;
+  width: 1.55em;
+  height: 0.75em;
+  margin-left: 0.12em;
+  font-size: 0.64em;
   line-height: 1;
   letter-spacing: 0;
   overflow: visible;
   color: var(--brass);
-  vertical-align: 0.1em;
+  vertical-align: 0.16em;
 }
 
 .hero-inf .live-inf-base {
-  stroke-width: 0.034em;
+  stroke-width: 0.05em;
 }
 
 .hero-inf .live-inf-flow {
-  stroke-width: 0.047em;
+  stroke-width: 0.068em;
 }
 
 .hero-lede {
