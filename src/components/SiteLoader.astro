@@ -18,6 +18,17 @@
   </div>
 </div>
 
+<!-- 慢线路提示条（方案 A）：加载层盖着页面时浮在最上面，
+     用户可以选择切到加速域 blog.moxo.cc。样式内联在 BaseHead 的首屏关键样式里。 -->
+<div id="slow-line" class="slow-line" role="status" aria-live="polite" hidden>
+  <span class="slow-line-dot" aria-hidden="true"></span>
+  <span class="slow-line-text"
+    >当前线路较慢 <span class="slow-line-sub">· 已等 <b data-line-elapsed>0.0</b>s</span></span
+  >
+  <button class="slow-line-go" type="button">切换到加速线路 <span aria-hidden="true">→</span></button>
+  <button class="slow-line-close" type="button" aria-label="留在此页，本次会话不再提示">×</button>
+</div>
+
 <script is:inline>
   // 加载层的显示/隐藏不再跟 window.load 一个节奏：
   //  · 显示：样式全部内联在 BaseHead，HTML 一到就能画出来，不用等主样式表；
@@ -55,6 +66,49 @@
     const GIVE_UP_AFTER = 30000;
     const GIVE_UP_AFTER_NAV = 10000;
 
+    // 慢线路提示（方案 A）：主站上加载到 HINT_AFTER 还没就绪，就浮出一条能切到
+    // 加速域 blog.moxo.cc 的提示条。只在主域启用；加速域、预览域上整段逻辑不生效。
+    // 用户点了「切换」写 localStorage，下次进入由 BaseHead 的内联脚本在 HTML
+    // 解析到的最早期直接跳走；点「×」写 sessionStorage，本次会话不再提示。
+    const LINE_HOST = location.hostname === 'moxo.cc' || location.hostname === 'www.moxo.cc';
+    const LINE_BLOG = 'https://blog.moxo.cc';
+    const LINE_PREF_KEY = 'moxo:line';
+    const LINE_DISMISS_KEY = 'moxo:line-dismiss';
+    const HINT_AFTER = 3000;
+    let hintShown = false;
+
+    const lineNode = () => (LINE_HOST ? document.getElementById('slow-line') : null);
+
+    const lineDismissed = () => {
+      try {
+        return sessionStorage.getItem(LINE_DISMISS_KEY) === '1';
+      } catch {
+        return true;
+      }
+    };
+
+    const hideHint = () => {
+      const node = lineNode();
+      if (!node) return;
+      node.classList.remove('is-on');
+      node.hidden = true;
+    };
+
+    const showHint = () => {
+      const node = lineNode();
+      if (!node || hintShown) return;
+      hintShown = true;
+      node.hidden = false;
+      requestAnimationFrame(() => node.classList.add('is-on'));
+    };
+
+    const updateHint = (now) => {
+      const node = lineNode();
+      if (!node) return;
+      const elapsed = node.querySelector('[data-line-elapsed]');
+      if (elapsed) elapsed.textContent = (now / 1000).toFixed(1);
+    };
+
     // 还有没有没落地的主样式表（加载失败的按已结束处理，别把加载层卡死）
     const stylesPending = () =>
       Array.prototype.some.call(
@@ -66,6 +120,7 @@
       if (finished || !el) return;
       finished = true;
       clearTimeout(timer);
+      hideHint();
       const node = el;
       el = null;
       node.dataset.slHidden = '1';
@@ -92,6 +147,11 @@
     const tick = () => {
       if (finished || !el) return;
       const now = performance.now();
+      // 慢到阈值还没就绪 → 浮出「切到加速线路」的提示条（只提示、不自动跳）
+      if (LINE_HOST && !hintShown && !lineDismissed() && now >= HINT_AFTER && stylesPending()) {
+        showHint();
+      }
+      if (hintShown) updateHint(now);
       if (stylesReadyAt === 0 && !stylesPending()) stylesReadyAt = now;
       if (now >= deadline) return hide('timeout', navigating);
       // 两件事都到齐就撤（换页时动效与样式通常同步就位，不用再等宽限期）
@@ -146,5 +206,32 @@
     document.addEventListener('astro:after-swap', () => {
       adopt(true);
     });
+
+    // 提示条的两个按钮用事件委托，换页后节点被替换也不用重新绑定
+    if (LINE_HOST) {
+      document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const go = target.closest('.slow-line-go');
+        const close = target.closest('.slow-line-close');
+        if (!go && !close) return;
+        event.preventDefault();
+        if (close) {
+          try {
+            sessionStorage.setItem(LINE_DISMISS_KEY, '1');
+          } catch {
+            /* 存不了就只收起这一次 */
+          }
+          hideHint();
+          return;
+        }
+        try {
+          localStorage.setItem(LINE_PREF_KEY, 'cdn');
+        } catch {
+          /* 存不了偏好也能跳，只是下次不记得 */
+        }
+        location.replace(LINE_BLOG + location.pathname + location.search + location.hash);
+      });
+    }
   })();
 </script>

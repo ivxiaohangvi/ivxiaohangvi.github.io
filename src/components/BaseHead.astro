@@ -73,6 +73,35 @@ const ogImage = new URL(image, site);
 </script>
 
 <!--
+  慢线路兜底的第一段（"记住偏好就直跳"）：用户在本站选过「走加速线路」之后，
+  HTML 一解析到这段就跳去 blog.moxo.cc，不等主样式表、不等任何资源。
+  只允许 moxo.cc → blog.moxo.cc 单向跳；反方向、预览域、API 路径、爬虫一律不管。
+-->
+<script is:inline>
+  (() => {
+    try {
+      const LINE_PREF_KEY = 'moxo:line';
+
+      const host = location.hostname;
+      if (host !== 'moxo.cc' && host !== 'www.moxo.cc') return;
+      if (navigator.webdriver) return;
+      if (document.visibilityState === 'hidden') return;
+      if (/bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless/i.test(navigator.userAgent)) return;
+      if (location.pathname.startsWith('/api/')) return;
+      if (localStorage.getItem(LINE_PREF_KEY) !== 'cdn') return;
+
+      // 从加速域回到主域是用户的主动行为，别再把他弹回去
+      const referrer = document.referrer || '';
+      if (referrer.includes('//blog.moxo.cc')) return;
+
+      location.replace('https://blog.moxo.cc' + location.pathname + location.search + location.hash);
+    } catch {
+      /* 隐私模式 / 存储被禁用：什么都不做，按普通访问处理 */
+    }
+  })();
+</script>
+
+<!--
   首屏关键样式，故意内联、不参与打包：加载层和页面底色在 HTML 解析到的当下就能画出来，
   不用等下面那两个几十 KB 的主样式表。主样式表在构建后会被
   scripts/defer-stylesheets.mjs 改成非阻塞加载（media="print" → 载入后切回 all），
@@ -222,6 +251,174 @@ const ogImage = new URL(image, site);
     .sl-trail--head {
       opacity: 0.9;
       stroke-width: 2.5;
+    }
+  }
+
+  /* ── 慢线路提示条（方案 A）────────────────────────────────────
+     和加载层一样必须内联：它出现的时候主样式表往往还没到。
+     颜色全部写死，不依赖 global.css 里的 CSS 变量。 */
+  .slow-line {
+    position: fixed;
+    left: 50%;
+    bottom: 1.35rem;
+    z-index: 2147483001;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    max-width: calc(100vw - 2rem);
+    margin: 0;
+    padding: 0.42rem 0.45rem 0.42rem 0.78rem;
+    border: 1px solid rgba(27, 77, 92, 0.18);
+    border-radius: 999px;
+    background: rgba(239, 236, 227, 0.96);
+    box-shadow: 0 12px 32px -20px rgba(0, 0, 0, 0.45);
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+    color: #4a5652;
+    transform: translateX(-50%) translateY(0.6rem);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+
+  .slow-line[hidden] {
+    display: none;
+  }
+
+  .slow-line.is-on {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .slow-line-dot {
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #2f7c8c;
+  }
+
+  .slow-line-text {
+    white-space: nowrap;
+  }
+
+  .slow-line-text b {
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: #222824;
+  }
+
+  .slow-line-sub {
+    color: #7d857f;
+  }
+
+  .slow-line-go {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.34rem 0.68rem;
+    border: 1px solid rgba(27, 77, 92, 0.42);
+    border-radius: 999px;
+    background: rgba(27, 77, 92, 0.08);
+    color: #1b4d5c;
+    font: inherit;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .slow-line-go:hover {
+    background: rgba(27, 77, 92, 0.16);
+    border-color: rgba(27, 77, 92, 0.62);
+  }
+
+  .slow-line-close {
+    flex: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #7d857f;
+    font: inherit;
+    font-size: 0.9rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .slow-line-close:hover {
+    background: rgba(27, 77, 92, 0.1);
+    color: #222824;
+  }
+
+  :root[data-theme='dark'] .slow-line {
+    border-color: rgba(121, 167, 173, 0.24);
+    background: rgba(18, 27, 25, 0.96);
+    color: #b5b3a6;
+  }
+
+  :root[data-theme='dark'] .slow-line-text b {
+    color: #e7e4da;
+  }
+
+  :root[data-theme='dark'] .slow-line-sub {
+    color: #7f8a86;
+  }
+
+  :root[data-theme='dark'] .slow-line-dot {
+    background: #79a7ad;
+  }
+
+  :root[data-theme='dark'] .slow-line-go {
+    border-color: rgba(121, 167, 173, 0.5);
+    background: rgba(121, 167, 173, 0.12);
+    color: #9ec9cf;
+  }
+
+  :root[data-theme='dark'] .slow-line-go:hover {
+    background: rgba(121, 167, 173, 0.22);
+  }
+
+  :root[data-theme='dark'] .slow-line-close {
+    color: #7f8a86;
+  }
+
+  :root[data-theme='dark'] .slow-line-close:hover {
+    background: rgba(121, 167, 173, 0.16);
+    color: #e7e4da;
+  }
+
+  @media (max-width: 480px) {
+    .slow-line {
+      left: 0.9rem;
+      right: 0.9rem;
+      bottom: 1rem;
+      max-width: none;
+      transform: translateY(0.6rem);
+      padding: 0.45rem 0.45rem 0.45rem 0.7rem;
+      font-size: 0.68rem;
+    }
+
+    .slow-line.is-on {
+      transform: translateY(0);
+    }
+
+    .slow-line-sub {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slow-line {
+      transition: none;
     }
   }
 </style>
