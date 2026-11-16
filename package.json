@@ -14,7 +14,7 @@
     "test:sanitize": "node --test scripts/sanitize-comment.test.mjs",
     "test:steam-sync": "node --test scripts/steam-sync.test.mjs",
     "verify:steam": "node scripts/verify-steam-output.mjs",
-    "build": "node --test scripts/sanitize-comment.test.mjs scripts/steam-sync.test.mjs && astro build && node scripts/verify-steam-output.mjs && pagefind --site dist",
+    "build": "node --test scripts/sanitize-comment.test.mjs scripts/steam-sync.test.mjs && astro build && node scripts/defer-stylesheets.mjs && node scripts/verify-steam-output.mjs && pagefind --site dist",
     "preview": "astro preview",
     "astro": "astro",
     "vault:encode": "node scripts/encode-vault.mjs",

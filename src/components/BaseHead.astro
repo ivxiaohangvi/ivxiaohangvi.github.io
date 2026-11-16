@@ -71,3 +71,166 @@ const ogImage = new URL(image, site);
     document.addEventListener('astro:after-swap', apply);
   })();
 </script>
+
+<!--
+  首屏关键样式，故意内联、不参与打包：加载层和页面底色在 HTML 解析到的当下就能画出来，
+  不用等下面那两个几十 KB 的主样式表。主样式表在构建后会被
+  scripts/defer-stylesheets.mjs 改成非阻塞加载（media="print" → 载入后切回 all），
+  所以「白屏若干秒」会变成「一直在转圈」，等样式真的到位了加载层才撤。
+-->
+<style is:inline>
+  html {
+    background: #e8e4d9;
+  }
+
+  :root[data-theme='dark'] {
+    background: #0d1413;
+  }
+
+  body {
+    margin: 0;
+  }
+
+  .site-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e8e4d9;
+    transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+  }
+
+  .site-loader.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  :root[data-theme='dark'] .site-loader {
+    background: #0d1413;
+  }
+
+  body.is-bare .site-loader {
+    background: #080f10;
+  }
+
+  .site-loader-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.15rem;
+  }
+
+  .site-loader-mark {
+    width: min(40vw, 136px);
+    overflow: visible;
+  }
+
+  .site-loader path {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .sl-track {
+    stroke: #1b4d5c;
+    stroke-width: 2;
+    opacity: 0.16;
+  }
+
+  .sl-trail {
+    stroke: #1b4d5c;
+    stroke-width: 2.5;
+    animation: site-loader-trail 2s linear infinite;
+    will-change: stroke-dashoffset;
+  }
+
+  .sl-trail--long {
+    opacity: 0.22;
+    stroke-dasharray: 0.34 0.66;
+  }
+
+  .sl-trail--mid {
+    opacity: 0.55;
+    stroke-dasharray: 0.16 0.84;
+  }
+
+  .sl-trail--head {
+    stroke-width: 3;
+    opacity: 0.95;
+    stroke-dasharray: 0.045 0.955;
+  }
+
+  @keyframes site-loader-trail {
+    to {
+      stroke-dashoffset: -1;
+    }
+  }
+
+  .site-loader-name {
+    font-family: 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', 'STSong', 'SimSun', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.42em;
+    text-indent: 0.42em;
+    text-transform: lowercase;
+    color: #4a5652;
+    opacity: 0.72;
+  }
+
+  :root[data-theme='dark'] .sl-track,
+  :root[data-theme='dark'] .sl-trail {
+    stroke: #79a7ad;
+  }
+
+  :root[data-theme='dark'] .sl-track {
+    opacity: 0.22;
+  }
+
+  :root[data-theme='dark'] .site-loader-name {
+    color: #b5b3a6;
+  }
+
+  body.is-bare .sl-track,
+  body.is-bare .sl-trail {
+    stroke: #79a7ad;
+  }
+
+  body.is-bare .site-loader-name {
+    color: #8c948c;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-loader {
+      transition: none;
+    }
+
+    .sl-trail {
+      animation: none;
+      stroke-dasharray: 1 0;
+    }
+
+    .sl-trail--long {
+      opacity: 0;
+    }
+
+    .sl-trail--mid {
+      opacity: 0.5;
+    }
+
+    .sl-trail--head {
+      opacity: 0.9;
+      stroke-width: 2.5;
+    }
+  }
+</style>
+
+<!-- 关掉 JS 时加载层永远没人撤，用 noscript 直接藏起来；主样式表的 noscript 兜底由构建脚本补。 -->
+<noscript>
+  <style is:inline>
+    #site-loader {
+      display: none !important;
+    }
+  </style>
+</noscript>

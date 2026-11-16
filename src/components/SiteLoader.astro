@@ -1,4 +1,6 @@
 ---
+// 加载层：只在需要的时候盖住页面，样式全部内联在 BaseHead 的首屏关键样式里，
+// 不参与 CSS 打包，所以它不依赖任何外部样式表就能画出完整样子。
 ---
 <div id="site-loader" class="site-loader" aria-hidden="true">
   <div class="site-loader-inner">
@@ -16,158 +18,67 @@
   </div>
 </div>
 
-<style is:inline>
-  .site-loader {
-    position: fixed;
-    inset: 0;
-    z-index: 2147483000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #e8e4d9;
-    transition: opacity 0.5s ease, visibility 0s linear 0.5s;
-  }
-
-  .site-loader.is-hidden {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-  }
-
-  :root[data-theme='dark'] .site-loader {
-    background: #0d1413;
-  }
-
-  body.is-bare .site-loader {
-    background: #080f10;
-  }
-
-  .site-loader-inner {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.15rem;
-  }
-
-  .site-loader-mark {
-    width: min(40vw, 136px);
-    overflow: visible;
-  }
-
-  .site-loader path {
-    fill: none;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .sl-track {
-    stroke: #1b4d5c;
-    stroke-width: 2;
-    opacity: 0.16;
-  }
-
-  .sl-trail {
-    stroke: #1b4d5c;
-    stroke-width: 2.5;
-    animation: site-loader-trail 2s linear infinite;
-    will-change: stroke-dashoffset;
-  }
-
-  .sl-trail--long {
-    opacity: 0.22;
-    stroke-dasharray: 0.34 0.66;
-  }
-
-  .sl-trail--mid {
-    opacity: 0.55;
-    stroke-dasharray: 0.16 0.84;
-  }
-
-  .sl-trail--head {
-    stroke-width: 3;
-    opacity: 0.95;
-    stroke-dasharray: 0.045 0.955;
-  }
-
-  @keyframes site-loader-trail {
-    to {
-      stroke-dashoffset: -1;
-    }
-  }
-
-  .site-loader-name {
-    font-family: 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', 'STSong', 'SimSun', serif;
-    font-size: 0.8rem;
-    letter-spacing: 0.42em;
-    text-indent: 0.42em;
-    text-transform: lowercase;
-    color: #4a5652;
-    opacity: 0.72;
-  }
-
-  :root[data-theme='dark'] .sl-track,
-  :root[data-theme='dark'] .sl-trail {
-    stroke: #79a7ad;
-  }
-
-  :root[data-theme='dark'] .sl-track {
-    opacity: 0.22;
-  }
-
-  :root[data-theme='dark'] .site-loader-name {
-    color: #b5b3a6;
-  }
-
-  body.is-bare .sl-track,
-  body.is-bare .sl-trail {
-    stroke: #79a7ad;
-  }
-
-  body.is-bare .site-loader-name {
-    color: #8c948c;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .site-loader {
-      transition: none;
-    }
-
-    .sl-trail {
-      animation: none;
-      stroke-dasharray: 1 0;
-    }
-
-    .sl-trail--long {
-      opacity: 0;
-    }
-
-    .sl-trail--mid {
-      opacity: 0.5;
-    }
-
-    .sl-trail--head {
-      opacity: 0.9;
-      stroke-width: 2.5;
-    }
-  }
-</style>
-
 <script is:inline>
+  // 加载层的显示/隐藏不再跟 window.load 一个节奏：
+  //  · 显示：样式全部内联在 BaseHead，HTML 一到就能画出来，不用等主样式表；
+  //  · 隐藏：等两件事——主样式表真的生效（构建后被改成非阻塞加载，
+  //    只有 link.sheet 挂上才算数），以及 astro:page-load（动效在那一刻初始化，
+  //    hero 的 gsap.from 会先把元素设成透明再入场，早撤会看到内容「跳」一下）。
+  // 所以慢网络下是「立刻一直转圈」，页面准备好了才撤，而不是白屏若干秒后闪一瞬。
   (() => {
-    const hide = () => {
-      const el = document.getElementById('site-loader');
-      if (!el || el.dataset.slHidden) return;
+    const el = document.getElementById('site-loader');
+    if (!el) return;
+
+    let finished = false;
+
+    const hide = (reason) => {
+      if (finished) return;
+      finished = true;
       el.dataset.slHidden = '1';
       el.classList.add('is-hidden');
+      el.dispatchEvent(new CustomEvent('site-loader:hide', { detail: { reason } }));
       el.addEventListener('transitionend', () => el.remove(), { once: true });
-      setTimeout(() => el.isConnected && el.remove(), 1200);
+      // transition 被 prefers-reduced-motion 关掉时不会有 transitionend，兜底移除
+      setTimeout(() => el.isConnected && el.remove(), 1400);
     };
-    if (document.readyState === 'complete') {
-      hide();
-    } else {
-      window.addEventListener('load', hide, { once: true });
-      setTimeout(hide, 6000);
-    }
-    document.addEventListener('astro:after-swap', hide);
+
+    // 还有没有没落地的主样式表（加载失败的按已结束处理，别把加载层卡死）
+    const stylesPending = () =>
+      Array.prototype.some.call(
+        document.querySelectorAll('link[data-defer-style]'),
+        (link) => !link.sheet && link.dataset.deferStyleError !== '1',
+      );
+
+    const startedAt = performance.now();
+    let stylesReadyAt = 0;
+    // 再快也给加载层留一点存在感，避免一闪而过
+    const MIN_VISIBLE = 450;
+    // 样式到位后再等动效初始化的宽限期
+    const GRACE_AFTER_STYLES = 4000;
+    // 极端情况（样式彻底回不来 / page-load 一直不来）：到点也撤
+    const GIVE_UP_AFTER = 30000;
+
+    const tick = () => {
+      if (finished) return;
+      const elapsed = performance.now() - startedAt;
+      if (stylesReadyAt === 0 && !stylesPending()) stylesReadyAt = performance.now();
+      if (elapsed >= GIVE_UP_AFTER) return hide('timeout');
+      // astro:page-load 迟迟不来时，样式到位后再等一小会儿就撤，别被某张慢图拖住
+      if (stylesReadyAt > 0 && performance.now() - stylesReadyAt >= GRACE_AFTER_STYLES) {
+        return hide('styles-settled');
+      }
+      setTimeout(tick, 100);
+    };
+    tick();
+
+    // 正常路径：astro:page-load 在 load 之后、动效初始化之后触发
+    document.addEventListener('astro:page-load', () => {
+      if (stylesPending()) return; // 样式没到先别撤，等轮询兜底
+      const wait = Math.max(0, MIN_VISIBLE - (performance.now() - startedAt));
+      setTimeout(() => hide('page-load'), wait);
+    });
+
+    // 站内换页：新文档已经到手就撤，别把转场动画压在加载层下面
+    document.addEventListener('astro:after-swap', () => hide('swap'));
   })();
 </script>
