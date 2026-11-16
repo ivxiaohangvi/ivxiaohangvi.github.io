@@ -16,7 +16,7 @@ export const siteConfig = {
   /** 一句话身份 */
   tagline: '背井离江的汤姆',
   /** 人格标签（首页展示用） */
-  identity: ['INFP', '迹忆', '观察', '创造', '无限可能'],
+  identity: ['INFP', '观察', '记录', '创造', '无限可能'],
   /** 社交链接：留空则前端不渲染对应入口 */
   social: {
     github: 'https://github.com/ivxiaohangvi', 

@@ -32,7 +32,7 @@ const hasRedactions = entries.some((entry) => entry.body?.includes('class="redac
         <span class="page-count">{String(entries.length).padStart(2, '0')} 篇</span>
       </div>
       <p class="page-lede">
-        从 Daily You 同步来的日子。心情用一行色谱标出，在这里无需评判。
+        从 Daily You 同步来的日子，在这里情绪无需评判。
       </p>
       <a class="text-link page-head-link" href={withBase('/diary/archive/')}>
         按月份装订 · 书架 <span>→</span>
@@ -76,7 +76,7 @@ const hasRedactions = entries.some((entry) => entry.body?.includes('class="redac
           {hasRedactions && (
             <p class="redaction-note" data-reveal>
               <span class="redact" data-pagefind-ignore aria-hidden="true">██</span>
-              有些人或事，我涂黑了，我想我的迹忆不应该影响他人。
+              有些人或事，我涂黑了。
             </p>
           )}
         </>

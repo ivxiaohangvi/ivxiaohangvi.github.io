@@ -18,7 +18,7 @@ const [photos, rolls] = await Promise.all([getCollection('photos'), getPhotoRoll
         <h1>摄影</h1>
         <span class="page-count">{String(photos.length).padStart(3, '0')} 格 / {String(rolls.length).padStart(2, '0')} 卷</span>
       </div>
-      <p class="page-lede">镜头替我记住的光线。一个相册一卷，装进暗盒——拖拽或方向键过片，拉过卷头卷尾有阻尼，松手自己弹回；点过哪一卷，滚轮就归哪一卷，指针离开片基即还给页面；点开在放大机下把底片冲成正片，也欢迎什么都不做，只是看看。</p>
+      <p class="page-lede">镜头替我记住的光线。一个相册一卷，可点击冲洗，欢迎什么都不做，只是看看。</p>
       <a class="text-link page-head-link" href={withBase('/photos/archive/')}>按卷收进胶卷柜 <span aria-hidden="true">→</span></a>
     </header>
   </div>
