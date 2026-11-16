@@ -12,8 +12,10 @@ const moments = (await getCollection('moments'))
   .map((entry) => ({
     id: entry.id,
     data: entry.data,
-    // 只有图片、没有正文的动态，glob loader 给出的 body 是 undefined，先兜底再压缩空白
-    body: (entry.body ?? '').replace(/\s+/g, ' ').trim(),
+    // 只有图片、没有正文的动态，glob loader 给出的 body 是 undefined，先兜底；
+    // 剥掉导入器插进来的行内 HTML（如涂黑的 <span class="redact">██</span>），只留可见文字，
+    // 否则这段标记会被当成纯文本原样显示出来
+    body: (entry.body ?? '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim(),
     ts: entry.data.date.valueOf(),
   }))
   .sort((a, b) => b.ts - a.ts);

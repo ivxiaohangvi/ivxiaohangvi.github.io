@@ -7,6 +7,7 @@ import LiveInfinity from '../components/LiveInfinity.astro';
 import { moodInfo } from '../lib/mood';
 import { siteConfig, withBase } from '../config';
 import { beijingDateDot, beijingIso, beijingMonthDay, beijingTime } from '../lib/date';
+import { plainText } from '../lib/diary-list';
 
 const [diary, moments, photos, tools, posts] = await Promise.all([
   getCollection('diary'),
@@ -30,14 +31,6 @@ const latestMoment = moments[0];
 const latestPhoto = photos[0];
 const latestPost = posts[0];
 const latestTool = tools.sort((a, b) => a.data.order - b.data.order)[0];
-
-const plain = (markdown = '') =>
-  markdown
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-    .replace(/[#>*_`~]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
 
 const shortDate = (date: Date) => beijingMonthDay(date);
 const longDate = (date: Date) => beijingDateDot(date);
@@ -113,7 +106,7 @@ const nightPick = nightPool.length > 0 ? nightPool[Math.floor(Date.now() / 21_60
 // 引文取正文里第一行像人话的（跳过 "be" 这种零碎行与图片语法）
 const nightLines = (nightPick?.body ?? '')
   .split(/\r?\n/)
-  .map((line) => plain(line))
+  .map((line) => plainText(line))
   .filter((line) => line.length >= 6);
 const nightBody = nightLines.join(' ');
 const nightExcerpt = nightBody.slice(0, 96).replace(/[“"'‘「『]+$/, '');
@@ -166,7 +159,7 @@ const nightWrap = !/^[“"‘'「『]/.test(nightExcerpt);
                   {latestDiary.data.sample && <span class="sample-stamp">示例</span>}
                 </div>
               )}
-              <p class="now-text">{plain(latestDiary.body).slice(0, 120)}{plain(latestDiary.body).length > 120 ? '…' : ''}</p>
+              <p class="now-text">{plainText(latestDiary.body).slice(0, 120)}{plainText(latestDiary.body).length > 120 ? '…' : ''}</p>
               <div class="now-foot">
                 <span class="now-caption">{nowMood ? `这一天的心情：${nowMood.label}` : '心情未知'}</span>
                 <a class="text-link" href={withBase(`/diary/${latestDiary.id}/`)}>读这一页 <span aria-hidden="true">→</span></a>
