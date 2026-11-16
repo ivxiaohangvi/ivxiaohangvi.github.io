@@ -267,14 +267,6 @@
   content: '收起';
 }
 
-.spec-card.is-flipped ~ .unsent {
-  display: none;
-}
-
-.spec-card.is-flipped ~ [data-unsent-back] {
-  display: block;
-}
-
 .unsent-body {
   max-width: 38em;
   padding-bottom: 1.2rem;

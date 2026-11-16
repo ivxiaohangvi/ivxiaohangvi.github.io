@@ -270,7 +270,7 @@ const latest = steamComments.slice(0, 3);
             </figcaption>
           </figure>
 
-          <!-- 卡片正面那份折叠区：收起时就在卡片下面 -->
+          <!-- 「想放在这里的话」：固定在卡片下面，不随卡片翻面而变 -->
           <details class="unsent">
             <summary>
               <span class="unsent-stamp">UNSENT</span>
@@ -284,24 +284,6 @@ const latest = steamComments.slice(0, 3);
             </div>
           </details>
 
-          <!-- 卡片背面那份：翻开才看得到，翻到背面时位置与正面一致 -->
-          <details class="unsent" data-unsent-back data-pagefind-ignore>
-            <summary>
-              <span class="unsent-stamp">UNSENT</span>
-              <span class="unsent-title">夹在说明书背面的信</span>
-              <span class="unsent-toggle" aria-hidden="true"></span>
-            </summary>
-            <div class="unsent-body" data-pagefind-ignore>
-              <p>在 Steam 的签名里，我留了一封很长的信。这里只摘最后一段：</p>
-              <blockquote>
-                “当今晚的烟花把夜空点成白昼，随着开场声起，千万兄弟为你扬帆启航。
-                到时你乘船过月光下的海面，如有浪涛如山，那就是我来见你了。”
-              </blockquote>
-              <p class="unsent-source">
-                奶淇淋们写给琳 · 全文在 <a href={steam} target="_blank" rel="noopener noreferrer">Steam 展柜 ↗</a>
-              </p>
-            </div>
-          </details>
         </section>
 
         <section class="doc-section" id="friends" data-index-section>
@@ -554,7 +536,6 @@ const latest = steamComments.slice(0, 3);
     }
     const hint = card.querySelector<HTMLElement>('[data-spec-hint]');
     if (hint) hint.textContent = flipped ? '背面 · 一封没寄出的信' : '按住卡片边缘约半秒翻面';
-    specSyncUnsents(card.closest('.doc-section'), flipped);
   };
 
   const specFlip = (card: HTMLElement) => {
@@ -590,36 +571,15 @@ const latest = steamComments.slice(0, 3);
     document.querySelectorAll<HTMLElement>('[data-spec-flip]').forEach(specSync);
   };
 
-  // 卡片背面那份折叠区：卡片翻到背面时，它才第一次有位置。
-  // 正面朝上时它没有位置（display:none、inert、aria-hidden），
-  // 所以开读屏、Tab、Pagefind 和 Ctrl+F 都只会撞见其中一份。
-  const specSyncUnsents = (section: Element | null, flipped: boolean) => {
-    const back = section?.querySelector<HTMLElement>('[data-unsent-back]');
-    if (!back) return;
-    back.toggleAttribute('inert', !flipped);
-    back.setAttribute('aria-hidden', String(!flipped));
-  };
-
-  const initUnsents = () => {
-    document.querySelectorAll<HTMLElement>('.doc-section').forEach((section) => {
-      const card = section.querySelector<HTMLElement>('[data-spec-flip]');
-      specSyncUnsents(section, card?.dataset.flipped === '1');
-    });
-  };
-
-  // 同样的数字看两遍没意思：正反两份折叠区永远只开着其中一份
+  // 同一节里若有多份折叠区，只留一份展开
   const unsentSync = (details: HTMLDetailsElement) => {
-    const section = details.closest('.doc-section');
-    const isBack = details.hasAttribute('data-unsent-back');
-    const siblings = section
-      ? Array.from(section.querySelectorAll<HTMLDetailsElement>('.unsent')).filter(
-          (d) => d.hasAttribute('data-unsent-back') === isBack,
-        )
-      : [];
     if (!details.open) return;
-    siblings.forEach((other) => {
-      if (other !== details) other.open = false;
-    });
+    const section = details.closest('.doc-section');
+    section
+      ?.querySelectorAll<HTMLDetailsElement>('.unsent')
+      .forEach((other) => {
+        if (other !== details) other.open = false;
+      });
   };
 
   document.addEventListener('toggle', (e) => {
@@ -775,7 +735,6 @@ const latest = steamComments.slice(0, 3);
     initIndex();
     initCopy();
     initSpec();
-    initUnsents();
     initRailAnchor();
   }
 

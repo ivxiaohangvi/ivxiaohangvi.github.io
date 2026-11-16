@@ -3351,11 +3351,6 @@ html.is-lightbox-open {
 
 
 
-/* 正反两份折叠区只露一份：卡片翻到背面时正面那份让位、背面那份顶上来。
-   下面三条只管显隐，内容样式仍是原始那一套 */
-[data-unsent-back] {
-  display: none;
-}
 
 
 
