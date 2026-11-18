@@ -30,7 +30,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
 const index = posts.findIndex((item) => item.id === post.id);
 const older = posts[index + 1];
 const newer = posts[index - 1];
-const readingMinutes = Math.max(1, Math.round((post.body?.length ?? 0) / 450));
+const readingMinutes = Math.max(1, Math.round((post.body?.length ?? 0) / 300));
 const year = beijingYear(post.data.pubDate);
 const canonical = new URL(withBase(`/blog/${post.id}/`), Astro.site ?? new URL('https://moxo.cc')).href;
 ---
