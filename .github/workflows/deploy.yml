@@ -78,7 +78,7 @@ jobs:
           node-version: 22
           cache: npm
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       # 装不上就跳过盖章，绝不挡住发布；真实错误仍在日志里，同时以 warning 形式亮出来
