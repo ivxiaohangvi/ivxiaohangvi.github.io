@@ -14,8 +14,10 @@
     "test:sanitize": "node --test scripts/sanitize-comment.test.mjs",
     "test:steam-sync": "node --test scripts/steam-sync.test.mjs",
     "test:wait-artifact": "node --test scripts/wait-pages-artifact.test.mjs",
+    "test:search-vocab": "node --test scripts/build-search-vocab.test.mjs",
+    "test:search-segmenter": "node --test scripts/search-query-segmenter.test.mjs",
     "verify:steam": "node scripts/verify-steam-output.mjs",
-    "build": "node --test scripts/sanitize-comment.test.mjs scripts/steam-sync.test.mjs scripts/wait-pages-artifact.test.mjs && astro build && node scripts/defer-stylesheets.mjs && node scripts/verify-steam-output.mjs && pagefind --site dist",
+    "build": "node --test scripts/sanitize-comment.test.mjs scripts/steam-sync.test.mjs scripts/wait-pages-artifact.test.mjs scripts/build-search-vocab.test.mjs scripts/search-query-segmenter.test.mjs && astro build && node scripts/defer-stylesheets.mjs && node scripts/verify-steam-output.mjs && pagefind --site dist && node scripts/build-search-vocab.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "vault:encode": "node scripts/encode-vault.mjs",
@@ -31,7 +33,6 @@
     "@astrojs/sitemap": "^3.7.4",
     "astro": "^5.18.2",
     "gsap": "^3.15.0",
-    "pagefind": "^1.5.2",
     "parse5": "^7.3.0",
     "pinyin-pro": "^3.29.5",
     "three": "^0.186.1"
@@ -42,6 +43,7 @@
     "@gltf-transform/cli": "^4.2.0",
     "js-yaml": "^4.3.2",
     "obj2gltf": "^3.1.1",
+    "pagefind": "^1.6.0",
     "sharp": "^0.34.4"
   }
 }

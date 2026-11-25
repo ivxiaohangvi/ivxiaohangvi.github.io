@@ -89,6 +89,8 @@ const driftMobile = layoutWordCloud(wordField.words, {
   <script>
     import { gsap } from 'gsap';
 
+    import { installSearchQuerySegmenter } from '../lib/search-query-segmenter';
+
     type PagefindResultData = {
       url: string;
       excerpt: string;
@@ -107,6 +109,8 @@ const driftMobile = layoutWordCloud(wordField.words, {
       if (!import.meta.env.PROD) return null;
       if (pagefind) return pagefind;
       try {
+        // 让查询切词与索引切词同口径（中文词表最长匹配），必须在 import pagefind.js 之前安装。
+        await installSearchQuerySegmenter();
         const path = `${import.meta.env.BASE_URL}pagefind/pagefind.js`;
         pagefind = (await import(/* @vite-ignore */ path)) as unknown as Pagefind;
       } catch {
