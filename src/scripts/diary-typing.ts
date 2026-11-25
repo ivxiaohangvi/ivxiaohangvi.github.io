@@ -25,6 +25,8 @@ interface Unit {
   syllables: string[];
   pinyin: string;
   done: boolean;
+  /** 上一轮误打出来的错词；修正重打时用它还原候选顺序。 */
+  wrong?: string;
 }
 
 interface TimerEntry {
@@ -48,9 +50,9 @@ const PAUSE_PUNCT = /[，、；：,;:]/;
 const ATOMIC_SELECTOR =
   '.redact, img, video, audio, iframe, canvas, svg, pre, table, hr, figure, br, picture, object, embed';
 
-/** 在原 156 键/分的基础上加快 40%：基准 350 → 250ms，连击下限 262 → 187ms。 */
-const KEY_BASE = 250;
-const KEY_MIN = 187;
+/** 在 156 键/分的基础上先加快 40%（350 → 250ms），再快 20%：基准 200ms，连击下限 150ms。 */
+const KEY_BASE = 200;
+const KEY_MIN = 150;
 const KEY_MAX = 1100;
 const SYLLABLE_FIRST = 1.08;
 const SYLLABLE_MIDDLE = 0.93;
@@ -813,7 +815,11 @@ class DiaryTyping {
     return 'ok';
   }
 
-  private async typeComposed(unit: Unit, allowMistake: boolean): Promise<'ok' | 'wrong'> {
+  private async typeComposed(
+    unit: Unit,
+    allowMistake: boolean,
+    correctionFrom = '',
+  ): Promise<'ok' | 'wrong'> {
     if (this.stopped) return 'ok';
 
     const composition = { value: '' };
@@ -842,22 +848,38 @@ class DiaryTyping {
         ? this.wordCandidates(unit, target, zeroBias)
         : this.charCandidates(unit.pinyin, target, zeroBias);
 
+    let list = candidates;
     let commit = target;
-    let active = candidates.indexOf(target);
+    let active = list.indexOf(target);
 
-    if (allowMistake && Math.random() < (unit.kind === 'word' ? WORD_MISTAKE_CHANCE : HAN_MISTAKE_CHANCE)) {
+    if (correctionFrom && correctionFrom !== target) {
+      // 修正重打：上一轮的错词仍排第一候选，正确词放到它后面；
+      // 选字框从第 1 格移到正确词的格子上，才像“发现选错、把框移回去”。
+      const rest = candidates.filter((item) => item !== correctionFrom && item !== target);
+      const ordered = [correctionFrom, ...rest.slice(0, 3)];
+      const position = 1 + Math.floor(Math.random() * ordered.length);
+      ordered.splice(position, 0, target);
+      list = ordered;
+      active = position;
+    } else if (
+      allowMistake &&
+      Math.random() < (unit.kind === 'word' ? WORD_MISTAKE_CHANCE : HAN_MISTAKE_CHANCE)
+    ) {
       const wrong = this.pickWrongCandidate(candidates, target);
       if (wrong) {
+        // 真实误打：没细看候选、直接回车默认第一个 —— 错词排到第一格，选字框不动。
+        list = [wrong, ...candidates.filter((item) => item !== wrong)];
+        unit.wrong = wrong;
         commit = wrong;
-        active = candidates.indexOf(wrong);
+        active = 0;
       }
     }
 
     if (active < 0) {
-      active = candidates.length > 0 ? Math.floor(Math.random() * candidates.length) : 0;
+      active = list.length > 0 ? Math.floor(Math.random() * list.length) : 0;
     }
 
-    await this.chooseCandidate(this.composeLabel(unit, unit.pinyin), candidates, active, pace);
+    await this.chooseCandidate(this.composeLabel(unit, unit.pinyin), list, active, pace);
     if (this.stopped) return 'ok';
 
     this.applyCommit(unit, commit);
@@ -1065,7 +1087,9 @@ class DiaryTyping {
       if (this.stopped) return;
     }
 
-    await this.typeComposed(unit, false);
+    const wrong = unit.wrong ?? '';
+    unit.wrong = undefined;
+    await this.typeComposed(unit, false, wrong);
   }
 
   private setCaret(token: Token, after: boolean): void {
