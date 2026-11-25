@@ -28,9 +28,9 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -69,11 +69,11 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref_name }}
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -126,13 +126,13 @@ jobs:
       # sync job 可能刚 push 了留言快照和同步状态；按分支取最新 HEAD，
       # 否则默认 checkout 会停在触发 SHA，页面要再等一轮才会看到同步结果
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref_name }}
       # LQIP 的 med/thumb 是构建期产物，不入库；用清单的内容哈希做 cache key。
       # 命中时只重算新增/改动的图；未命中（例如第一次部署）会全量生成一次。
       - name: Restore LQIP image cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             public/diary/images/med
@@ -146,7 +146,7 @@ jobs:
             lqip-
       # 安装依赖 → npm run build（prebuild 先解码 vault、再补 LQIP，最后 Pagefind）→ 上传产物
       - name: Install, build, and upload site
-        uses: withastro/action@v3
+        uses: withastro/action@v6
         with:
           node-version: 22
       # 产物刚上传完时，GitHub 的 Actions 产物服务可能还要一会儿才把它列出来，
@@ -161,4 +161,4 @@ jobs:
       # 同一个 run 里再跑一遍会重复上传产物，deploy-pages 会因 "Artifact count is 2" 失败。
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
