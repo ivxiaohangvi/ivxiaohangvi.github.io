@@ -13,8 +13,9 @@
     "gen:images": "node scripts/gen-image-lqip.mjs",
     "test:sanitize": "node --test scripts/sanitize-comment.test.mjs",
     "test:steam-sync": "node --test scripts/steam-sync.test.mjs",
+    "test:wait-artifact": "node --test scripts/wait-pages-artifact.test.mjs",
     "verify:steam": "node scripts/verify-steam-output.mjs",
-    "build": "node --test scripts/sanitize-comment.test.mjs scripts/steam-sync.test.mjs && astro build && node scripts/defer-stylesheets.mjs && node scripts/verify-steam-output.mjs && pagefind --site dist",
+    "build": "node --test scripts/sanitize-comment.test.mjs scripts/steam-sync.test.mjs scripts/wait-pages-artifact.test.mjs && astro build && node scripts/defer-stylesheets.mjs && node scripts/verify-steam-output.mjs && pagefind --site dist",
     "preview": "astro preview",
     "astro": "astro",
     "vault:encode": "node scripts/encode-vault.mjs",
@@ -36,6 +37,7 @@
     "three": "^0.186.1"
   },
   "devDependencies": {
+    "@actions/artifact": "^2.3.2",
     "@astrojs/markdown-remark": "^6.3.11",
     "@gltf-transform/cli": "^4.2.0",
     "js-yaml": "^4.3.2",
