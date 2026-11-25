@@ -4,6 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import WordDriftCloud from '../components/WordDriftCloud.astro';
 import { layoutWordCloud } from '../lib/word-cloud-layout';
 import { buildWordField } from '../lib/word-field';
+import { pinyin } from 'pinyin-pro';
 import '../styles/word-field.css';
 
 const [diary, moments, blog] = await Promise.all([
@@ -36,6 +37,23 @@ const driftMobile = layoutWordCloud(wordField.words, {
   bands: { 1: [0.02, 0.38], 2: [0.24, 0.62], 3: [0.44, 0.82], 4: [0.62, 1.0] },
   ampScale: 0.8,
 });
+
+// 词场里每个词的逐字拼音、以及每个音的候选字（都取自词场自身），构建期算好交给浏览器。
+const PINYIN_OPTIONS = { toneType: 'none', type: 'array' } as const;
+const wordSyllables: Record<string, string[]> = {};
+const syllableCandidates: Record<string, string[]> = {};
+for (const item of wordField.words) {
+  const chars = [...item.word];
+  const syllables = pinyin(item.word, PINYIN_OPTIONS) as string[];
+  if (syllables.length === chars.length) wordSyllables[item.word] = syllables;
+  for (let index = 0; index < chars.length; index += 1) {
+    const syllable = syllables[index];
+    if (!syllable || !/^[a-z]+$/.test(syllable) || !/\p{Script=Han}/u.test(chars[index])) continue;
+    const pool = (syllableCandidates[syllable] ??= []);
+    if (!pool.includes(chars[index]) && pool.length < 6) pool.push(chars[index]);
+  }
+}
+const typingData = JSON.stringify({ syllables: wordSyllables, candidates: syllableCandidates }).replace(/</g, '\\u003c');
 ---
 <BaseLayout title="搜索" description="搜索 moxo 里的迹忆、动态与文章。">
   <div class="wrap-narrow">
@@ -54,6 +72,13 @@ const driftMobile = layoutWordCloud(wordField.words, {
         搜索索引在构建时由 Pagefind 生成；本地开发模式下不可用，执行
         <code>npm run build &amp;&amp; npm run preview</code> 可以体验完整效果。
       </p>
+      <div class="search-ime" id="search-ime" hidden aria-hidden="true">
+        <div class="search-ime-head">
+          <span class="search-ime-compose" data-search-ime-compose></span>
+          <span class="search-ime-mode">全拼</span>
+        </div>
+        <div class="search-ime-list" data-search-ime-list></div>
+      </div>
     </div>
 
     {
@@ -70,6 +95,18 @@ const driftMobile = layoutWordCloud(wordField.words, {
         </section>
       )
     }
+
+    <div id="search-loading" class="search-loading" role="status" hidden>
+      <svg viewBox="0 0 80 48" fill="none" aria-hidden="true">
+        <path class="sl-track" pathLength="1" d="M8 24C8 10 28 8 40 24C52 40 72 38 72 24C72 10 52 8 40 24C28 40 8 38 8 24Z"></path>
+        <path class="sl-trail sl-trail--long" pathLength="1" d="M8 24C8 10 28 8 40 24C52 40 72 38 72 24C72 10 52 8 40 24C28 40 8 38 8 24Z"></path>
+        <path class="sl-trail sl-trail--mid" pathLength="1" d="M8 24C8 10 28 8 40 24C52 40 72 38 72 24C72 10 52 8 40 24C28 40 8 38 8 24Z"></path>
+        <path class="sl-trail sl-trail--head" pathLength="1" d="M8 24C8 10 28 8 40 24C52 40 72 38 72 24C72 10 52 8 40 24C28 40 8 38 8 24Z"></path>
+      </svg>
+      <span class="search-loading-text">搜索中…</span>
+    </div>
+
+    <script type="application/json" data-search-typing set:html={typingData}></script>
 
     <div id="search-results" class="search-results" aria-live="polite"></div>
   </div>
@@ -90,6 +127,7 @@ const driftMobile = layoutWordCloud(wordField.words, {
     import { gsap } from 'gsap';
 
     import { installSearchQuerySegmenter } from '../lib/search-query-segmenter';
+    import { typeWordIntoSearch } from '../lib/search-typing';
 
     type PagefindResultData = {
       url: string;
@@ -212,14 +250,153 @@ const driftMobile = layoutWordCloud(wordField.words, {
       const pf = await ensurePagefind();
       if (pf) hint?.remove();
 
+      const typingScript = document.querySelector<HTMLScriptElement>('script[data-search-typing]');
+      let typingData: { syllables: Record<string, string[]>; candidates: Record<string, string[]> } = {
+        syllables: {},
+        candidates: {},
+      };
+      try {
+        const parsed = typingScript?.textContent ? JSON.parse(typingScript.textContent) : null;
+        if (parsed && typeof parsed === 'object') typingData = parsed;
+      } catch {
+        /* 数据坏了就退回“直接落字” */
+      }
+
+      const ime = document.getElementById('search-ime');
+      const imeCompose = ime?.querySelector<HTMLElement>('[data-search-ime-compose]') ?? null;
+      const imeList = ime?.querySelector<HTMLElement>('[data-search-ime-list]') ?? null;
+      const loading = document.getElementById('search-loading');
+      const resultsBox = document.getElementById('search-results');
+      const prefersReducedMotion = (): boolean => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      let typingToken: object | null = null;
+      let searchToken = 0;
+
+      const setLoading = (on: boolean): void => {
+        if (loading) loading.hidden = !on;
+        if (!resultsBox) return;
+        if (on) resultsBox.setAttribute('aria-busy', 'true');
+        else resultsBox.removeAttribute('aria-busy');
+      };
+
+      const setIme = (on: boolean): void => {
+        if (!ime) return;
+        if (on) {
+          ime.hidden = false;
+          ime.classList.add('is-visible');
+        } else {
+          ime.classList.remove('is-visible');
+          ime.hidden = true;
+        }
+      };
+
+      const setCompose = (text: string): void => {
+        if (imeCompose) imeCompose.textContent = text;
+      };
+
+      const setCandidates = (chars: string[], active: number): void => {
+        if (!imeList) return;
+        imeList.replaceChildren(
+          ...chars.map((char, index) => {
+            const item = document.createElement('span');
+            item.className = index === active ? 'search-ime-item is-active' : 'search-ime-item';
+            const number = document.createElement('span');
+            number.className = 'search-ime-index';
+            number.textContent = String(index + 1);
+            const glyph = document.createElement('span');
+            glyph.className = 'search-ime-glyph';
+            glyph.textContent = char;
+            item.append(number, glyph);
+            return item;
+          }),
+        );
+      };
+
+      const cancelTyping = (): void => {
+        if (!typingToken) return;
+        typingToken = null;
+        setIme(false);
+        setCompose('');
+        imeList?.replaceChildren();
+      };
+
+      const runSearch = async (query: string): Promise<void> => {
+        const token = (searchToken += 1);
+        const showLoadingLater = (resultsBox?.childElementCount ?? 0) === 0;
+        const loadingTimer = showLoadingLater
+          ? window.setTimeout(() => {
+              if (token === searchToken) setLoading(true);
+            }, 140)
+          : undefined;
+        try {
+          if (!pf) return;
+          const response = await pf.search(query);
+          const items = await Promise.all(response.results.slice(0, 10).map((result) => result.data()));
+          if (token !== searchToken) return;
+          renderResults(items, query);
+        } catch {
+          if (token !== searchToken || !resultsBox) return;
+          renderResults([], '');
+          resultsBox.innerHTML = '<p class="search-empty">搜索暂时不可用，请刷新页面后再试。</p>';
+        } finally {
+          if (loadingTimer !== undefined) window.clearTimeout(loadingTimer);
+          if (token === searchToken) setLoading(false);
+        }
+      };
+
+      const startTyping = async (word: string): Promise<void> => {
+        cancelTyping();
+        const token = {};
+        typingToken = token;
+        const cancelled = (): boolean => typingToken !== token;
+        if (field) field.hidden = true;
+        renderResults([], '');
+        setLoading(false);
+        input.focus();
+        await typeWordIntoSearch({
+          word,
+          syllables: typingData.syllables[word] ?? [],
+          candidatesFor: (syllable, char) => {
+            const pool = typingData.candidates[syllable] ?? [];
+            return [char, ...pool.filter((candidate) => candidate !== char)].slice(0, 4);
+          },
+          reduceMotion: prefersReducedMotion(),
+          isCancelled: cancelled,
+          hooks: {
+            setValue: (value) => {
+              if (!cancelled()) input.value = value;
+            },
+            compose: (text) => {
+              if (cancelled()) return;
+              if (text) setIme(true);
+              setCompose(text);
+            },
+            candidates: (chars, active) => {
+              if (!cancelled()) setCandidates(chars, active);
+            },
+            hideIme: () => {
+              if (!cancelled()) setIme(false);
+            },
+          },
+        });
+        if (typingToken !== token) return;
+        typingToken = null;
+        setIme(false);
+        setCompose('');
+        imeList?.replaceChildren();
+        input.value = word;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+
       field?.addEventListener('click', (event) => {
         const link = (event.target as Element).closest<HTMLAnchorElement>('a[data-word]');
         if (!link) return;
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
-        input.value = link.dataset.word ?? '';
-        input.focus();
-        input.dispatchEvent(new Event('input', { bubbles: true }));
+        const word = link.dataset.word ?? '';
+        if (!word) return;
+        restoreNote();
+        void startTyping(word);
       });
       field?.addEventListener('pointerover', (event) => describe(event.target));
       field?.addEventListener('focusin', (event) => describe(event.target));
@@ -228,20 +405,20 @@ const driftMobile = layoutWordCloud(wordField.words, {
 
       let timer: number | undefined;
       input.addEventListener('input', () => {
+        cancelTyping();
         const query = input.value.trim();
         if (field) field.hidden = query.length > 0;
         restoreNote();
         syncQuery(query);
         window.clearTimeout(timer);
         if (!query) {
+          searchToken += 1;
+          setLoading(false);
           renderResults([], '');
           return;
         }
-        timer = window.setTimeout(async () => {
-          if (!pf) return;
-          const response = await pf.search(query);
-          const items = await Promise.all(response.results.slice(0, 10).map((r) => r.data()));
-          renderResults(items, query);
+        timer = window.setTimeout(() => {
+          void runSearch(query);
         }, 180);
       });
 
@@ -251,6 +428,7 @@ const driftMobile = layoutWordCloud(wordField.words, {
           input.focus();
         }
         if (event.key === 'Escape' && document.activeElement === input) {
+          cancelTyping();
           input.blur();
         }
       });

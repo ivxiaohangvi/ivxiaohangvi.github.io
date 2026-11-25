@@ -3468,6 +3468,7 @@ html.is-lightbox-open {
 
 /* 17 · 搜索 --------------------------------------------------------------- */
 .search-box {
+  position: relative;
   margin-top: 2.5rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--ink);
@@ -3612,6 +3613,171 @@ kbd {
   font-size: 0.85rem;
   color: var(--muted);
   text-align: center;
+}
+
+/* 词场点词后的输入法面板：只复刻打字机的“组合 + 候选”观感，不做错字与暗字 */
+.search-ime {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 12rem;
+  max-width: min(100%, 22rem);
+  padding: 0.55rem 0.7rem 0.6rem;
+  border: 1px solid var(--ink);
+  background: var(--card);
+  box-shadow: 4px 6px 0 color-mix(in srgb, var(--ink) 8%, transparent);
+  animation: search-ime-in 0.16s ease-out;
+}
+
+.search-ime[hidden] {
+  display: none;
+}
+
+.search-ime-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.search-ime-compose {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+}
+
+.search-ime-compose::after {
+  content: '';
+  display: inline-block;
+  width: 1px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.12em;
+  background: currentColor;
+  animation: search-ime-caret 1.08s steps(1, end) infinite;
+}
+
+.search-ime-mode {
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.14em;
+  color: var(--brass);
+}
+
+.search-ime-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.search-ime-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  padding: 0.1rem 0.35rem;
+  border: 1px solid var(--rule-soft);
+  background: var(--paper);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.search-ime-item.is-active {
+  border-color: var(--ink);
+  background: var(--paper-deep);
+}
+
+.search-ime-index {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  color: var(--muted);
+}
+
+.search-ime-item.is-active .search-ime-index {
+  color: var(--brass);
+}
+
+@keyframes search-ime-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes search-ime-caret {
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* 搜索等待：复用全站加载标记的描边动画，给结果区一个“正在搜索”的反馈 */
+.search-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 1.5rem;
+  padding: 1.2rem 0.4rem;
+  color: var(--muted);
+}
+
+.search-loading[hidden] {
+  display: none;
+}
+
+.search-loading svg {
+  width: 64px;
+  height: auto;
+  flex: none;
+  overflow: visible;
+}
+
+.search-loading path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.search-loading-text {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  animation: search-loading-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes search-loading-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-ime {
+    animation: none;
+  }
+
+  .search-ime-compose::after {
+    animation: none;
+  }
+
+  .search-loading-text {
+    animation: none;
+  }
 }
 
 
