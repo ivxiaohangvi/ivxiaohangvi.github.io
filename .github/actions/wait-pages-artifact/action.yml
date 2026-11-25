@@ -1,0 +1,5 @@
+name: Wait for Pages artifact visibility
+description: 等待 github-pages 产物在 Actions 产物服务里可见后再部署，规避 actions/deploy-pages#451 的产物可见性竞态
+runs:
+  using: node24
+  main: index.mjs

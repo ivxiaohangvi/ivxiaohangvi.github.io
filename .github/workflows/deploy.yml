@@ -154,8 +154,10 @@ jobs:
       # 产物其实已经上传成功，只是发布太早了（参见 actions/deploy-pages#451）。
       # 这里用与 deploy-pages 相同的客户端先轮询到产物可见，再交给下面一步部署；
       # 探测本身出错时只告警放行，不会因为探测故障挡住发布。
+      # 必须作为 JavaScript action 运行：ACTIONS_RUNTIME_TOKEN 只注入 action 进程，
+      # 普通 run: 步骤拿不到（否则会退化成"探测失败、直接部署"）。
       - name: Wait for Pages artifact visibility
-        run: node scripts/wait-pages-artifact.mjs
+        uses: ./.github/actions/wait-pages-artifact
       # 同一个 job 内接着发布，避免依赖链被跳过。
       # 注意：如果部署失败，请重新触发一次工作流，不要 Re-run 本次运行——
       # 同一个 run 里再跑一遍会重复上传产物，deploy-pages 会因 "Artifact count is 2" 失败。

@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { DEFAULT_ARTIFACT_NAME, waitForArtifactVisible } from './wait-pages-artifact.mjs';
 
 const SCRIPT_PATH = fileURLToPath(new URL('./wait-pages-artifact.mjs', import.meta.url));
+const ACTION_PATH = fileURLToPath(new URL('../.github/actions/wait-pages-artifact/index.mjs', import.meta.url));
 const LIST_ARTIFACTS_PATH = '/twirp/github.actions.results.api.v1.ArtifactService/ListArtifacts';
 
 function fakeClock(start = 0) {
@@ -282,4 +283,27 @@ test('集成：运行时依赖装不上时告警放行（退出码 0）', async 
   assert.equal(result.code, 0, result.stderr);
   assert.match(result.stdout, /无法加载 @actions\/artifact/);
   assert.match(result.stdout, /跳过等待直接部署/);
+});
+
+test('集成：本地 action 包装层能用运行时环境轮询产物', async (t) => {
+  const responses = [listArtifactsResponse([]), listArtifactsResponse([DEFAULT_ARTIFACT_NAME])];
+  let index = 0;
+  const server = await startMockResultsServer(() => ({
+    body: responses[Math.min(index++, responses.length - 1)],
+  }));
+  t.after(() => server.close());
+
+  const result = await runWaitScript(
+    childEnv({
+      ACTIONS_RUNTIME_TOKEN: fakeRuntimeToken(),
+      ACTIONS_RESULTS_URL: server.url,
+      WAIT_ARTIFACT_INTERVAL_MS: '20',
+      WAIT_ARTIFACT_TIMEOUT_MS: '5000',
+    }),
+    ACTION_PATH,
+  );
+
+  assert.equal(result.code, 0, result.stderr);
+  assert.match(result.stdout, /第 2 次查询发现 1 个 "github-pages" 产物/);
+  assert.equal(server.requests.length, 2);
 });

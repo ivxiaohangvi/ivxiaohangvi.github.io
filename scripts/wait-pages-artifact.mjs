@@ -106,7 +106,7 @@ export async function waitForArtifactVisible({
   }
 }
 
-async function main() {
+export async function runCli() {
   const artifactName = process.env.PAGES_ARTIFACT_NAME || DEFAULT_ARTIFACT_NAME;
   const intervalMs = readPositiveIntEnv('WAIT_ARTIFACT_INTERVAL_MS', DEFAULT_INTERVAL_MS);
   const timeoutMs = readPositiveIntEnv('WAIT_ARTIFACT_TIMEOUT_MS', DEFAULT_TIMEOUT_MS);
@@ -152,7 +152,7 @@ async function main() {
 
 const isMain = process.argv[1] !== undefined && pathToFileURL(process.argv[1]).href === import.meta.url;
 if (isMain) {
-  main().catch((error) => {
+  runCli().catch((error) => {
     console.error(`::error::wait-pages-artifact 运行失败：${error instanceof Error ? error.stack ?? error.message : String(error)}`);
     process.exitCode = 1;
   });
