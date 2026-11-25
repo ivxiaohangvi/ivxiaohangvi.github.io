@@ -62,12 +62,13 @@ const HESITATE_CHANCE = 0.025;
 const HESITATE_PAUSE: readonly [number, number] = [240, 620];
 
 const BACKSPACE_PAUSE: readonly [number, number] = [88, 160];
-/** 键速提高后按比例降低滑键率，保持退格约 20 次/分不变。 */
-const SLIP_CHANCE = 0.072;
+/** 字母级滑键：每键 7.2% → 5.04%（两种错误率整体降低 30% 后的滑键档）。 */
+const SLIP_CHANCE = 0.0504;
 const LATE_SLIP_CHANCE = 0.5;
 const MAX_SLIPS_PER_SYLLABLE = 2;
-const WORD_MISTAKE_CHANCE = 0.04;
-const HAN_MISTAKE_CHANCE = 0.02;
+/** 候选级错字：词单元 4% → 2.8%、单字单元 2% → 1.4%（整体降低 30%）。 */
+const WORD_MISTAKE_CHANCE = 0.028;
+const HAN_MISTAKE_CHANCE = 0.014;
 
 const CANDIDATE_READ: readonly [number, number] = [160, 480];
 const CANDIDATE_STEP: readonly [number, number] = [90, 180];
