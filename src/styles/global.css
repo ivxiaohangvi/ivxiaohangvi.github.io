@@ -3615,97 +3615,147 @@ kbd {
   text-align: center;
 }
 
-/* 词场点词后的输入法面板：只复刻打字机的“组合 + 候选”观感，不做错字与暗字 */
+/* 词场点词后的输入法面板：尺寸、字号、颜色与迹忆页 .diary-ime 完全对齐 */
 .search-ime {
   position: absolute;
   top: calc(100% + 0.35rem);
   left: 0;
   z-index: 20;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  min-width: 12rem;
-  max-width: min(100%, 22rem);
-  padding: 0.55rem 0.7rem 0.6rem;
-  border: 1px solid var(--ink);
+  min-width: 168px;
+  max-width: min(380px, calc(100vw - 24px));
+  padding: 0.42rem 0.5rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--rule) 88%, var(--brass));
   background: var(--card);
-  box-shadow: 4px 6px 0 color-mix(in srgb, var(--ink) 8%, transparent);
-  animation: search-ime-in 0.16s ease-out;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.16),
+    0 1px 0 color-mix(in srgb, var(--paper) 72%, transparent) inset;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.11s ease, transform 0.11s ease;
+  pointer-events: none;
 }
 
-.search-ime[hidden] {
-  display: none;
+.search-ime::before {
+  content: '';
+  position: absolute;
+  inset: 0.35rem auto 0.35rem 0;
+  width: 2px;
+  background: var(--brass);
+  opacity: 0.72;
+}
+
+.search-ime.is-visible {
+  opacity: 1;
+  transform: none;
 }
 
 .search-ime-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.6rem;
+  gap: 0.18rem 0.55rem;
+  padding: 0 0.2rem 0.32rem 0.35rem;
+  border-bottom: 1px solid var(--rule-soft);
 }
 
 .search-ime-compose {
-  flex: 1;
+  flex: 1 1 7rem;
+  min-width: 0;
   font-family: var(--font-mono);
   font-size: 0.78rem;
-  letter-spacing: 0.12em;
+  line-height: 1.45;
+  letter-spacing: 0.1em;
   color: var(--ink);
+  overflow-wrap: anywhere;
+  word-break: break-all;
 }
 
 .search-ime-compose::after {
   content: '';
   display: inline-block;
   width: 1px;
-  height: 1em;
+  height: 0.82em;
   margin-left: 2px;
-  vertical-align: -0.12em;
-  background: currentColor;
+  vertical-align: -0.06em;
+  background: var(--cyan);
   animation: search-ime-caret 1.08s steps(1, end) infinite;
 }
 
 .search-ime-mode {
+  margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 0.52rem;
-  letter-spacing: 0.14em;
+  font-size: 0.44rem;
+  letter-spacing: 0.2em;
   color: var(--brass);
 }
 
 .search-ime-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
+  align-items: stretch;
+  gap: 0.06rem 0.08rem;
+  padding: 0.34rem 0 0 0.1rem;
 }
 
 .search-ime-item {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: baseline;
-  gap: 0.15rem;
-  padding: 0.1rem 0.35rem;
-  border: 1px solid var(--rule-soft);
-  background: var(--paper);
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-  color: var(--ink);
+  gap: 0.2rem;
+  padding: 0.12rem 0.28rem 0.15rem;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: background-color 0.1s ease, border-color 0.1s ease;
 }
 
 .search-ime-item.is-active {
-  border-color: var(--ink);
-  background: var(--paper-deep);
+  background: color-mix(in srgb, var(--cyan-wash) 68%, transparent);
+  border-color: color-mix(in srgb, var(--cyan) 26%, transparent);
 }
 
 .search-ime-index {
   font-family: var(--font-mono);
-  font-size: 0.5rem;
+  font-size: 0.46rem;
   color: var(--muted);
 }
 
 .search-ime-item.is-active .search-ime-index {
-  color: var(--brass);
+  color: var(--cyan-deep);
 }
 
-@keyframes search-ime-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
+:root[data-theme='dark'] .search-ime-item.is-active .search-ime-index {
+  color: var(--cyan);
+}
+
+.search-ime-glyph {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+@media (max-width: 560px) {
+  .search-ime {
+    min-width: 150px;
+    padding: 0.36rem 0.42rem 0.42rem;
+  }
+
+  .search-ime-compose {
+    font-size: 0.72rem;
+  }
+
+  .search-ime-list {
+    gap: 0.04rem;
+    padding-top: 0.3rem;
+  }
+
+  .search-ime-item {
+    gap: 0.16rem;
+    padding: 0.1rem 0.22rem 0.12rem;
+  }
+
+  .search-ime-glyph {
+    font-size: 0.92rem;
   }
 }
 
@@ -3768,7 +3818,7 @@ kbd {
 
 @media (prefers-reduced-motion: reduce) {
   .search-ime {
-    animation: none;
+    display: none !important;
   }
 
   .search-ime-compose::after {

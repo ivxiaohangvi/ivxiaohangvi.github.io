@@ -4,6 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import WordDriftCloud from '../components/WordDriftCloud.astro';
 import { layoutWordCloud } from '../lib/word-cloud-layout';
 import { buildWordField } from '../lib/word-field';
+import { buildTypingLexicon } from '../lib/typing-data';
 import { pinyin } from 'pinyin-pro';
 import '../styles/word-field.css';
 
@@ -38,22 +39,68 @@ const driftMobile = layoutWordCloud(wordField.words, {
   ampScale: 0.8,
 });
 
-// 词场里每个词的逐字拼音、以及每个音的候选字（都取自词场自身），构建期算好交给浏览器。
+// 词场里每个词的逐字拼音、每个音的候选字池、以及拼音打完后展示的候选词，构建期算好交给浏览器。
+// 候选字池取自日记打字机同一份常用字表（typing-data 的 lexicon.s），这样候选字更像真正的输入法。
 const PINYIN_OPTIONS = { toneType: 'none', type: 'array' } as const;
 const wordSyllables: Record<string, string[]> = {};
-const syllableCandidates: Record<string, string[]> = {};
 for (const item of wordField.words) {
   const chars = [...item.word];
   const syllables = pinyin(item.word, PINYIN_OPTIONS) as string[];
   if (syllables.length === chars.length) wordSyllables[item.word] = syllables;
-  for (let index = 0; index < chars.length; index += 1) {
-    const syllable = syllables[index];
-    if (!syllable || !/^[a-z]+$/.test(syllable) || !/\p{Script=Han}/u.test(chars[index])) continue;
-    const pool = (syllableCandidates[syllable] ??= []);
-    if (!pool.includes(chars[index]) && pool.length < 6) pool.push(chars[index]);
-  }
 }
-const typingData = JSON.stringify({ syllables: wordSyllables, candidates: syllableCandidates }).replace(/</g, '\\u003c');
+
+const fillerLexicon = buildTypingLexicon(wordField.words.map((item) => item.word).join('\n'));
+const syllablePools = fillerLexicon?.s ?? {};
+const syllableSet = new Set<string>();
+for (const syllables of Object.values(wordSyllables)) {
+  for (const syllable of syllables) syllableSet.add(syllable);
+}
+const syllableCandidates: Record<string, string[]> = {};
+for (const syllable of syllableSet) {
+  const pool: string[] = [];
+  const seen = new Set<string>();
+  for (const char of syllablePools[syllable] ?? '') {
+    if (!seen.has(char) && pool.length < 8) {
+      seen.add(char);
+      pool.push(char);
+    }
+  }
+  for (const item of wordField.words) {
+    const index = (wordSyllables[item.word] ?? []).indexOf(syllable);
+    if (index < 0) continue;
+    const char = [...item.word][index]!;
+    if (!seen.has(char)) {
+      seen.add(char);
+      pool.unshift(char);
+    }
+  }
+  syllableCandidates[syllable] = pool;
+}
+
+// 拼音打完后展示的候选词：目标词 + 用同音字池拼出的虚位候选（只是输入法观感，最终敲定目标词）。
+const wordCandidates: Record<string, string[]> = {};
+for (const item of wordField.words) {
+  const syllables = wordSyllables[item.word];
+  if (!syllables) continue;
+  const chars = [...item.word];
+  const list = [item.word];
+  for (let round = 1; round <= 3 && list.length < 4; round += 1) {
+    let synthetic = '';
+    for (let index = 0; index < chars.length; index += 1) {
+      const pool = [...(syllablePools[syllables[index]!] ?? '')];
+      const pick = pool.length > 0 ? pool[(round + index) % pool.length]! : chars[index]!;
+      synthetic += pick;
+    }
+    if (!list.includes(synthetic)) list.push(synthetic);
+  }
+  wordCandidates[item.word] = list;
+}
+
+const typingData = JSON.stringify({
+  syllables: wordSyllables,
+  candidates: syllableCandidates,
+  wordCandidates,
+}).replace(/</g, '\\u003c');
 ---
 <BaseLayout title="搜索" description="搜索 moxo 里的迹忆、动态与文章。">
   <div class="wrap-narrow">
@@ -72,7 +119,7 @@ const typingData = JSON.stringify({ syllables: wordSyllables, candidates: syllab
         搜索索引在构建时由 Pagefind 生成；本地开发模式下不可用，执行
         <code>npm run build &amp;&amp; npm run preview</code> 可以体验完整效果。
       </p>
-      <div class="search-ime" id="search-ime" hidden aria-hidden="true">
+      <div class="search-ime" id="search-ime" aria-hidden="true">
         <div class="search-ime-head">
           <span class="search-ime-compose" data-search-ime-compose></span>
           <span class="search-ime-mode">全拼</span>
@@ -251,9 +298,14 @@ const typingData = JSON.stringify({ syllables: wordSyllables, candidates: syllab
       if (pf) hint?.remove();
 
       const typingScript = document.querySelector<HTMLScriptElement>('script[data-search-typing]');
-      let typingData: { syllables: Record<string, string[]>; candidates: Record<string, string[]> } = {
+      let typingData: {
+        syllables: Record<string, string[]>;
+        candidates: Record<string, string[]>;
+        wordCandidates: Record<string, string[]>;
+      } = {
         syllables: {},
         candidates: {},
+        wordCandidates: {},
       };
       try {
         const parsed = typingScript?.textContent ? JSON.parse(typingScript.textContent) : null;
@@ -281,23 +333,18 @@ const typingData = JSON.stringify({ syllables: wordSyllables, candidates: syllab
 
       const setIme = (on: boolean): void => {
         if (!ime) return;
-        if (on) {
-          ime.hidden = false;
-          ime.classList.add('is-visible');
-        } else {
-          ime.classList.remove('is-visible');
-          ime.hidden = true;
-        }
+        ime.classList.toggle('is-visible', on);
+        ime.setAttribute('aria-hidden', on ? 'false' : 'true');
       };
 
       const setCompose = (text: string): void => {
         if (imeCompose) imeCompose.textContent = text;
       };
 
-      const setCandidates = (chars: string[], active: number): void => {
+      const setCandidates = (items: string[], active: number): void => {
         if (!imeList) return;
         imeList.replaceChildren(
-          ...chars.map((char, index) => {
+          ...items.map((text, index) => {
             const item = document.createElement('span');
             item.className = index === active ? 'search-ime-item is-active' : 'search-ime-item';
             const number = document.createElement('span');
@@ -305,7 +352,7 @@ const typingData = JSON.stringify({ syllables: wordSyllables, candidates: syllab
             number.textContent = String(index + 1);
             const glyph = document.createElement('span');
             glyph.className = 'search-ime-glyph';
-            glyph.textContent = char;
+            glyph.textContent = text;
             item.append(number, glyph);
             return item;
           }),
@@ -356,10 +403,11 @@ const typingData = JSON.stringify({ syllables: wordSyllables, candidates: syllab
         await typeWordIntoSearch({
           word,
           syllables: typingData.syllables[word] ?? [],
-          candidatesFor: (syllable, char) => {
+          charCandidatesFor: (syllable, char) => {
             const pool = typingData.candidates[syllable] ?? [];
             return [char, ...pool.filter((candidate) => candidate !== char)].slice(0, 4);
           },
+          wordCandidates: typingData.wordCandidates[word] ?? [word],
           reduceMotion: prefersReducedMotion(),
           isCancelled: cancelled,
           hooks: {
