@@ -82,30 +82,100 @@ function canHeight(count: number): number {
 
 /** 一事一颗粒：最多画 12 颗，多出来的用右下角的 +N 表示 */
 const MAX_PARTICLES = 12;
+
+/** 稳定的小 PRNG（mulberry32）：固定种子 → 每次构建得到同一组光点分布，但不再排成一条斜线。 */
+function mulberry32(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const round = (value: number, digits = 1) => value.toFixed(digits);
+
+/**
+ * 光点可落范围（罐子外框百分比）。这里只取罐肚中段：
+ * 上沿离罐口留出漂移空间，下沿避开便签和 +N。
+ */
+const DUST_AREA = { xMin: 22, xMax: 78, yMin: 27, yMax: 80 } as const;
+
+/** 左下月份便签、右下 +N 两块区域不落光点（坐标同样是罐子外框百分比）。 */
+const DUST_BLOCKED = [
+  { xMax: 58, yMin: 55 },
+  { xMin: 64, yMin: 62 },
+] as const;
+
+function dustSpotIsFree(x: number, y: number): boolean {
+  for (const zone of DUST_BLOCKED) {
+    const inX = 'xMin' in zone ? x > zone.xMin : x < zone.xMax;
+    if (inX && y > zone.yMin) return false;
+  }
+  return true;
+}
+
+/**
+ * 把光点撒进罐肚：随机落点 + 轻微避让。
+ * 之前的实现用 `hash + index * 97` 再取模，相邻两颗粒的坐标差是常数，
+ * 每只罐子都排成同一条斜线——这里换成带种子的随机撒点，彼此留出光晕距离。
+ */
 function particlesOf(item: FurnitureItem) {
-  const hash = hashOf(item.key);
   const shown = Math.min(item.count, MAX_PARTICLES);
-  return Array.from({ length: shown }, (_, index) => {
-    const spread = hash + index * 97;
-    const dir = (spread % 2 === 0 ? 1 : -1) as 1 | -1;
-    return {
-      /** 坐标是罐子外框的百分比：只走罐肚中间那一片，别贴到壁上 */
-      x: 24 + (spread % 52),
-      y: 36 + ((spread * 7) % 38),
-      size: 3.4 + ((spread % 5) * 0.5),
+  const random = mulberry32(hashOf(item.key) * 7919 + 104729);
+  const dust: {
+    x: string;
+    y: string;
+    size: string;
+    haze: string;
+    mx: string;
+    my: string;
+    durX: string;
+    durY: string;
+    delayX: string;
+    delayY: string;
+    color: string;
+    colorMix: string;
+  }[] = [];
+
+  for (let index = 0; index < shown; index += 1) {
+    let x = DUST_AREA.xMin;
+    let y = DUST_AREA.yMin;
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      x = DUST_AREA.xMin + random() * (DUST_AREA.xMax - DUST_AREA.xMin);
+      y = DUST_AREA.yMin + random() * (DUST_AREA.yMax - DUST_AREA.yMin);
+      /** 横向按 0.62、纵向按 0.92 折算，避免两颗粒的光晕叠在一起 */
+      const spaced = dust.every(
+        (other) => Math.hypot((Number(other.x) - x) * 0.62, (Number(other.y) - y) * 0.92) > 7.6,
+      );
+      if (dustSpotIsFree(x, y) && (spaced || attempt >= 36)) break;
+    }
+
+    const dir = random() < 0.5 ? 1 : -1;
+    dust.push({
+      /** 坐标是罐子外框的百分比 */
+      x: round(x, 2),
+      y: round(y, 2),
+      size: round(3.1 + random() * 1.5, 2),
       /** 光晕大小：有的紧、有的散，才不像复制出来的一排珠子 */
-      haze: (2 + ((spread >> 5) % 4) * 0.25).toFixed(2),
-      delay: ((spread % 40) / 10 - 2).toFixed(1),
-      /** 漂移半径：罐身只有 60 出头，横向走 3–5px、纵向走 5–9px 才不会蹭到罐壁 */
-      mx: ((3 + (spread % 3)) * dir).toFixed(1),
-      my: -(5 + ((spread >> 3) % 5)).toFixed(1),
-      /** 一颗粒一次绕行 26–44 秒，速度各不相同才不会同频 */
-      dur: (26 + (spread % 19)).toFixed(1),
+      haze: round(2 + random() * 1.2, 2),
+      /** 漂移半径：罐身只有 60 出头，横向走 3–5px、纵向走 4–8px 才不会蹭到罐壁 */
+      mx: round(dir * (2.6 + random() * 2.8)),
+      my: round(-(3.5 + random() * 4.5)),
+      /** 横、纵两套漂移的周期与相位都不同，叠起来才像被不同气流带着走 */
+      durX: round(19 + random() * 17),
+      durY: round(15 + random() * 19),
+      delayX: round(-(random() * 36)),
+      delayY: round(-(random() * 34)),
       /** 一瓶一个主色（夜间用），掺过相邻心情色的留到白天用 */
       color: `var(--dust-${dustToneOf(item.tone)})`,
-      colorMix: dustMixOf(item.tone, spread),
-    };
-  });
+      colorMix: dustMixOf(item.tone, Math.floor(random() * 216)),
+    });
+  }
+
+  return dust;
 }
 ---
 
@@ -261,7 +331,7 @@ function particlesOf(item: FurnitureItem) {
                               {particlesOf(item).map((particle) => (
                                 <span
                                   class="bot-dust"
-                                  style={`--x:${particle.x}%;--y:${particle.y}%;--s:${particle.size}px;--haze:${particle.haze};--d:${particle.delay}s;--t:${particle.dur}s;--mx:${particle.mx}px;--my:${particle.my}px;--c:${particle.color};--c2:${particle.colorMix}`}
+                                  style={`--x:${particle.x}%;--y:${particle.y}%;--s:${particle.size}px;--haze:${particle.haze};--mx:${particle.mx}px;--my:${particle.my}px;--tx:${particle.durX}s;--ty:${particle.durY}s;--dx:${particle.delayX}s;--dy:${particle.delayY}s;--c:${particle.color};--c2:${particle.colorMix}`}
                                 />
                               ))}
                               {item.count > MAX_PARTICLES && <span class="bot-more">+{item.count - MAX_PARTICLES}</span>}
@@ -690,7 +760,9 @@ function particlesOf(item: FurnitureItem) {
     margin-left: calc(var(--halo) / -2);
     border-radius: 50%;
     pointer-events: none;
-    animation: dust-drift var(--t) ease-in-out var(--d) infinite;
+    animation:
+      dust-drift-x var(--tx, 28s) ease-in-out var(--dx, 0s) infinite,
+      dust-drift-y var(--ty, 21s) ease-in-out var(--dy, 0s) infinite;
   }
 
   .bot-dust::before {
@@ -746,31 +818,42 @@ function particlesOf(item: FurnitureItem) {
     filter: blur(0.5px);
   }
 
-  /* 光粒在瓶里慢慢绕：每一步的横纵位移都不同，看起来像被瓶中的气流带着走 */
-  @keyframes dust-drift {
-    0% {
-      transform: translate3d(0, 0, 0);
+  /* 光粒在瓶里慢慢飘：横、纵两套动画周期和相位都不同，
+     叠起来像被罐里不同的气流各自带着走，而不是整瓶一起晃。
+     横向走 translate、纵向走 transform，两个属性互不覆盖。 */
+  @keyframes dust-drift-x {
+    0%,
+    100% {
+      translate: 0 0;
       opacity: 0.55;
     }
-    20% {
-      transform: translate3d(var(--mx, 0px), calc(var(--my, 0px) * 0.5), 0);
+    24% {
+      translate: calc(var(--mx, 0px) * 1.15) 0;
       opacity: 0.9;
     }
-    45% {
-      transform: translate3d(calc(var(--mx, 0px) * -0.65), var(--my, 0px), 0);
+    48% {
+      translate: calc(var(--mx, 0px) * -0.85) 0;
       opacity: 1;
     }
-    65% {
-      transform: translate3d(calc(var(--mx, 0px) * 0.45), calc(var(--my, 0px) * 0.75), 0);
+    74% {
+      translate: calc(var(--mx, 0px) * 0.45) 0;
       opacity: 0.7;
     }
-    85% {
-      transform: translate3d(calc(var(--mx, 0px) * -0.5), calc(var(--my, 0px) * 0.25), 0);
-      opacity: 0.95;
-    }
+  }
+
+  @keyframes dust-drift-y {
+    0%,
     100% {
       transform: translate3d(0, 0, 0);
-      opacity: 0.55;
+    }
+    22% {
+      transform: translate3d(0, calc(var(--my, 0px) * 0.45), 0);
+    }
+    50% {
+      transform: translate3d(0, var(--my, 0px), 0);
+    }
+    78% {
+      transform: translate3d(0, calc(var(--my, 0px) * 0.3), 0);
     }
   }
 
