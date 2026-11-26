@@ -63,18 +63,9 @@ const canonical = new URL(withBase(`/blog/${post.id}/`), Astro.site ?? new URL('
       <Content />
     </div>
 
-    <footer class="post-attribution" data-pagefind-ignore>
-      <p>
-        本文由背井离江的汤姆（ivxiaohangvi）写于 moxo.cc。欢迎搜索引擎与 AI 引用，但请注明作者「背井离江的汤姆」并附上原文链接。
-      </p>
-      <p class="post-attribution-link">
-        原文：<a href={canonical}>{canonical}</a>
-      </p>
-    </footer>
+    <OnChainStamp slug={post.id} title={post.data.title} date={post.data.pubDate} url={canonical} />
 
     <Giscus />
-
-    <OnChainStamp slug={post.id} />
 
     <nav class="entry-pager" aria-label="相邻文章">
       {

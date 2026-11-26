@@ -3969,40 +3969,6 @@ kbd {
   color: var(--ink-soft);
 }
 
-/* 文章页尾的署名：机器政策之外，留一条人能读到的出处 */
-.post-attribution {
-  margin-top: 2.8rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--rule-soft);
-  font-family: var(--font-mono);
-  font-size: 0.58rem;
-  line-height: 1.9;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-}
-
-.post-attribution p {
-  margin: 0;
-}
-
-.post-attribution-link {
-  margin-top: 0.35rem;
-  word-break: break-all;
-}
-
-.post-attribution-link a {
-  color: var(--ink-soft);
-  border-bottom: 1px solid var(--rule);
-  transition:
-    color 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.post-attribution-link a:hover {
-  color: var(--brass);
-  border-color: var(--brass);
-}
-
 .tag-ledger {
   border-top: 1px solid var(--ink);
 }

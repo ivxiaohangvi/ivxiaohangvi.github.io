@@ -1,145 +1,361 @@
-/* 文章底部的「已上链」提示 —— 档案卡风格：细线 + 铜色 + 等宽小字 */
+/*
+ * 文章底部的「蓝晒存证 / 引用声明」——描图纸风格。
+ * 一张小卡片：蓝晒坐标格底 + 四角对版准星 + 顶部状态灯 + 引用声明 + 底行存证信息。
+ * 三态如实区分（颜色 + 底行信息）：
+ *   confirmed  青色灯，给出区块高度 / 哈希 / 出块时间 + 「查看区块」
+ *   pending    铜色灯，只写「等待打包 · 已提交 OTS 日历，通常 1–24 小时」
+ *   stale      红色灯，保留原区块并标「（旧证明）」
+ *   missing    不显示存证信息，只保留引用声明与复制声明（用于还没盖章的文章）
+ */
 .onchain {
-  margin-top: 2.2rem;
-  padding-top: 1.1rem;
-  border-top: 1px solid var(--rule);
+  --trace-wash: color-mix(in srgb, var(--cyan-wash) 30%, transparent);
+  --trace-grid: color-mix(in srgb, var(--cyan) 8%, transparent);
+  position: relative;
+  margin-top: 2.7rem;
+  padding: 0.9rem 1.1rem 0.85rem;
+  color: var(--ink-soft);
   font-family: var(--font-mono);
+  background:
+    linear-gradient(180deg, var(--trace-wash), transparent 42%),
+    repeating-linear-gradient(0deg, transparent 0 23px, var(--trace-grid) 23px 24px),
+    repeating-linear-gradient(90deg, transparent 0 23px, var(--trace-grid) 23px 24px),
+    var(--card);
+  border: 1px solid color-mix(in srgb, var(--cyan) 24%, var(--rule));
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--paper) 55%, transparent);
+}
+
+:root[data-theme='dark'] .onchain {
+  --trace-wash: color-mix(in srgb, var(--cyan-wash) 20%, transparent);
+  --trace-grid: color-mix(in srgb, var(--cyan) 17%, transparent);
+}
+
+.onchain::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--cyan-deep),
+    color-mix(in srgb, var(--cyan) 55%, transparent) 34%,
+    var(--brass) 76%,
+    transparent
+  );
+  opacity: 0.75;
+}
+
+/* 四角对版准星 */
+.cy-reg {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  color: var(--cyan-deep);
+  opacity: 0.4;
+  pointer-events: none;
+}
+.cy-reg svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.reg-mark {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+}
+.reg-mark circle {
+  fill: currentColor;
+  stroke: none;
+}
+.cy-reg.tl { left: -9px; top: -9px; }
+.cy-reg.tr { right: -9px; top: -9px; }
+.cy-reg.bl { left: -9px; bottom: -9px; }
+.cy-reg.br { right: -9px; bottom: -9px; }
+:root[data-theme='dark'] .cy-reg { color: var(--cyan); }
+
+/* 顶部：蓝晒徽标（小圆点即状态灯） + SHA-256 */
+.onchain .cy-top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.62rem;
+  font: 0.52rem/1.6 var(--font-mono);
+  letter-spacing: 0.07em;
   color: var(--muted);
 }
-
-.onchain-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  font-size: 0.52rem;
-  letter-spacing: 0.16em;
+.onchain .cy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.14rem 0.5rem 0.16rem;
+  font-size: 0.45rem;
+  letter-spacing: 0.18em;
+  border: 1px solid color-mix(in srgb, var(--cyan) 44%, transparent);
+  color: var(--cyan-deep);
+  background: color-mix(in srgb, var(--cyan-wash) 34%, transparent);
 }
-
-.onchain-kicker {
-  color: var(--brass);
+:root[data-theme='dark'] .onchain .cy-badge {
+  border-color: color-mix(in srgb, var(--cyan) 46%, transparent);
+  color: var(--cyan);
+  background: color-mix(in srgb, var(--cyan) 14%, transparent);
 }
-
-.onchain-state {
-  padding: 0.06rem 0.3rem 0.1rem;
-  border: 1px solid color-mix(in srgb, var(--brass) 46%, transparent);
-  color: color-mix(in srgb, var(--brass) 78%, var(--ink));
-  letter-spacing: 0.12em;
-  white-space: nowrap;
-}
-
-.onchain.is-pending .onchain-state,
-.onchain.is-stale .onchain-state,
-.onchain.is-missing .onchain-state {
+.onchain.is-missing .cy-badge {
   border-color: var(--rule);
   color: var(--muted);
+  background: transparent;
+}
+.onchain .cy-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 16%, transparent);
+  animation: onchain-pulse 2.6s ease-in-out infinite;
+}
+.onchain .cy-badge--pending .cy-dot {
+  background: var(--brass);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brass) 20%, transparent);
+}
+.onchain .cy-badge--stale .cy-dot {
+  background: var(--stamp);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--stamp) 20%, transparent);
+}
+.onchain .cy-sep {
+  opacity: 0.35;
+}
+.onchain .cy-spacer {
+  flex: 1 1 auto;
+}
+.onchain .cy-digest .k {
+  font-size: 0.43rem;
+  letter-spacing: 0.16em;
+  margin-right: 0.28rem;
+  color: var(--brass);
+}
+.onchain .cy-digest code {
+  color: var(--ink-soft);
 }
 
-.onchain-meta {
-  margin: 0.55rem 0 0;
-  font-size: 0.56rem;
+/* 正文：引用声明 + 可折叠的许可/免责声明 */
+.onchain .cy-body {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
   line-height: 1.9;
-  letter-spacing: 0.03em;
   color: var(--ink-soft);
+  text-wrap: pretty;
 }
-
-.onchain-meta a {
-  color: var(--link);
-  border-bottom: 1px solid var(--rule);
-  text-decoration: none;
+.onchain .cy-body p {
+  margin: 0;
 }
-
-.onchain-meta a:hover {
-  color: var(--brass);
-  border-color: var(--brass);
-}
-
-.onchain-num {
+.onchain .cy-body b {
+  font-weight: 600;
   color: var(--ink);
-  letter-spacing: 0.06em;
 }
-
-.onchain-sep {
-  margin: 0 0.32rem;
-  color: color-mix(in srgb, var(--muted) 60%, transparent);
+.onchain .nw {
+  white-space: nowrap;
 }
-
-.onchain-digest {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 0.5rem 0.7rem;
-  margin: 0.5rem 0 0;
-  font-size: 0.54rem;
-  letter-spacing: 0.04em;
-}
-
-.onchain-digest code {
-  font-size: 0.56rem;
-  color: var(--ink-soft);
-  letter-spacing: 0.02em;
-}
-
-.onchain-file {
-  color: var(--link);
-  border-bottom: 1px solid var(--rule);
-  text-decoration: none;
-}
-
-.onchain-file:hover {
-  color: var(--brass);
-  border-color: var(--brass);
-}
-
-.onchain-how {
-  margin-top: 0.7rem;
-  font-size: 0.54rem;
-}
-
-.onchain-how summary {
-  cursor: pointer;
-  color: var(--muted);
-  list-style: none;
-  letter-spacing: 0.06em;
-}
-
-.onchain-how summary::-webkit-details-marker {
-  display: none;
-}
-
-.onchain-how summary::after {
-  content: ' ↓';
-}
-
-.onchain-how[open] summary::after {
-  content: ' ↑';
-}
-
-.onchain-how summary:hover {
-  color: var(--brass);
-}
-
-.onchain-how ol {
-  margin: 0.55rem 0 0;
-  padding-left: 1.05rem;
-  line-height: 1.95;
-  color: var(--ink-soft);
-}
-
-.onchain-how li + li {
+.onchain .cy-legal {
   margin-top: 0.3rem;
 }
-
-.onchain-how code {
-  padding: 0.02rem 0.24rem;
-  background: color-mix(in srgb, var(--ink) 6%, transparent);
-  font-size: 0.52rem;
-  color: var(--ink);
+.onchain .cy-legal-para {
+  margin: 0;
+}
+.onchain .cy-legal-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.onchain .cy-legal.is-open .cy-legal-clamp {
+  display: inline;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+.onchain .cy-legal-toggle {
+  margin-top: 0.22rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 0.72rem/1.7 var(--font-mono);
+  letter-spacing: 0.12em;
+  color: var(--brass);
+  cursor: pointer;
+}
+.onchain .cy-legal-toggle::after {
+  content: ' ＋';
+  color: var(--muted);
+}
+.onchain .cy-legal-toggle[aria-expanded='true']::after {
+  content: ' －';
+}
+.onchain .cy-legal-toggle:hover {
+  color: var(--cyan-deep);
 }
 
-.onchain-note {
-  margin: 0.55rem 0 0;
+/* 底行：存证信息 + 动作 */
+.onchain .cy-foot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.95rem;
+  margin-top: 0.66rem;
+  padding-top: 0.55rem;
+  font: 0.5rem/1.6 var(--font-mono);
+  letter-spacing: 0.05em;
   color: var(--muted);
-  font-size: 0.52rem;
-  line-height: 1.9;
+  border-top: 1px dashed color-mix(in srgb, var(--cyan) 34%, transparent);
+}
+.onchain .cy-foot .k {
+  font-size: 0.43rem;
+  letter-spacing: 0.16em;
+  margin-right: 0.26rem;
+  color: var(--brass);
+}
+.onchain .cy-foot-meta,
+.onchain .cy-foot-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.55rem;
+}
+.onchain .cy-foot-actions {
+  justify-content: flex-end;
+}
+.onchain .cy-foot a {
+  text-decoration: none;
+  color: var(--link);
+  border-bottom: 1px solid var(--rule);
+}
+.onchain .cy-foot a:hover {
+  color: var(--brass);
+  border-color: var(--brass);
+}
+.onchain .cy-stale-mark {
+  color: var(--stamp);
+  font-size: 0.92em;
+  letter-spacing: 0.04em;
+}
+.onchain .cy-copy {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.22rem;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  color: var(--link);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--brass) 46%, transparent);
+  cursor: pointer;
+}
+.onchain .cy-copy:hover {
+  color: var(--cyan-deep);
+  border-color: var(--brass);
+}
+.onchain .cy-copy.is-copied {
+  color: var(--brass);
+  border-color: var(--brass);
+}
+.onchain .cy-copy .cy-ico {
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.04rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  align-self: center;
+}
+
+/* 许可协议行 */
+.onchain .cy-license {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.18rem 0.55rem;
+  margin-top: 0.5rem;
+  padding-top: 0.42rem;
+  border-top: 1px dashed color-mix(in srgb, var(--cyan) 22%, transparent);
+  font: 0.44rem/1.7 var(--font-mono);
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.onchain .cy-license .k {
+  color: var(--brass);
+  letter-spacing: 0.18em;
+}
+.onchain .cy-license a {
+  color: var(--link);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--brass) 36%, transparent);
+}
+.onchain .cy-license a:hover {
+  color: var(--cyan-deep);
+  border-color: var(--brass);
+}
+:root[data-theme='dark'] .onchain .cy-license {
+  border-top-color: color-mix(in srgb, var(--cyan) 26%, transparent);
+}
+:root[data-theme='dark'] .onchain .cy-license a {
+  color: var(--cyan);
+}
+
+@keyframes onchain-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 16%, transparent);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--cyan) 5%, transparent);
+    opacity: 0.62;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onchain .cy-dot {
+    animation: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .onchain {
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+  }
+  .cy-reg {
+    width: 13px;
+    height: 13px;
+  }
+  .cy-reg.tl,
+  .cy-reg.bl {
+    left: -7px;
+  }
+  .cy-reg.tr,
+  .cy-reg.br {
+    right: -7px;
+  }
+  .onchain .cy-legal-clamp {
+    -webkit-line-clamp: 3;
+  }
+  .onchain .cy-foot {
+    flex-wrap: wrap;
+  }
+  .onchain .cy-foot-meta {
+    flex-basis: 100%;
+  }
+  .onchain .cy-foot .cy-spacer {
+    display: none;
+  }
+  .onchain .cy-foot-actions {
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
+  .onchain .cy-foot-meta .cy-sep:nth-last-child(2) {
+    display: none;
+  }
 }
