@@ -11,6 +11,7 @@
     "predev": "node scripts/decode-vault.mjs && node scripts/write-push-info.mjs",
     "prebuild": "node scripts/decode-vault.mjs && node scripts/write-push-info.mjs && node scripts/gen-image-lqip.mjs",
     "gen:images": "node scripts/gen-image-lqip.mjs",
+    "build:favicons": "node scripts/build-favicons.mjs",
     "test:sanitize": "node --test scripts/sanitize-comment.test.mjs",
     "test:steam-sync": "node --test scripts/steam-sync.test.mjs",
     "test:wait-artifact": "node --test scripts/wait-pages-artifact.test.mjs",
