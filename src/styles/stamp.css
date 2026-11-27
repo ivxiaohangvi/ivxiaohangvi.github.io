@@ -16,7 +16,6 @@
   color: var(--ink-soft);
   font-family: var(--font-mono);
   background:
-    linear-gradient(180deg, var(--trace-wash), transparent 42%),
     repeating-linear-gradient(0deg, transparent 0 23px, var(--trace-grid) 23px 24px),
     repeating-linear-gradient(90deg, transparent 0 23px, var(--trace-grid) 23px 24px),
     var(--card);
@@ -25,7 +24,6 @@
 }
 
 :root[data-theme='dark'] .onchain {
-  --trace-wash: color-mix(in srgb, var(--cyan-wash) 20%, transparent);
   --trace-grid: color-mix(in srgb, var(--cyan) 17%, transparent);
 }
 
@@ -44,6 +42,36 @@
     transparent
   );
   opacity: 0.75;
+}
+
+/* 蓝晒晕染：像显影液里慢慢化开，极慢的漂移（52s 来回） */
+.onchain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(52% 66% at 14% 10%, color-mix(in srgb, var(--cyan-wash) 20%, transparent), transparent 72%),
+    radial-gradient(46% 58% at 84% 84%, color-mix(in srgb, var(--cyan) 5%, transparent), transparent 74%);
+  background-size: 180% 180%;
+  background-repeat: no-repeat;
+  opacity: 0.7;
+  animation: onchain-wash-drift 52s ease-in-out infinite alternate;
+}
+:root[data-theme='dark'] .onchain::after {
+  background:
+    radial-gradient(48% 60% at 16% 12%, color-mix(in srgb, var(--cyan) 11%, transparent), transparent 68%),
+    radial-gradient(42% 54% at 84% 82%, color-mix(in srgb, var(--cyan) 6%, transparent), transparent 70%);
+  background-size: 180% 180%;
+  background-repeat: no-repeat;
+}
+.onchain > .cy-top,
+.onchain > .cy-body,
+.onchain > .cy-foot,
+.onchain > .cy-license {
+  position: relative;
+  z-index: 1;
 }
 
 /* 四角对版准星 */
@@ -142,7 +170,7 @@
 /* 正文：引用声明 + 可折叠的许可/免责声明 */
 .onchain .cy-body {
   margin: 0.6rem 0 0;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   line-height: 1.9;
   color: var(--ink-soft);
   text-wrap: pretty;
@@ -305,6 +333,15 @@
   color: var(--cyan);
 }
 
+@keyframes onchain-wash-drift {
+  from {
+    background-position: 0% 0%, 100% 100%;
+  }
+  to {
+    background-position: 100% 40%, 0% 60%;
+  }
+}
+
 @keyframes onchain-pulse {
   0%, 100% {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--cyan) 16%, transparent);
@@ -317,7 +354,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .onchain .cy-dot {
+  .onchain .cy-dot,
+  .onchain::after {
     animation: none;
   }
 }

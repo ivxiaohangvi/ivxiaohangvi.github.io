@@ -95,11 +95,11 @@ const copyText = [`${author} · moxo.cc · ${dateStr}`, `《${title}》`, `原�
 const lead = '本文由背井离江的汤姆（ivxiaohangvi）发布于 moxo.cc 个人博客，';
 const bodyHtml =
   status === 'confirmed'
-    ? `${lead}<span class="nw">文章发布指纹已锚定于比特币主区块链，</span><span class="nw">区块高度为 <b>#${heightText}</b>。</span>`
+    ? `${lead}<span class="nw">文章发布指纹已锚定于比特币主链，</span><span class="nw">区块高度为 <b>#${heightText}</b>。</span>`
     : status === 'stale'
-      ? `${lead}<span class="nw">文章发布指纹原锚定于比特币主区块链，</span><span class="nw">区块高度为 <b>#${heightText}</b>，</span>但正文已变更、存证已过期。`
+      ? `${lead}<span class="nw">文章发布指纹原锚定于比特币主链，</span><span class="nw">区块高度为 <b>#${heightText}</b>，</span>但正文已变更、存证已过期。`
       : status === 'pending'
-        ? `${lead}文章发布指纹已提交 OpenTimestamps 存证，正在等待写入比特币主区块链。`
+        ? `${lead}文章发布指纹已提交 OpenTimestamps 存证，正在等待写入比特币主链。`
         : lead;
 
 const licenseText = '本文仅允许在充分声明原文链接或作者的情况下进行引用、摘要、传播，禁止商用分发传播。';
