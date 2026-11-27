@@ -44,7 +44,7 @@
   opacity: 0.75;
 }
 
-/* 蓝晒晕染：像显影液里慢慢化开，极慢的漂移（52s 来回） */
+/* 蓝晒晕染：像显影液里慢慢化开，缓慢的漂移（24s 单程，来回 48s） */
 .onchain::after {
   content: '';
   position: absolute;
@@ -52,18 +52,21 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(52% 66% at 14% 10%, color-mix(in srgb, var(--cyan-wash) 20%, transparent), transparent 72%),
-    radial-gradient(46% 58% at 84% 84%, color-mix(in srgb, var(--cyan) 5%, transparent), transparent 74%);
-  background-size: 180% 180%;
+    radial-gradient(60% 74% at 10% 6%, color-mix(in srgb, var(--cyan-wash) 52%, transparent), transparent 70%),
+    radial-gradient(54% 66% at 88% 88%, color-mix(in srgb, var(--cyan) 14%, transparent), transparent 72%),
+    linear-gradient(100deg, transparent 40%, color-mix(in srgb, var(--cyan-wash) 62%, transparent) 50%, transparent 60%);
+  background-size: 150% 150%, 150% 150%, 220% 100%;
   background-repeat: no-repeat;
-  opacity: 0.7;
-  animation: onchain-wash-drift 52s ease-in-out infinite alternate;
+  opacity: 0.9;
+  will-change: background-position, transform;
+  animation: onchain-wash-drift 24s ease-in-out infinite alternate;
 }
-:root[data-theme='dark'] .onchain::after {
+':root[data-theme='dark'] .onchain::after {
   background:
-    radial-gradient(48% 60% at 16% 12%, color-mix(in srgb, var(--cyan) 11%, transparent), transparent 68%),
-    radial-gradient(42% 54% at 84% 82%, color-mix(in srgb, var(--cyan) 6%, transparent), transparent 70%);
-  background-size: 180% 180%;
+    radial-gradient(60% 74% at 10% 6%, color-mix(in srgb, var(--cyan) 24%, transparent), transparent 70%),
+    radial-gradient(54% 66% at 88% 88%, color-mix(in srgb, var(--cyan) 10%, transparent), transparent 72%),
+    linear-gradient(100deg, transparent 40%, color-mix(in srgb, var(--cyan) 16%, transparent) 50%, transparent 60%);
+  background-size: 150% 150%, 150% 150%, 220% 100%;
   background-repeat: no-repeat;
 }
 .onchain > .cy-top,
@@ -335,10 +338,12 @@
 
 @keyframes onchain-wash-drift {
   from {
-    background-position: 0% 0%, 100% 100%;
+    background-position: 0% 0%, 100% 100%, 0% 0%;
+    transform: translate3d(-1.6%, -1.2%, 0) scale(1.01);
   }
   to {
-    background-position: 100% 40%, 0% 60%;
+    background-position: 130% 130%, -30% -30%, 100% 100%;
+    transform: translate3d(1.6%, 1.2%, 0) scale(1.08);
   }
 }
 
