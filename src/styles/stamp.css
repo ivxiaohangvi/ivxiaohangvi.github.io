@@ -44,7 +44,7 @@
   opacity: 0.75;
 }
 
-/* 蓝晒晕染：像水波一样极缓地荡开（36s 单程，来回 72s） */
+/* 蓝晒晕染：最初版的柔和光晕，极缓漂移（52s 来回） */
 .onchain::after {
   content: '';
   position: absolute;
@@ -52,21 +52,19 @@
   z-index: 0;
   pointer-events: none;
   background:
-    repeating-radial-gradient(circle at 30% 22%, transparent 0 26px, color-mix(in srgb, var(--cyan-wash) 22%, transparent) 30px 33px, transparent 37px 62px),
-    repeating-radial-gradient(circle at 74% 78%, transparent 0 34px, color-mix(in srgb, var(--cyan) 8%, transparent) 38px 41px, transparent 45px 78px);
-  background-size: 150% 150%, 190% 190%;
-  background-position: 20% 14%, 80% 84%;
+    radial-gradient(56% 70% at 12% 8%, color-mix(in srgb, var(--cyan-wash) 26%, transparent), transparent 72%),
+    radial-gradient(50% 62% at 86% 86%, color-mix(in srgb, var(--cyan) 8%, transparent), transparent 74%);
+  background-size: 180% 180%;
   background-repeat: no-repeat;
   opacity: 0.56;
-  will-change: background-position, background-size;
-  animation: onchain-wash-drift 36s ease-in-out infinite alternate;
+  will-change: background-position;
+  animation: onchain-wash-drift 52s ease-in-out infinite alternate;
 }
 ':root[data-theme='dark'] .onchain::after {
   background:
-    repeating-radial-gradient(circle at 30% 22%, transparent 0 26px, color-mix(in srgb, var(--cyan) 11%, transparent) 30px 33px, transparent 37px 62px),
-    repeating-radial-gradient(circle at 74% 78%, transparent 0 34px, color-mix(in srgb, var(--cyan) 5%, transparent) 38px 41px, transparent 45px 78px);
-  background-size: 150% 150%, 190% 190%;
-  background-position: 20% 14%, 80% 84%;
+    radial-gradient(56% 70% at 12% 8%, color-mix(in srgb, var(--cyan) 12%, transparent), transparent 72%),
+    radial-gradient(50% 62% at 86% 86%, color-mix(in srgb, var(--cyan) 5%, transparent), transparent 74%);
+  background-size: 180% 180%;
   background-repeat: no-repeat;
 }
 .onchain > .cy-top,
@@ -338,12 +336,10 @@
 
 @keyframes onchain-wash-drift {
   from {
-    background-size: 140% 140%, 176% 176%;
-    background-position: 18% 12%, 82% 86%;
+    background-position: 0% 0%, 100% 100%;
   }
   to {
-    background-size: 166% 166%, 204% 204%;
-    background-position: 24% 18%, 76% 78%;
+    background-position: 100% 40%, 0% 60%;
   }
 }
 
