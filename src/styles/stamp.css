@@ -44,7 +44,7 @@
   opacity: 0.75;
 }
 
-/* 蓝晒晕染：像显影液里慢慢化开，缓慢的漂移（24s 单程，来回 48s） */
+/* 蓝晒晕染：像水波一样极缓地荡开（36s 单程，来回 72s） */
 .onchain::after {
   content: '';
   position: absolute;
@@ -52,21 +52,21 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(60% 74% at 10% 6%, color-mix(in srgb, var(--cyan-wash) 52%, transparent), transparent 70%),
-    radial-gradient(54% 66% at 88% 88%, color-mix(in srgb, var(--cyan) 14%, transparent), transparent 72%),
-    linear-gradient(100deg, transparent 40%, color-mix(in srgb, var(--cyan-wash) 62%, transparent) 50%, transparent 60%);
-  background-size: 150% 150%, 150% 150%, 220% 100%;
+    repeating-radial-gradient(circle at 30% 22%, transparent 0 26px, color-mix(in srgb, var(--cyan-wash) 22%, transparent) 30px 33px, transparent 37px 62px),
+    repeating-radial-gradient(circle at 74% 78%, transparent 0 34px, color-mix(in srgb, var(--cyan) 8%, transparent) 38px 41px, transparent 45px 78px);
+  background-size: 150% 150%, 190% 190%;
+  background-position: 20% 14%, 80% 84%;
   background-repeat: no-repeat;
-  opacity: 0.9;
-  will-change: background-position, transform;
-  animation: onchain-wash-drift 24s ease-in-out infinite alternate;
+  opacity: 0.56;
+  will-change: background-position, background-size;
+  animation: onchain-wash-drift 36s ease-in-out infinite alternate;
 }
 ':root[data-theme='dark'] .onchain::after {
   background:
-    radial-gradient(60% 74% at 10% 6%, color-mix(in srgb, var(--cyan) 24%, transparent), transparent 70%),
-    radial-gradient(54% 66% at 88% 88%, color-mix(in srgb, var(--cyan) 10%, transparent), transparent 72%),
-    linear-gradient(100deg, transparent 40%, color-mix(in srgb, var(--cyan) 16%, transparent) 50%, transparent 60%);
-  background-size: 150% 150%, 150% 150%, 220% 100%;
+    repeating-radial-gradient(circle at 30% 22%, transparent 0 26px, color-mix(in srgb, var(--cyan) 11%, transparent) 30px 33px, transparent 37px 62px),
+    repeating-radial-gradient(circle at 74% 78%, transparent 0 34px, color-mix(in srgb, var(--cyan) 5%, transparent) 38px 41px, transparent 45px 78px);
+  background-size: 150% 150%, 190% 190%;
+  background-position: 20% 14%, 80% 84%;
   background-repeat: no-repeat;
 }
 .onchain > .cy-top,
@@ -338,12 +338,12 @@
 
 @keyframes onchain-wash-drift {
   from {
-    background-position: 0% 0%, 100% 100%, 0% 0%;
-    transform: translate3d(-1.6%, -1.2%, 0) scale(1.01);
+    background-size: 140% 140%, 176% 176%;
+    background-position: 18% 12%, 82% 86%;
   }
   to {
-    background-position: 130% 130%, -30% -30%, 100% 100%;
-    transform: translate3d(1.6%, 1.2%, 0) scale(1.08);
+    background-size: 166% 166%, 204% 204%;
+    background-position: 24% 18%, 76% 78%;
   }
 }
 
