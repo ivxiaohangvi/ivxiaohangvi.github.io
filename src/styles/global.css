@@ -2076,9 +2076,7 @@ body.is-bare .grain {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.8rem;
-  margin-top: 3.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--rule);
+  margin-top: 3rem;
 }
 
 @media (max-width: 760px) {
