@@ -65,8 +65,6 @@ const canonical = new URL(withBase(`/blog/${post.id}/`), Astro.site ?? new URL('
 
     <OnChainStamp slug={post.id} title={post.data.title} date={post.data.pubDate} url={canonical} />
 
-    <Giscus />
-
     <nav class="entry-pager" aria-label="相邻文章">
       {
         older ? (
@@ -89,5 +87,7 @@ const canonical = new URL(withBase(`/blog/${post.id}/`), Astro.site ?? new URL('
         )
       }
     </nav>
+
+    <Giscus />
   </article>
 </BaseLayout>
